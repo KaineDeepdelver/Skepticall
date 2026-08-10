@@ -1,6 +1,7 @@
 package net.omnimedia.omni.message.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import net.omnimedia.omni.config.R2StorageService;
 import net.omnimedia.omni.group.dto.GroupMessageDTO;
 import net.omnimedia.omni.group.service.GroupService;
 import net.omnimedia.omni.message.dto.ConversationDTO;
@@ -24,6 +25,7 @@ public class MessageRestController {
     @Autowired private MessageService messageService;
     @Autowired private SimpMessagingTemplate messagingTemplate;
     @Autowired private GroupService groupService;
+    @Autowired private R2StorageService r2Storage;
 
     private Long callerId(HttpServletRequest req) {
         return (Long) req.getAttribute("authenticatedUserId");
@@ -81,16 +83,7 @@ public class MessageRestController {
         if (senderId == null) return ResponseEntity.status(401).build();
 
         try {
-            File folder = new File("uploads");
-            if (!folder.exists()) folder.mkdir();
-
-            String orig = file.getOriginalFilename();
-            String ext  = (orig != null && orig.contains("."))
-                    ? orig.substring(orig.lastIndexOf('.')) : "";
-            String fileName = type.toLowerCase() + "_" + UUID.randomUUID() + ext;
-            Path path = Paths.get("uploads/" + fileName);
-            Files.write(path, file.getBytes());
-            String fileUrl = "/uploads/" + fileName;
+            String fileUrl = r2Storage.upload(file, type.toLowerCase());
 
             // ── Group upload ──
             if (groupId != null) {

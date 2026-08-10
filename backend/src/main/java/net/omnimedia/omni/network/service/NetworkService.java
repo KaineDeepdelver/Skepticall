@@ -1,6 +1,7 @@
 package net.omnimedia.omni.network.service;
 
 import lombok.RequiredArgsConstructor;
+import net.omnimedia.omni.config.R2StorageService;
 import net.omnimedia.omni.exceptions.BusinessException;
 import net.omnimedia.omni.exceptions.ErrorType;
 import net.omnimedia.omni.network.dto.*;
@@ -36,6 +37,7 @@ public class NetworkService {
     private final ChannelCategoryRepository channelCategoryRepository;
     private final UserRepository userRepository;
     private final NetworkPermissionService permissions;
+    private final R2StorageService r2Storage;
 
     // ── Create / read ──────────────────────────────────────────────────
 
@@ -243,25 +245,11 @@ public class NetworkService {
         return toDTO(networkRepository.save(network));
     }
 
-    // Same convention as UserService.saveFile — flat "uploads/" folder served
-    // statically at "/uploads/**" (see WebConfig). Duplicated rather than
-    // shared since UserService's version is private and this is the only
-    // other place that needs it right now.
+    // Files now live in Cloudflare R2 (see R2StorageService) instead of
+    // local disk — Render's ephemeral filesystem meant any file written
+    // locally was lost on the next redeploy/restart/spin-down.
     private String saveFile(MultipartFile file, String prefix) {
-        try {
-            File folder = new File("uploads");
-            if (!folder.exists()) folder.mkdir();
-            String ext = "";
-            String orig = file.getOriginalFilename();
-            if (orig != null && orig.contains("."))
-                ext = orig.substring(orig.lastIndexOf('.'));
-            String fileName = prefix + "_" + UUID.randomUUID() + ext;
-            Path path = Paths.get("uploads/" + fileName);
-            Files.write(path, file.getBytes());
-            return "/uploads/" + fileName;
-        } catch (IOException e) {
-            throw new BusinessException(ErrorType.INVALID_OPERATION, "Failed to save uploaded file: " + e.getMessage());
-        }
+        return r2Storage.upload(file, prefix);
     }
 
     // ── Bans ────────────────────────────────────────────────────────────

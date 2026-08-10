@@ -2,6 +2,7 @@ package net.omnimedia.omni.post.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import net.omnimedia.omni.config.R2StorageService;
 import net.omnimedia.omni.exceptions.BusinessException;
 import net.omnimedia.omni.exceptions.ErrorType;
 import net.omnimedia.omni.post.dto.PostDTO;
@@ -17,6 +18,7 @@ import java.util.*;
 @RestController @RequestMapping("/posts") @RequiredArgsConstructor @CrossOrigin(origins = "*")
 public class PostController {
     private final PostService postService;
+    private final R2StorageService r2Storage;
 
     private Long callerId(HttpServletRequest req) {
         return (Long) req.getAttribute("authenticatedUserId");
@@ -60,9 +62,6 @@ public class PostController {
         boolean hasMedia   = mediaFiles != null && mediaFiles.stream().anyMatch(f -> f != null && !f.isEmpty());
         if (!hasContent && !hasMedia) return ResponseEntity.badRequest().build();
 
-        Path dir = Paths.get("uploads");
-        Files.createDirectories(dir);
-
         List<String[]> mediaEntries = new ArrayList<>();
         if (hasMedia) {
             for (MultipartFile file : mediaFiles) {
@@ -80,13 +79,8 @@ public class PostController {
                     );
                 }
 
-                String ext = Optional.ofNullable(file.getOriginalFilename())
-                        .filter(n -> n.contains("."))
-                        .map(n -> n.substring(n.lastIndexOf('.')))
-                        .orElse("");
-                String filename = "post_" + UUID.randomUUID() + ext;
-                Files.copy(file.getInputStream(), dir.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
-                mediaEntries.add(new String[]{ mediaType, "/uploads/" + filename });
+                String url = r2Storage.upload(file, "post");
+                mediaEntries.add(new String[]{ mediaType, url });
             }
         }
 

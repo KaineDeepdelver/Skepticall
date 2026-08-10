@@ -33,6 +33,27 @@ spring.jpa.show-sql=false
 spring.servlet.multipart.max-file-size=500MB
 spring.servlet.multipart.max-request-size=500MB
 
+# == File storage (Cloudflare R2) ==================================
+# Uploaded files (avatars, banners, post media, message attachments,
+# network icons/banners, ...) are stored in Cloudflare R2 rather than on
+# local disk — Render's filesystem is ephemeral (wiped on every redeploy/
+# restart/spin-down) and the free plan can't attach a persistent disk, so
+# local storage doesn't survive there. See R2StorageService.
+#
+# R2_ACCOUNT_ID          — Cloudflare dashboard → R2 → Overview (right side)
+# R2_ACCESS_KEY_ID /
+# R2_SECRET_ACCESS_KEY   — R2 → Manage API Tokens → Create API Token
+# R2_BUCKET              — the bucket name you created for uploads
+# R2_PUBLIC_BASE_URL     — the public URL files should be served from,
+#                          e.g. https://cdn.skepticall.com or your bucket's
+#                          r2.dev URL — no trailing slash
+
+r2.account-id=${R2_ACCOUNT_ID}
+r2.access-key-id=${R2_ACCESS_KEY_ID}
+r2.secret-access-key=${R2_SECRET_ACCESS_KEY}
+r2.bucket=${R2_BUCKET}
+r2.public-base-url=${R2_PUBLIC_BASE_URL}
+
 # == Redis ========================================================
 
 spring.data.redis.host=${REDIS_HOST:localhost}

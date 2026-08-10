@@ -2,6 +2,7 @@ package net.omnimedia.omni.media.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import net.omnimedia.omni.config.R2StorageService;
 import net.omnimedia.omni.exceptions.BusinessException;
 import net.omnimedia.omni.exceptions.ErrorType;
 import net.omnimedia.omni.media.dto.MediaItemDTO;
@@ -17,6 +18,7 @@ import java.util.*;
 @RestController @RequestMapping("/media") @RequiredArgsConstructor @CrossOrigin(origins = "*")
 public class MediaController {
     private final MediaService mediaService;
+    private final R2StorageService r2Storage;
 
     private Long callerId(HttpServletRequest req) {
         return (Long) req.getAttribute("authenticatedUserId");
@@ -60,18 +62,11 @@ public class MediaController {
             return ResponseEntity.badRequest().body("Clips cannot exceed 5 minutes (300 seconds).");
         }
 
-        String ext = Optional.ofNullable(video.getOriginalFilename()).filter(n -> n.contains(".")).map(n -> n.substring(n.lastIndexOf('.'))).orElse(".mp4");
-        String vName = "media_" + UUID.randomUUID() + ext;
-        Path dir = Paths.get("uploads"); Files.createDirectories(dir);
-        Files.copy(video.getInputStream(), dir.resolve(vName), StandardCopyOption.REPLACE_EXISTING);
-        String videoUrl = "/uploads/" + vName;
+        String videoUrl = r2Storage.upload(video, "media");
 
         String thumbUrl = null;
         if (thumbnail != null && !thumbnail.isEmpty()) {
-            String tExt = Optional.ofNullable(thumbnail.getOriginalFilename()).filter(n -> n.contains(".")).map(n -> n.substring(n.lastIndexOf('.'))).orElse(".jpg");
-            String tName = "thumb_" + UUID.randomUUID() + tExt;
-            Files.copy(thumbnail.getInputStream(), dir.resolve(tName), StandardCopyOption.REPLACE_EXISTING);
-            thumbUrl = "/uploads/" + tName;
+            thumbUrl = r2Storage.upload(thumbnail, "thumb");
         }
 
         return ResponseEntity.ok(mediaService.create(authorId, title, description, videoUrl, thumbUrl, isClip, durationSeconds));

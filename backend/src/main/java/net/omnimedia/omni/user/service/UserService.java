@@ -3,6 +3,7 @@ package net.omnimedia.omni.user.service;
 import lombok.RequiredArgsConstructor;
 import net.omnimedia.omni.admin.repository.AdminRepository;
 import net.omnimedia.omni.captcha.service.CaptchaService;
+import net.omnimedia.omni.config.R2StorageService;
 import net.omnimedia.omni.config.jwt.JwtUtil;
 import net.omnimedia.omni.exceptions.BusinessException;
 import net.omnimedia.omni.exceptions.ErrorType;
@@ -38,6 +39,7 @@ public class UserService {
     private final AdminRepository adminRepository;
     private final JwtUtil jwtUtil;
     private final CaptchaService captchaService;
+    private final R2StorageService r2Storage;
 
     // == Auth =================================================================
 
@@ -284,23 +286,6 @@ public class UserService {
     }
 
     private String saveFile(MultipartFile file, String prefix) {
-        try {
-            File folder = new File("uploads");
-            if (!folder.exists()) folder.mkdir();
-            String ext  = "";
-            String orig = file.getOriginalFilename();
-            if (orig != null && orig.contains("."))
-                ext = orig.substring(orig.lastIndexOf('.'));
-            String fileName = prefix + "_" + UUID.randomUUID() + ext;
-            Path path = Paths.get("uploads/" + fileName);
-            Files.write(path, file.getBytes());
-            return "/uploads/" + fileName;
-        } catch (IOException e) {
-            throw new BusinessException(
-                    ErrorType.INVALID_OPERATION,
-                    "💾 File persistence failed: Unable to save uploaded media payload. Reason: " + e.getMessage()
-            );
-        }
-
+        return r2Storage.upload(file, prefix);
     }
 }

@@ -79,10 +79,10 @@ async function req(path, opts = {}) {
   return ct.includes('json') ? res.json() : res.text();
 }
 
-function upload(path, formData) {
+function upload(path, formData, method = 'POST') {
   const token = sessionStorage.getItem('omni_token');
   return fetch(`${API_BASE}${path}`, {
-    method: 'POST',
+    method,
     body: formData,
     headers: {
       ...NGROK_HEADER,
@@ -105,7 +105,7 @@ export const api = {
   getUser:           (id)       => req(`/users/${id}`),
   getUserByUsername: (username) => req(`/users/by-username/${encodeURIComponent(username)}`),
   searchUsers:    (query)           => req(`/users/search?query=${encodeURIComponent(query)}`),
-  updateProfile:  (id, fd)          => upload(`/users/${id}/profile`, fd),
+  updateProfile:  (id, fd)          => upload(`/users/${id}/profile`, fd, 'PUT'),
   updateAccount:  (id, body)        => req(`/users/${id}/account`,  { method: 'PUT', body }),
   updatePrivacy:  (id, privacyMode) => req(`/users/${id}/privacy`,  { method: 'PUT', body: { privacyMode } }),
   // Generic settings patch (presence, notifications, security flags, etc.)
