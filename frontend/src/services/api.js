@@ -89,6 +89,17 @@ function upload(path, formData, method = 'POST') {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   }).then(r => {
+    if (r.status === 401 || r.status === 403) {
+      // None of the upload()-backed endpoints (profile, posts, messages)
+      // catch SecurityException in their controller, so a 403 here can only
+      // come from Spring Security's own entry point rejecting a missing,
+      // expired, or otherwise invalid token — never a legit "wrong user"
+      // 403 from app code. Safe to always treat it as a stale session.
+      sessionStorage.removeItem('omni_token');
+      sessionStorage.removeItem('omni_user');
+      sessionStorage.removeItem('omni_user_id');
+      window.dispatchEvent(new Event('omni:auth-expired'));
+    }
     if (!r.ok) return r.text().then(t => { throw new Error(t); });
     return r.json();
   });
@@ -275,5 +286,8 @@ export const adminApi = {
   deleteUser:    (userId)       => req(`/admin/users/${userId}`, { method: 'DELETE' }),
   listAdmins:    ()             => req('/admin/admins'),
   grantAdmin:    (targetUserId) => req(`/admin/admins/${targetUserId}`, { method: 'POST' }),
+  revokeAdmin:   (targetUserId) => req(`/admin/admins/${targetUserId}`, { method: 'DELETE' }),
+};
+
   revokeAdmin:   (targetUserId) => req(`/admin/admins/${targetUserId}`, { method: 'DELETE' }),
 };
