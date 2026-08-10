@@ -16,15 +16,22 @@ export const API_BASE = (!isLocalhost && typeof window !== 'undefined' && window
 const NGROK_HEADER = {};
 
 /**
- * Rewrites any URL whose origin is localhost (any port) to use the current
- * API_BASE instead. This fixes Mixed Content errors when image/file URLs
- * were stored in the DB with a localhost origin (e.g. http://localhost:1979/uploads/...)
- * but the frontend is now served over HTTPS via a Cloudflare tunnel.
+ * Resolves a stored image/file URL to something the browser can actually
+ * load, in two cases:
+ *  1. Relative paths (e.g. "/uploads/xyz.jpg") — how the backend actually
+ *     stores them. These get resolved against the *frontend's* origin by
+ *     the browser if left as-is, which is wrong; they need the backend's
+ *     origin (API_BASE) prefixed on.
+ *  2. Absolute localhost URLs (e.g. "http://localhost:1979/uploads/...")
+ *     — leftover from an older dev setup or a different local port. These
+ *     get rewritten to the current API_BASE so they still resolve after
+ *     moving between dev machines / tunnel URLs / ports.
  *
  * Usage: <img src={resolveUrl(user.profilePicture)} />
  */
 export function resolveUrl(url) {
   if (!url) return url;
+  if (url.startsWith('/')) return `${API_BASE}${url}`;
   try {
     const parsed = new URL(url);
     if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
@@ -79,6 +86,11 @@ async function req(path, opts = {}) {
   return ct.includes('json') ? res.json() : res.text();
 }
 
+// `method` defaults to POST since that covers most upload() call sites
+// (createPost, uploadMedia, uploadMessage, network icon/banner) — but
+// callers that hit a @PutMapping endpoint (updateProfile) MUST pass 'PUT'
+// explicitly, or the request 404s/405s against a route that doesn't
+// actually have a POST handler.
 function upload(path, formData, method = 'POST') {
   const token = sessionStorage.getItem('omni_token');
   return fetch(`${API_BASE}${path}`, {
@@ -89,12 +101,10 @@ function upload(path, formData, method = 'POST') {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   }).then(r => {
-    if (r.status === 401 || r.status === 403) {
-      // None of the upload()-backed endpoints (profile, posts, messages)
-      // catch SecurityException in their controller, so a 403 here can only
-      // come from Spring Security's own entry point rejecting a missing,
-      // expired, or otherwise invalid token — never a legit "wrong user"
-      // 403 from app code. Safe to always treat it as a stale session.
+    if (r.status === 401 || (r.status === 403 && token === null)) {
+      // Same expired/invalid-token recovery as req() below — uploads (posts,
+      // media, profile pics, message attachments) were previously silently
+      // failing here with no way for the app to know the user got logged out.
       sessionStorage.removeItem('omni_token');
       sessionStorage.removeItem('omni_user');
       sessionStorage.removeItem('omni_user_id');
@@ -119,6 +129,8 @@ export const api = {
   updateProfile:  (id, fd)          => upload(`/users/${id}/profile`, fd, 'PUT'),
   updateAccount:  (id, body)        => req(`/users/${id}/account`,  { method: 'PUT', body }),
   updatePrivacy:  (id, privacyMode) => req(`/users/${id}/privacy`,  { method: 'PUT', body: { privacyMode } }),
+  updateNameColor: (id, nameColor) => req(`/users/${id}/name-color`, { method: 'PUT', body: { nameColor } }),
+  updateAvatarOverlay: (id, svg) => req(`/users/${id}/avatar-overlay`, { method: 'PUT', body: { svg } }),
   // Generic settings patch (presence, notifications, security flags, etc.)
   updateSettings: (id, body)        => req(`/users/${id}/settings`, { method: 'PUT', body }),
   deleteAccount:  (id, password)    => req(`/users/${id}`,          { method: 'DELETE', body: { password } }),
@@ -287,6 +299,6 @@ export const adminApi = {
   listAdmins:    ()             => req('/admin/admins'),
   grantAdmin:    (targetUserId) => req(`/admin/admins/${targetUserId}`, { method: 'POST' }),
   revokeAdmin:   (targetUserId) => req(`/admin/admins/${targetUserId}`, { method: 'DELETE' }),
+  grantPremium:  (targetUserId) => req(`/admin/users/${targetUserId}/premium`, { method: 'POST' }),
+  revokePremium: (targetUserId) => req(`/admin/users/${targetUserId}/premium`, { method: 'DELETE' }),
 };
-
-
