@@ -289,5 +289,4 @@ export const adminApi = {
   revokeAdmin:   (targetUserId) => req(`/admin/admins/${targetUserId}`, { method: 'DELETE' }),
 };
 
-  revokeAdmin:   (targetUserId) => req(`/admin/admins/${targetUserId}`, { method: 'DELETE' }),
-};
+
