@@ -6,6 +6,7 @@ import { api, API_BASE, followApi } from '../services/api';
 import CommentsPanel from '../components/CommentsPanel';
 import UserAvatar from '../components/UserAvatar';
 import MarkdownRenderer from '../components/MarkdownRenderer';
+import RightSidebar from '../components/layout/RightSidebar';
 
 function avatarUrl(pic) { if (!pic) return null; return pic.startsWith('http') ? pic : `${API_BASE}${pic}`; }
 function fmtTime(iso) {
@@ -147,6 +148,8 @@ export default function PostDetailPage() {
           )}
         </div>
       </div>
+
+      <RightSidebar />
     </div>
   );
 }
