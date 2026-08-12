@@ -1247,6 +1247,7 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 
 .post-detail-comments-mobile  { display: block; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 4px; min-height: 300px; }
 .post-detail-comments-desktop { display: none; }
+.post-detail-comments-bottom  { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 4px; min-height: 400px; }
 
 @media (min-width: 769px) {
   .post-detail-body    { padding: 0 24px 40px; }
@@ -1638,6 +1639,7 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 
 .post-detail-comments-mobile  { display: block; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 4px; min-height: 300px; }
 .post-detail-comments-desktop { display: none; }
+.post-detail-comments-bottom  { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 4px; min-height: 400px; }
 
 @media (min-width: 769px) {
   .post-detail-content { border-right: 1px solid var(--border); }
