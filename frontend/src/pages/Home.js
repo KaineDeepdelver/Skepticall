@@ -449,14 +449,17 @@ const HOME_STYLES = `
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 12px;
   }
 
   .omni-feed-wrap {
     padding: 0 0 48px 0;
     width: 100%;
-    max-width: 640px;
+    max-width: 820px;
     min-width: 0;
+  }
+
+  @media (min-width: 1100px) {
+    .omni-home-layout { padding-right: 300px; }
   }
 
   /* ── Feed header ── */
