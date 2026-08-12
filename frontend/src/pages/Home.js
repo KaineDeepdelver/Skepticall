@@ -459,7 +459,7 @@ const HOME_STYLES = `
   }
 
   @media (min-width: 1100px) {
-    .omni-home-layout { padding-right: 300px; }
+    .omni-home-layout { padding-right: 460px; }
   }
 
   /* ── Feed header ── */
