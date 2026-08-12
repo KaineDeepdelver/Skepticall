@@ -20,7 +20,7 @@ const PlusIcon  = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 export default function AppLayout() {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
-  const { collapsed, hidden, overlayOpen } = useSidebar();
+  const { collapsed, hidden, overlayOpen, width, setWidth } = useSidebar();
   const { user } = useAuth();
   const requireAccount = useRequireAccount();
 
@@ -53,11 +53,32 @@ export default function AppLayout() {
     navigate('/create');
   }
 
-  const FULL = 220;
+  const FULL = width;
   const MINI = 72;
   const isMini     = collapsed;
   const sidebarW   = isMini ? MINI : FULL;
   const overlayMode = hidden;
+
+  // Drag-to-resize — only active when the sidebar is expanded on desktop
+  // (not mini/collapsed, not the mobile/video-page overlay mode).
+  const [isResizing, setIsResizing] = React.useState(false);
+  const resizable = !isMini && !overlayMode;
+
+  React.useEffect(() => {
+    if (!isResizing) return;
+    function onMouseMove(e) { setWidth(e.clientX); }
+    function onMouseUp()    { setIsResizing(false); }
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, setWidth]);
 
   return (
     <>
@@ -69,19 +90,29 @@ export default function AppLayout() {
             flexShrink: 0,
             overflow: 'hidden',
             padding: '70px 8px 12px',
+            position: overlayMode ? 'fixed' : 'relative',
             ...(overlayMode ? {
-              position: 'fixed', top: 0, left: 0, zIndex: 100,
+              top: 0, left: 0, zIndex: 100,
               width: isMini ? MINI : FULL,
               minWidth: isMini ? MINI : FULL,
               transform: overlayOpen ? 'translateX(0)' : 'translateX(-100%)',
               transition: 'transform 0.3s ease',
             } : {
-              position: 'relative',
               width: sidebarW,
               minWidth: sidebarW,
-              transition: 'width 0.3s ease, min-width 0.3s ease',
+              transition: isResizing ? 'none' : 'width 0.3s ease, min-width 0.3s ease',
             }),
           }}>
+            {resizable && (
+              <div
+                onMouseDown={(e) => { e.preventDefault(); setIsResizing(true); }}
+                className="sidebar-resize-handle"
+                style={{
+                  position: 'absolute', top: 0, right: -3, bottom: 0, width: 6,
+                  cursor: 'col-resize', zIndex: 10,
+                }}
+              />
+            )}
             <nav style={{ display:'flex', flexDirection:'column', gap:4, width: isMini ? MINI-16 : FULL-16 }}>
               {nav.map(({ to, label, Icon }) => (
                 <button
