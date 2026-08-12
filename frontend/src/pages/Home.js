@@ -7,6 +7,7 @@ import { api, adminApi, API_BASE, followApi, resolveUrl } from '../services/api'
 import CommentsPanel from '../components/CommentsPanel';
 import UserAvatar from '../components/UserAvatar';
 import ConfirmModal from '../components/ConfirmModal';
+import RightSidebar from '../components/layout/RightSidebar';
 
 /* ── Icons ── */
 const LikeIcon    = ({ active }) => <svg viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>;
@@ -358,6 +359,7 @@ export default function Home() {
     <div className="omni-home-root omni-page-enter">
       <style>{HOME_STYLES}</style>
 
+      <div className="omni-home-layout">
       <div className="omni-feed-wrap">
         <FeedHeader onRefresh={() => loadPosts(0)} loading={loading} />
 
@@ -411,6 +413,8 @@ export default function Home() {
           </>
         )}
       </div>
+      <RightSidebar />
+      </div>
 
       {comments !== null && (
         <CommentsPanel type="post" targetId={comments} onClose={() => setComments(null)} />
@@ -441,8 +445,18 @@ const HOME_STYLES = `
     scroll-behavior: smooth;
   }
 
+  .omni-home-layout {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
   .omni-feed-wrap {
     padding: 0 0 48px 0;
+    width: 100%;
+    max-width: 640px;
+    min-width: 0;
   }
 
   /* ── Feed header ── */
