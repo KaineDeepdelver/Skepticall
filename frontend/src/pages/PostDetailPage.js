@@ -139,21 +139,14 @@ export default function PostDetailPage() {
             </button>
           </div>
 
-          {/* Mobile comments — inline below post */}
+          {/* Comments — now always rendered at the bottom, full width */}
           {commentsOpen && (
-            <div className="post-detail-comments-mobile">
+            <div className="post-detail-comments-bottom">
               <CommentsPanel type="post" targetId={post.id} inline={true} />
             </div>
           )}
         </div>
       </div>
-
-      {/* Desktop comments — side panel */}
-      {commentsOpen && (
-        <div className="post-detail-comments-desktop">
-          <CommentsPanel type="post" targetId={post.id} inline={true} />
-        </div>
-      )}
     </div>
   );
 }
