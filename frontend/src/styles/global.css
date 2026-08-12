@@ -1263,7 +1263,7 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
   }
 }
 @media (min-width: 1100px) {
-  .post-detail-content { padding-right: 300px; }
+  .post-detail-content { padding-right: 460px; }
 }
 
 /* ── LEGAL PAGES ─────────────────────────────────────────────────────────── */
@@ -1659,7 +1659,7 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
   }
 }
 @media (min-width: 1100px) {
-  .post-detail-content { padding-right: 300px; }
+  .post-detail-content { padding-right: 460px; }
 }
 
 /* ── RIGHT SIDEBAR — flippable profile / friends card ────────────────────── */
@@ -1673,10 +1673,9 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
     top: 58px;
     right: 0;
     bottom: 0;
-    width: 300px;
+    width: 460px;
     box-sizing: border-box;
     padding: 20px;
-    border-left: 1px solid var(--border);
     background: var(--bg-body);
     z-index: 50;
     overflow-y: auto;
