@@ -392,6 +392,10 @@ strong, b { font-weight: 700; }
 .app-layout { display: flex; height: 100vh; overflow: hidden; background: var(--bg-body); }
 
 /* ── SIDEBAR — Discord-style icon nav ────────────────────────────────────── */
+.sidebar-resize-handle { background: transparent; transition: background 0.15s; }
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle:active { background: var(--accent); opacity: 0.5; }
+
 .sidebar {
   width: 220px;
   min-width: 220px;
