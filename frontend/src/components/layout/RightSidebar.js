@@ -2,8 +2,13 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useWS } from '../../context/WebSocketContext';
-import { friendApi } from '../../services/api';
+import { friendApi, API_BASE } from '../../services/api';
 import UserAvatar from '../UserAvatar';
+
+function resolveMedia(pic) {
+  if (!pic) return null;
+  return pic.startsWith('http') ? pic : `${API_BASE}${pic}`;
+}
 
 const FlipIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
@@ -88,18 +93,24 @@ export default function RightSidebar() {
 
           {/* ── FRONT: profile card ── */}
           <div className="flip-face flip-face-front">
-            <button className="flip-arrow" onClick={() => setFlipped(true)} title="Show friends" aria-label="Show friends">
-              <FlipIcon />
-            </button>
+            <div className="profile-card-banner" style={user.bannerPicture ? {
+              backgroundImage: `url(${resolveMedia(user.bannerPicture)})`,
+            } : undefined}>
+              <button className="flip-arrow profile-card-flip-btn" onClick={() => setFlipped(true)} title="Show friends" aria-label="Show friends">
+                <FlipIcon />
+              </button>
+            </div>
+            <div className="profile-card-avatar-wrap">
+              <UserAvatar src={user.profilePicture} name={user.displayName || user.username} size={80} />
+            </div>
             <div className="profile-card-body">
-              <UserAvatar src={user.profilePicture} name={user.displayName || user.username} size={72} />
               <div className="profile-card-name">{user.displayName || user.username}</div>
               <div className="profile-card-username">@{user.username}</div>
-              {user.bio && <div className="profile-card-bio">{user.bio}</div>}
               <div className="profile-card-stats">
                 <div><strong>{(user.followerCount ?? 0).toLocaleString()}</strong><span>Followers</span></div>
                 <div><strong>{(user.followingCount ?? 0).toLocaleString()}</strong><span>Following</span></div>
               </div>
+              {user.bio && <div className="profile-card-bio">{user.bio}</div>}
               <button className="profile-card-view-btn" onClick={() => navigate(`/profile/${user.username}`)}>
                 View profile
               </button>
