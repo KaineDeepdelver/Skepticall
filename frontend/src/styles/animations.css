@@ -138,7 +138,7 @@
 
 /* Page enter animation */
 .omni-page-enter {
-  animation: omni-page-in 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation: omni-page-in 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
 }
 
 /* Animated elements */
