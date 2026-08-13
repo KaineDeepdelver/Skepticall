@@ -453,7 +453,7 @@ strong, b { font-weight: 700; }
   background: var(--bg-body);
   animation: omni-page-in 0.25s ease both;
 }
-.omni-page-enter { animation: omni-page-in 0.25s ease both; }
+.omni-page-enter { animation: omni-page-in 0.25s ease backwards; }
 
 .page-header {
   display: flex;
