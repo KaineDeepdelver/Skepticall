@@ -1668,8 +1668,7 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 }
 @media (min-width: 1100px) {
   .right-sidebar {
-    display: flex;
-    flex-direction: column;
+    display: block;
     position: fixed;
     top: 58px;
     right: 0;
@@ -1683,7 +1682,13 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
   }
 }
 
-.flip-card { flex: 1; min-height: 420px; position: relative; perspective: 1400px; }
+.flip-card {
+  width: 100%;
+  height: calc(100vh - 58px - 40px);
+  min-height: 420px;
+  position: relative;
+  perspective: 1400px;
+}
 .flip-card-inner {
   position: absolute;
   inset: 0;
