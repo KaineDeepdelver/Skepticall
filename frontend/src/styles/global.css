@@ -1678,7 +1678,7 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
     padding: 20px;
     background: var(--bg-body);
     z-index: 50;
-    overflow-y: auto;
+    overflow: hidden;
   }
 }
 
