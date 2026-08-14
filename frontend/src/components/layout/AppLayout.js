@@ -45,6 +45,7 @@ export default function AppLayout() {
     { to: '/',         label: 'Home',     Icon: HomeIcon  },
     { to: '/media',    label: 'Media',    Icon: MediaIcon },
     { to: '/messages', label: 'Messages', Icon: MsgIcon   },
+    { to: '/networks', label: 'Networks', Icon: NetIcon   },
     { to: '/settings', label: 'Settings', Icon: SetIcon   },
   ];
 
@@ -142,18 +143,25 @@ export default function AppLayout() {
 
           {/* Mobile bottom nav */}
           <nav className="mobile-bottom-nav">
-            {mobileNav.map(({ to, label, Icon }) => (
-              <button
-                key={to}
-                className={`mobile-nav-btn${pathname === to ? ' active' : ''}`}
-                onClick={() => {
-                  if (to === '/messages' && !user) { requireAccount('open messages'); return; }
-                  navigate(to);
-                }}
-              >
-                <Icon /><span>{label}</span>
-              </button>
-            ))}
+            {mobileNav.map(({ to, label, Icon }) => {
+              const active = to === '/' ? pathname === '/' : pathname.startsWith(to);
+              return (
+                <button
+                  key={to}
+                  className={`mobile-nav-btn${active ? ' active' : ''}`}
+                  onClick={() => {
+                    if (to === '/messages' && !user) { requireAccount('open messages'); return; }
+                    if (to === '/networks' && !user) { requireAccount('open networks'); return; }
+                    navigate(to, to === '/settings' ? { state: { tab: 'profile' } } : undefined);
+                  }}
+                  aria-label={label}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <span className="mobile-nav-icon"><Icon /></span>
+                  <span className="mobile-nav-label">{label}</span>
+                </button>
+              );
+            })}
           </nav>
 
           {/* Mobile post FAB — only on Home and Media, floating above the bottom nav.
