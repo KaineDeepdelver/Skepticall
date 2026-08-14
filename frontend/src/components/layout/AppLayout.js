@@ -35,8 +35,8 @@ export default function AppLayout() {
 
   const nav = [
     { to: '/',         label: 'Home',     Icon: HomeIcon  },
-    { to: '/messages', label: 'Messages', Icon: MsgIcon   },
     { to: '/media',    label: 'Media',    Icon: MediaIcon },
+    { to: '/messages', label: 'Messages', Icon: MsgIcon   },
     { to: '/networks', label: 'Networks', Icon: NetIcon   },
     { to: '/settings', label: 'Settings', Icon: SetIcon   },
   ];
