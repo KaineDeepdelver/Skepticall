@@ -81,6 +81,7 @@ body, .convo-panel, .chat-panel, .chat-header, .chat-input-bar,
   --bg-hover:       rgba(231, 233, 234, 0.06);
   --bg-menu:        #1c2026;
   --bg-elevated:    #1c2026;
+  --bg-nav-blur:    rgba(10, 8, 22, 0.92);
 
   /* Borders — very subtle, Twitter-style */
   --border:         rgba(47, 51, 54, 0.9);
@@ -139,6 +140,7 @@ body, .convo-panel, .chat-panel, .chat-header, .chat-input-bar,
   --bg-hover:       rgba(15, 20, 25, 0.05);
   --bg-menu:        #ffffff;
   --bg-elevated:    #ffffff;
+  --bg-nav-blur:    rgba(255, 255, 255, 0.85);
   --border:         rgba(239, 243, 244, 1);
   --border-input:   rgba(207, 217, 222, 1);
   --border-subtle:  rgba(207, 217, 222, 0.6);
@@ -1073,76 +1075,6 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 .profile-tab-btn:hover  { color: var(--text-primary); }
 .profile-tab-btn.active { color: var(--text-primary); font-weight: 700; border-bottom-color: var(--accent); }
 
-/* ── MOBILE (≤ 768px) ───────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .sidebar { display: none !important; }
-  .app-layout { flex-direction: column; }
-  .app-layout > div { height: calc(100vh - 60px) !important; }
-
-  .mobile-bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 64px;
-    background: var(--bg-sidebar);
-    border-top: 1px solid var(--border);
-    align-items: center;
-    justify-content: space-around;
-    z-index: 500;
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  .mobile-nav-btn {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 3px; flex: 1; height: 100%;
-    background: none; border: none; color: var(--text-muted);
-    font-size: 10px; font-weight: 500; cursor: pointer;
-    transition: color 0.15s;
-  }
-  .mobile-nav-btn svg { width: 22px; height: 22px; }
-  .mobile-nav-btn.active { color: var(--accent); }
-  .mobile-nav-btn span { line-height: 1; }
-
-  .mobile-nav-post {
-    display: flex; align-items: center; justify-content: center;
-    width: 48px; height: 48px; border-radius: 9999px;
-    background: var(--accent);
-    border: none; color: #fff;
-    flex-shrink: 0; cursor: pointer;
-    box-shadow: 0 4px 16px var(--accent-glow);
-    transition: transform 0.15s, box-shadow 0.15s;
-    margin-bottom: 4px;
-  }
-  .mobile-nav-post:active { transform: scale(0.90); }
-  .mobile-nav-post svg { width: 22px; height: 22px; }
-
-  .main-content { padding-bottom: 0; }
-  .messages-layout { height: calc(100vh - 60px) !important; }
-
-  .messages-layout .convo-panel { width: 100% !important; min-width: 0 !important; flex: 1; border-right: none; transition: none !important; }
-  .messages-layout .chat-panel { display: none; max-height: calc(100vh - 60px); }
-  .messages-layout.mobile-chat-open .convo-panel { display: none !important; }
-  .messages-layout.mobile-chat-open .chat-panel { display: flex; flex: 1; width: 100%; }
-
-  .mobile-back-btn { display: flex !important; }
-  .chat-header > button:nth-child(2) { display: none !important; }
-  .dm-search-btn { display: flex !important; }
-
-  .chat-input-bar, .reply-bar, .attachment-preview { flex-shrink: 0; }
-  .messages-layout.mobile-chat-open .chat-panel {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom));
-  }
-  .chat-messages { -webkit-overflow-scrolling: touch; padding: 12px 6px; }
-  .bubble-row { padding: 0 6px; }
-  .bubble { max-width: 82%; font-size: 14px; }
-  .bubble-media-frame { padding: 0; width: 100%; box-sizing: border-box; }
-  .bubble-media, video.bubble-media { max-width: 100%; width: 100%; max-height: 220px; border-radius: 6px; }
-  .msg-textarea::placeholder { font-size: 13px; }
-}
-
-@media (min-width: 769px) {
-  .mobile-bottom-nav { display: none !important; }
-}
-
 /* ════════════════════════════════════════ CREATE PAGE ════════════════════ */
 .create-page { display: flex; flex-direction: column; height: 100%; background: var(--bg-body); overflow: hidden; }
 .create-header {
@@ -1474,25 +1406,45 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
     position: fixed;
     bottom: 0; left: 0; right: 0;
     height: 64px;
-    background: rgba(10, 8, 22, 0.92);
+    background: var(--bg-nav-blur);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border-top: 1px solid var(--border);
-    align-items: center;
+    align-items: stretch;
     justify-content: space-around;
     z-index: 500;
     padding-bottom: env(safe-area-inset-bottom);
   }
   .mobile-nav-btn {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 3px; flex: 1; height: 100%;
+    gap: 2px; flex: 1; height: 100%; min-width: 0;
     background: none; border: none; color: var(--text-muted);
-    font-size: 10px; font-weight: 500; cursor: pointer;
+    font-size: 10px; font-weight: 600; letter-spacing: -0.01em; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
     transition: color 0.15s;
   }
-  .mobile-nav-btn svg { width: 22px; height: 22px; }
+  .mobile-nav-btn:active { transform: scale(0.94); }
+  .mobile-nav-btn svg { width: 21px; height: 21px; transition: transform 0.15s; }
   .mobile-nav-btn.active { color: var(--accent); }
+  .mobile-nav-btn.active svg { transform: translateY(-1px); }
   .mobile-nav-btn span { line-height: 1; }
+  .mobile-nav-btn .mobile-nav-label {
+    max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 10px;
+  }
+  .mobile-nav-btn .mobile-nav-icon {
+    display: flex; align-items: center; justify-content: center;
+    position: relative; width: 100%; height: 20px;
+  }
+  .mobile-nav-btn.active .mobile-nav-icon::before {
+    content: '';
+    position: absolute;
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--accent);
+    top: -3px;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
 
   .mobile-nav-post {
     display: flex; align-items: center; justify-content: center;
@@ -1536,6 +1488,13 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 
 @media (min-width: 769px) {
   .mobile-bottom-nav { display: none !important; }
+}
+
+/* ── Extra-small phones (≤ 380px) — five tabs need a touch more room ──────── */
+@media (max-width: 380px) {
+  .mobile-nav-btn { font-size: 9px; gap: 1px; }
+  .mobile-nav-btn svg { width: 20px; height: 20px; }
+  .mobile-nav-btn .mobile-nav-label { letter-spacing: -0.02em; }
 }
 
 /* ════════════════════════════════════════
