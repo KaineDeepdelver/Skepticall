@@ -12,7 +12,7 @@ function formatTime(iso) {
 
 const TYPE_LABEL = { TEXT: '', VOICE: '(voice)', ANNOUNCEMENT: '(announcements)' };
 
-export default function ChannelView({ networkId, channel, currentUserId }) {
+export default function ChannelView({ networkId, channel, currentUserId, hideHeader = false }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [hasMore, setHasMore]   = useState(false);
@@ -117,14 +117,16 @@ export default function ChannelView({ networkId, channel, currentUserId }) {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg-primary)' }}>
-      <div style={{
-        padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0,
-        display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, color: 'var(--text-primary)',
-      }}>
-        <span style={{ color: 'var(--text-muted)' }}>#</span>
-        {channel.name}
-        {TYPE_LABEL[channel.type] && <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{TYPE_LABEL[channel.type]}</span>}
-      </div>
+      {!hideHeader && (
+        <div style={{
+          padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0,
+          display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, color: 'var(--text-primary)',
+        }}>
+          <span style={{ color: 'var(--text-muted)' }}>#</span>
+          {channel.name}
+          {TYPE_LABEL[channel.type] && <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{TYPE_LABEL[channel.type]}</span>}
+        </div>
+      )}
 
       <div ref={listRef} style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {loading && <div style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center' }}>Loading…</div>}
@@ -187,7 +189,7 @@ export default function ChannelView({ networkId, channel, currentUserId }) {
         </div>
       )}
 
-      <div style={{ padding: 10, borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+      <div className="channel-input-bar" style={{ paddingTop: 10, paddingLeft: 10, paddingRight: 10, borderTop: '1px solid var(--border)', flexShrink: 0 }}>
         <input
           className="auth-input"
           placeholder={channel.type === 'ANNOUNCEMENT' ? `Announce in #${channel.name}` : `Message #${channel.name}`}

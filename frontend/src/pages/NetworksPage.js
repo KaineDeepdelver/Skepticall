@@ -2,9 +2,12 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { networkApi } from '../services/api';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { useSwipeHandlers } from '../hooks/useSwipeHandlers';
 import NetworkRail from '../components/networks/NetworkRail';
 import ChannelSidebar from '../components/networks/ChannelSidebar';
 import ChannelView from '../components/networks/ChannelView';
+import MobileChannelHeader from '../components/networks/MobileChannelHeader';
 import { CreateOrJoinNetworkModal, CreateChannelModal, CreateCategoryModal } from '../components/networks/NetworkModals';
 import ChannelSettingsModal from '../components/networks/ChannelSettingsModal';
 import InviteFriendsModal from '../components/networks/InviteFriendsModal';
@@ -71,6 +74,26 @@ export default function NetworksPage() {
   const [leavingNetwork, setLeavingNetwork] = useState(false);
   const [leaveError, setLeaveError] = useState('');
   const [error, setError] = useState('');
+
+  // Mobile: the rail + channel list and the chat panel are two separate
+  // screens that swap instead of squeezing all three desktop panes into a
+  // phone-width viewport. `activeChannel` itself is never cleared when
+  // going back to the list — the last channel you were in just stays
+  // highlighted, ready to jump straight back into.
+  const isMobile = useIsMobile();
+  const [mobileView, setMobileView] = useState('list'); // 'list' | 'chat'
+
+  function selectChannel(channel) {
+    setActiveChannel(channel);
+    if (isMobile) setMobileView('chat');
+  }
+
+  const listSwipe = useSwipeHandlers({
+    onSwipeLeft: () => { if (activeChannel) setMobileView('chat'); },
+  });
+  const chatSwipe = useSwipeHandlers({
+    onSwipeRight: () => setMobileView('list'),
+  });
 
   // Resizable channel sidebar. Clamped between MIN/MAX so it can't be
   // dragged down to nothing or stretched over the chat panel. Persisted
@@ -231,49 +254,111 @@ export default function NetworksPage() {
     return <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>;
   }
 
+  const emptyState = (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text-muted)' }}>
+      <div>You're not in any networks yet.</div>
+      <button
+        onClick={() => setShowAddNetwork(true)}
+        style={{ background: 'var(--accent)', color: 'var(--accent-text)', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontSize: 13.5 }}
+      >
+        Create or join one
+      </button>
+    </div>
+  );
+
   return (
     <div style={{ flex: 1, display: 'flex', minHeight: 0, height: '100%' }}>
-      <NetworkRail
-        networks={networks}
-        activeNetworkId={activeNetwork?.id}
-        onSelect={n => navigate(`/networks/${n.id}`)}
-        onAddClick={() => setShowAddNetwork(true)}
-      />
-
-      {!activeNetwork ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text-muted)' }}>
-          <div>You're not in any networks yet.</div>
-          <button
-            onClick={() => setShowAddNetwork(true)}
-            style={{ background: 'var(--accent)', color: 'var(--accent-text)', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontSize: 13.5 }}
-          >
-            Create or join one
-          </button>
-        </div>
+      {isMobile ? (
+        !activeNetwork ? (
+          <>
+            <NetworkRail
+              networks={networks}
+              activeNetworkId={activeNetwork?.id}
+              onSelect={n => navigate(`/networks/${n.id}`)}
+              onAddClick={() => setShowAddNetwork(true)}
+            />
+            {emptyState}
+          </>
+        ) : mobileView === 'list' ? (
+          // Swipe left (with a channel already highlighted) jumps straight
+          // into it — same as tapping it.
+          <div className="networks-mobile-list" {...listSwipe}>
+            <NetworkRail
+              networks={networks}
+              activeNetworkId={activeNetwork?.id}
+              onSelect={n => navigate(`/networks/${n.id}`)}
+              onAddClick={() => setShowAddNetwork(true)}
+            />
+            <ChannelSidebar
+              network={activeNetwork}
+              channels={channels}
+              activeChannelId={activeChannel?.id}
+              onSelectChannel={selectChannel}
+              onCreateChannel={categoryId => setChannelModal({ categoryId })}
+              onCreateCategory={() => setShowCreateCategory(true)}
+              onOpenChannelSettings={(channel, tab) => setSettingsTarget({ channel, tab })}
+              onOpenInvite={channel => setInviteTarget(channel)}
+              onRenameCategory={handleRenameCategory}
+              onRequestDeleteCategory={category => setDeleteCategoryTarget(category)}
+              onMoveToCategory={handleMoveToCategory}
+              onLeaveNetwork={() => setConfirmingLeave(true)}
+              onOpenNetworkSettings={() => setNetworkSettingsOpen(true)}
+              fillWidth
+            />
+          </div>
+        ) : (
+          // Back button and swipe-right both return to the list screen —
+          // neither clears activeChannel, so it's still highlighted there.
+          <div className="networks-mobile-chat" {...chatSwipe}>
+            <MobileChannelHeader
+              channel={activeChannel}
+              network={activeNetwork}
+              onBack={() => setMobileView('list')}
+              onOpenSettings={(channel, tab) => setSettingsTarget({ channel, tab })}
+            />
+            <ChannelView
+              networkId={activeNetwork.id}
+              channel={activeChannel}
+              currentUserId={user?.id}
+              hideHeader
+            />
+          </div>
+        )
       ) : (
         <>
-          <ChannelSidebar
-            network={activeNetwork}
-            channels={channels}
-            activeChannelId={activeChannel?.id}
-            onSelectChannel={setActiveChannel}
-            onCreateChannel={categoryId => setChannelModal({ categoryId })}
-            onCreateCategory={() => setShowCreateCategory(true)}
-            onOpenChannelSettings={(channel, tab) => setSettingsTarget({ channel, tab })}
-            onOpenInvite={channel => setInviteTarget(channel)}
-            onRenameCategory={handleRenameCategory}
-            onRequestDeleteCategory={category => setDeleteCategoryTarget(category)}
-            onMoveToCategory={handleMoveToCategory}
-            onLeaveNetwork={() => setConfirmingLeave(true)}
-            onOpenNetworkSettings={() => setNetworkSettingsOpen(true)}
-            width={sidebarWidth}
+          <NetworkRail
+            networks={networks}
+            activeNetworkId={activeNetwork?.id}
+            onSelect={n => navigate(`/networks/${n.id}`)}
+            onAddClick={() => setShowAddNetwork(true)}
           />
-          <ResizeHandle onMouseDown={handleResizeStart} />
-          <ChannelView
-            networkId={activeNetwork.id}
-            channel={activeChannel}
-            currentUserId={user?.id}
-          />
+
+          {!activeNetwork ? emptyState : (
+            <>
+              <ChannelSidebar
+                network={activeNetwork}
+                channels={channels}
+                activeChannelId={activeChannel?.id}
+                onSelectChannel={setActiveChannel}
+                onCreateChannel={categoryId => setChannelModal({ categoryId })}
+                onCreateCategory={() => setShowCreateCategory(true)}
+                onOpenChannelSettings={(channel, tab) => setSettingsTarget({ channel, tab })}
+                onOpenInvite={channel => setInviteTarget(channel)}
+                onRenameCategory={handleRenameCategory}
+                onRequestDeleteCategory={category => setDeleteCategoryTarget(category)}
+                onMoveToCategory={handleMoveToCategory}
+                onLeaveNetwork={() => setConfirmingLeave(true)}
+                onOpenNetworkSettings={() => setNetworkSettingsOpen(true)}
+                width={sidebarWidth}
+              />
+              <ResizeHandle onMouseDown={handleResizeStart} />
+              <ChannelView
+                networkId={activeNetwork.id}
+                channel={activeChannel}
+                currentUserId={user?.id}
+              />
+            </>
+          )}
         </>
       )}
 

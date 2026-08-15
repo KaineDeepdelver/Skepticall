@@ -331,6 +331,7 @@ export default function ChannelSidebar({
   onRenameCategory, onRequestDeleteCategory, onMoveToCategory, onLeaveNetwork,
   onOpenNetworkSettings,
   width = 220,
+  fillWidth = false,
 }) {
   const categories = (network.categories || []).slice().sort((a, b) => a.position - b.position);
   const [collapsed, setCollapsed] = useState({});
@@ -382,7 +383,10 @@ export default function ChannelSidebar({
     <div
       onScroll={handleScroll}
       style={{
-        width, flexShrink: 0, background: 'var(--bg-card)',
+        width: fillWidth ? 'auto' : width,
+        flex: fillWidth ? '1 1 auto' : '0 0 auto',
+        minWidth: 0,
+        background: 'var(--bg-card)',
         display: 'flex', flexDirection: 'column',
         overflowY: 'auto', overflowX: 'hidden',
       }}
@@ -467,7 +471,7 @@ export default function ChannelSidebar({
       </div>
 
       {(onCreateChannel || onCreateCategory) && (
-        <div style={{ display: 'flex', gap: 6, margin: 10 }}>
+        <div className="channel-sidebar-actions" style={{ display: 'flex', gap: 6, marginTop: 10, marginLeft: 10, marginRight: 10 }}>
           {onCreateChannel && (
             <button
               onClick={() => onCreateChannel(null)}

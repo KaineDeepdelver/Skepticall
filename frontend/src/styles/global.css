@@ -1075,6 +1075,10 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 .profile-tab-btn:hover  { color: var(--text-primary); }
 .profile-tab-btn.active { color: var(--text-primary); font-weight: 700; border-bottom-color: var(--accent); }
 
+/* ── NETWORKS (Discord-style servers) ──────────────────────────────────── */
+.channel-input-bar { padding-bottom: 10px; }
+.channel-sidebar-actions { margin-bottom: 10px; }
+
 /* ════════════════════════════════════════ CREATE PAGE ════════════════════ */
 .create-page { display: flex; flex-direction: column; height: 100%; background: var(--bg-body); overflow: hidden; }
 .create-header {
@@ -1484,6 +1488,68 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
   .bubble-media-frame { padding: 0; width: 100%; box-sizing: border-box; }
   .bubble-media, video.bubble-media { max-width: 100%; width: 100%; max-height: 220px; border-radius: 6px; }
   .msg-textarea::placeholder { font-size: 13px; }
+
+  /* ── Networks — single-pane mobile: list screen and chat screen swap
+     instead of squeezing three desktop panes into a phone width. ────────── */
+  .networks-mobile-list,
+  .networks-mobile-chat {
+    flex: 1; min-height: 0;
+    display: flex;
+    height: 100%;
+  }
+  .networks-mobile-chat { flex-direction: column; }
+
+  /* Channel list / create-channel row / message input all need clearance
+     above the fixed 64px bottom nav + safe area, same treatment as DMs. */
+  .networks-mobile-list .channel-sidebar-actions,
+  .networks-mobile-chat .channel-input-bar {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+  .networks-mobile-list .channel-sidebar-actions { margin-bottom: 0; }
+
+  .mobile-channel-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--bg-primary);
+  }
+  .mobile-channel-back {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; flex-shrink: 0;
+    border: none; background: none; color: var(--text-primary);
+    border-radius: 8px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-channel-back:active { background: var(--bg-hover); }
+  .mobile-channel-back-badge {
+    position: absolute; top: -2px; right: -4px;
+    min-width: 16px; height: 16px; padding: 0 4px;
+    border-radius: 9px; background: #e0475f;
+    color: #fff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1; box-shadow: 0 0 0 2px var(--bg-primary);
+  }
+  .mobile-channel-title {
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: 1px; min-width: 0; flex: 1;
+    border: none; background: none; padding: 0; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-channel-title-row {
+    display: flex; align-items: center; gap: 4px; max-width: 100%;
+  }
+  .mobile-channel-hash { color: var(--text-muted); font-size: 15px; }
+  .mobile-channel-name {
+    color: var(--text-primary); font-size: 15.5px; font-weight: 700;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mobile-channel-chevron { color: var(--text-muted); flex-shrink: 0; }
+  .mobile-channel-subtitle {
+    font-size: 11.5; color: var(--text-muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+  }
 }
 
 @media (min-width: 769px) {
