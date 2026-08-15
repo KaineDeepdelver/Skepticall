@@ -133,6 +133,15 @@
             <version>2.8.6</version>
         </dependency>
 
+        <!-- Apache Commons Imaging — used to strip EXIF/XMP/IPTC metadata
+             (GPS location, device/camera info, timestamps, etc.) from
+             uploaded JPEGs losslessly, without re-encoding pixel data. -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-imaging</artifactId>
+            <version>1.0.0-alpha6</version>
+        </dependency>
+
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
