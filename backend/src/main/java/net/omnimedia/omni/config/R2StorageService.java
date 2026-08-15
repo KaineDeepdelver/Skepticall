@@ -3,6 +3,7 @@ package net.omnimedia.omni.config;
 import jakarta.annotation.PostConstruct;
 import net.omnimedia.omni.exceptions.BusinessException;
 import net.omnimedia.omni.exceptions.ErrorType;
+import net.omnimedia.omni.media.util.MediaMetadataScrubber;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,6 +41,7 @@ public class R2StorageService {
     private final String accountId;
     private final String bucket;
     private final String publicBaseUrl; // e.g. https://cdn.skepticall.com  (no trailing slash)
+    private final MediaMetadataScrubber metadataScrubber;
 
     private S3Client s3;
 
@@ -48,10 +50,12 @@ public class R2StorageService {
             @Value("${r2.access-key-id}") String accessKeyId,
             @Value("${r2.secret-access-key}") String secretAccessKey,
             @Value("${r2.bucket}") String bucket,
-            @Value("${r2.public-base-url}") String publicBaseUrl
+            @Value("${r2.public-base-url}") String publicBaseUrl,
+            MediaMetadataScrubber metadataScrubber
     ) {
         this.accountId = accountId;
         this.bucket = bucket;
+        this.metadataScrubber = metadataScrubber;
         this.publicBaseUrl = publicBaseUrl.endsWith("/")
                 ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1)
                 : publicBaseUrl;
@@ -91,13 +95,20 @@ public class R2StorageService {
             }
             String key = prefix + "_" + UUID.randomUUID() + ext;
 
+            // Strip EXIF/GPS/device metadata before it ever reaches R2.
+            // Best-effort: on any failure this returns the original bytes
+            // unchanged rather than blocking the upload.
+            byte[] rawBytes = file.getBytes();
+            MediaMetadataScrubber.ScrubResult scrubbed =
+                    metadataScrubber.scrub(rawBytes, orig, file.getContentType());
+
             s3.putObject(
                     PutObjectRequest.builder()
                             .bucket(bucket)
                             .key(key)
-                            .contentType(file.getContentType())
+                            .contentType(scrubbed.contentType)
                             .build(),
-                    RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+                    RequestBody.fromBytes(scrubbed.bytes)
             );
 
             return publicBaseUrl + "/" + key;
