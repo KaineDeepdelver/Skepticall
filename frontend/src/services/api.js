@@ -278,8 +278,8 @@ export const networkApi = {
   // Messages
   getChannelMessages: (networkId, channelId, page = 0, size = 50) =>
     req(`/networks/${networkId}/channels/${channelId}/messages?page=${page}&size=${size}`),
-  postChannelMessage: (networkId, channelId, content, fileUrl) =>
-    req(`/networks/${networkId}/channels/${channelId}/messages`, { method: 'POST', body: { content, fileUrl } }),
+  postChannelMessage: (networkId, channelId, content, fileUrl, replyToId) =>
+    req(`/networks/${networkId}/channels/${channelId}/messages`, { method: 'POST', body: { content, fileUrl, replyToId } }),
   editChannelMessage: (networkId, channelId, messageId, content) =>
     req(`/networks/${networkId}/channels/${channelId}/messages/${messageId}`, { method: 'PATCH', body: { content } }),
   deleteChannelMessage: (networkId, channelId, messageId) =>

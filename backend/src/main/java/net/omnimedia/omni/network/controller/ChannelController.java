@@ -82,14 +82,16 @@ public class ChannelController {
         return ResponseEntity.ok(channelService.getMessages(networkId, requesterId, channelId, page, size));
     }
 
-    /** POST /networks/{networkId}/channels/{channelId}/messages  body: { content, fileUrl? } */
+    /** POST /networks/{networkId}/channels/{channelId}/messages  body: { content, fileUrl?, replyToId? } */
     @PostMapping("/{channelId}/messages")
     public ResponseEntity<?> postMessage(@PathVariable Long networkId, @PathVariable Long channelId, @RequestBody Map<String, Object> body, HttpServletRequest req) {
         Long senderId = callerId(req);
         if (senderId == null) return ResponseEntity.status(401).build();
         String content = body.containsKey("content") ? body.get("content").toString() : null;
         String fileUrl = body.containsKey("fileUrl") ? body.get("fileUrl").toString() : null;
-        ChannelMessageDTO saved = channelService.postMessage(networkId, channelId, senderId, content, fileUrl);
+        Long replyToId = body.containsKey("replyToId") && body.get("replyToId") != null
+                ? Long.parseLong(body.get("replyToId").toString()) : null;
+        ChannelMessageDTO saved = channelService.postMessage(networkId, channelId, senderId, content, fileUrl, replyToId);
         messagingTemplate.convertAndSend("/topic/channel/" + channelId, saved);
         return ResponseEntity.ok(saved);
     }

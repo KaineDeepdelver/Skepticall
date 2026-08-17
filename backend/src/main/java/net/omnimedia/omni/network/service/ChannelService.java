@@ -17,14 +17,19 @@ import net.omnimedia.omni.network.repository.ChannelMessageRepository;
 import net.omnimedia.omni.network.repository.ChannelRepository;
 import net.omnimedia.omni.network.repository.NetworkMemberRepository;
 import net.omnimedia.omni.user.entity.User;
+import net.omnimedia.omni.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +41,7 @@ public class ChannelService {
     private final NetworkService networkService;
     private final NetworkPermissionService permissions;
     private final NetworkMemberRepository networkMemberRepository;
+    private final UserRepository userRepository;
 
     // ── Channel CRUD ──────────────────────────────────────────────────
 
@@ -107,6 +113,11 @@ public class ChannelService {
 
     @Transactional
     public ChannelMessageDTO postMessage(Long networkId, Long channelId, Long senderId, String content, String fileUrl) {
+        return postMessage(networkId, channelId, senderId, content, fileUrl, null);
+    }
+
+    @Transactional
+    public ChannelMessageDTO postMessage(Long networkId, Long channelId, Long senderId, String content, String fileUrl, Long replyToId) {
         Network network = networkService.requireNetwork(networkId);
         NetworkMember sender = networkService.requireMember(network, senderId);
         Channel channel = requireChannel(network, channelId);
@@ -119,13 +130,47 @@ public class ChannelService {
             throw new BusinessException(ErrorType.INVALID_OPERATION, "Can't post text messages in a voice channel");
         }
 
+        ChannelMessage replyTo = null;
+        if (replyToId != null) {
+            replyTo = requireMessage(replyToId);
+            if (!replyTo.getChannel().getId().equals(channelId)) {
+                throw new BusinessException(ErrorType.INVALID_OPERATION, "Can't reply to a message from a different channel");
+            }
+        }
+
         ChannelMessage msg = ChannelMessage.builder()
                 .channel(channel)
                 .author(sender.getUser())
                 .content(content)
                 .fileUrl(fileUrl)
+                .replyTo(replyTo)
+                .mentionedUserIds(parseMentions(content, networkId))
                 .build();
         return toMessageDTO(channelMessageRepository.save(msg));
+    }
+
+    // Matches @username tokens — username chars mirror what registration
+    // allows elsewhere in the app (alphanumeric, underscore, dot).
+    private static final Pattern MENTION_PATTERN = Pattern.compile("@([a-zA-Z0-9_.]+)");
+
+    // Resolves @username tokens in a message to user ids, scoped to this
+    // network's membership — mentioning someone who isn't in the network
+    // (or doesn't exist) is silently ignored rather than erroring, since
+    // "@" is common enough in casual chat that we don't want to reject a
+    // whole message over an unmatched token.
+    private List<Long> parseMentions(String content, Long networkId) {
+        if (content == null || content.isBlank()) return List.of();
+        LinkedHashSet<Long> ids = new LinkedHashSet<>();
+        Matcher matcher = MENTION_PATTERN.matcher(content);
+        while (matcher.find()) {
+            String username = matcher.group(1);
+            userRepository.findByUsername(username).ifPresent(u -> {
+                if (networkMemberRepository.existsByNetworkIdAndUserId(networkId, u.getId())) {
+                    ids.add(u.getId());
+                }
+            });
+        }
+        return new ArrayList<>(ids);
     }
 
     public Page<ChannelMessageDTO> getMessages(Long networkId, Long requesterId, Long channelId, int page, int size) {
@@ -202,13 +247,17 @@ public class ChannelService {
                 .build();
     }
 
+    private static final int REPLY_SNIPPET_MAX_LEN = 120;
+
     private ChannelMessageDTO toMessageDTO(ChannelMessage m) {
         User author = m.getAuthor();
         String roleColor = networkMemberRepository
                 .findByNetworkIdAndUserId(m.getChannel().getNetwork().getId(), author.getId())
                 .map(this::topRoleColor)
                 .orElse(null);
-        return ChannelMessageDTO.builder()
+
+        ChannelMessage replyTo = m.getReplyTo();
+        ChannelMessageDTO.ChannelMessageDTOBuilder builder = ChannelMessageDTO.builder()
                 .id(m.getId())
                 .channelId(m.getChannel().getId())
                 .authorId(author.getId())
@@ -220,7 +269,23 @@ public class ChannelService {
                 .fileUrl(m.getFileUrl())
                 .edited(m.getEdited())
                 .createdAt(m.getCreatedAt())
-                .build();
+                .mentionedUserIds(m.getMentionedUserIds());
+
+        if (replyTo != null) {
+            User replyAuthor = replyTo.getAuthor();
+            builder.replyToId(replyTo.getId())
+                    .replyToAuthorId(replyAuthor.getId())
+                    .replyToAuthorUsername(replyAuthor.getUsername())
+                    .replyToAuthorDisplayName(replyAuthor.getDisplayName())
+                    .replyToContent(truncate(replyTo.getContent(), REPLY_SNIPPET_MAX_LEN));
+        }
+
+        return builder.build();
+    }
+
+    private String truncate(String s, int maxLen) {
+        if (s == null) return null;
+        return s.length() <= maxLen ? s : s.substring(0, maxLen) + "…";
     }
 
     // Members use the colour of the highest-position role they hold that

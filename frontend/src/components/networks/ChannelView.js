@@ -21,7 +21,18 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
   const [sending, setSending]   = useState(false);
   const [error, setError]       = useState('');
   const [popover, setPopover]   = useState(null); // { userId, anchor, roleColor }
+  const [replyTarget, setReplyTarget] = useState(null); // the message object being replied to, or null
   const listRef = useRef(null);
+  const messageRefs = useRef({}); // id -> DOM node, so clicking a quoted preview can scroll to the original
+
+  function scrollToMessage(id) {
+    const node = messageRefs.current[id];
+    if (!node) return;
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    node.style.transition = 'background-color 0.2s';
+    node.style.backgroundColor = 'var(--bg-hover, rgba(255,255,255,0.06))';
+    setTimeout(() => { node.style.backgroundColor = ''; }, 900);
+  }
 
   const load = useCallback(async (pageToLoad) => {
     if (!channel) return;
@@ -39,7 +50,7 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
   }, [networkId, channel]);
 
   useEffect(() => {
-    setMessages([]); setLoading(true); setError('');
+    setMessages([]); setLoading(true); setError(''); setReplyTarget(null);
     load(0);
   }, [channel?.id]);
 
@@ -101,15 +112,24 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
     if (!content || sending) return;
     setSending(true); setError('');
     const tmpId = `tmp-${Date.now()}`;
-    setMessages(prev => [...prev, { id: tmpId, content, authorId: currentUserId, createdAt: new Date().toISOString(), _optimistic: true }]);
+    const replyingTo = replyTarget;
+    setMessages(prev => [...prev, {
+      id: tmpId, content, authorId: currentUserId, createdAt: new Date().toISOString(), _optimistic: true,
+      replyToId: replyingTo?.id ?? null,
+      replyToAuthorUsername: replyingTo?.authorUsername ?? null,
+      replyToAuthorDisplayName: replyingTo?.authorDisplayName ?? null,
+      replyToContent: replyingTo?.content ?? null,
+    }]);
     setDraft('');
+    setReplyTarget(null);
     try {
-      const saved = await networkApi.postChannelMessage(networkId, channel.id, content);
+      const saved = await networkApi.postChannelMessage(networkId, channel.id, content, undefined, replyingTo?.id);
       setMessages(prev => prev.map(m => m.id === tmpId ? saved : m));
     } catch (e) {
       setMessages(prev => prev.filter(m => m.id !== tmpId));
       setError(e.message || 'Failed to send — permission denied, or announcement channels need POST_IN_ANNOUNCEMENTS.');
       setDraft(content);
+      setReplyTarget(replyingTo);
     } finally {
       setSending(false);
     }
@@ -117,6 +137,11 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg-primary)' }}>
+      <style>{`
+        .channel-message-row:hover { background: var(--bg-hover, rgba(255,255,255,0.03)); }
+        .channel-message-row:hover .channel-message-reply-btn { opacity: 1; }
+        .channel-message-reply-btn:hover { color: var(--text-primary); }
+      `}</style>
       {!hideHeader && (
         <div style={{
           padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0,
@@ -146,31 +171,89 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
           </div>
         )}
 
-        {messages.map(m => (
-          <div key={m.id} style={{ display: 'flex', gap: 10, opacity: m._optimistic ? 0.6 : 1 }}>
-            <UserAvatar
-              src={m.authorAvatar}
-              name={m.authorDisplayName || m.authorUsername}
-              size={32}
-              onClick={m.authorId ? (e => setPopover({ userId: m.authorId, anchor: e.currentTarget, roleColor: m.authorRoleColor })) : undefined}
-            />
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>
-                <span
-                  onClick={m.authorId ? (e => setPopover({ userId: m.authorId, anchor: e.currentTarget, roleColor: m.authorRoleColor })) : undefined}
-                  style={{ color: m.authorRoleColor || 'var(--text-primary)', cursor: m.authorId ? 'pointer' : 'default', fontWeight: 600 }}
-                >
-                  {m.authorDisplayName || m.authorUsername || 'you'}
+        {messages.map(m => {
+          const pingsMe = currentUserId != null && (
+            (m.replyToAuthorId != null && Number(m.replyToAuthorId) === Number(currentUserId)) ||
+            (Array.isArray(m.mentionedUserIds) && m.mentionedUserIds.map(Number).includes(Number(currentUserId)))
+          );
+          return (
+          <div
+            key={m.id}
+            ref={el => { if (el) messageRefs.current[m.id] = el; else delete messageRefs.current[m.id]; }}
+            className="channel-message-row"
+            style={{
+              opacity: m._optimistic ? 0.6 : 1, padding: '6px 10px 6px 8px', borderRadius: 6, position: 'relative',
+              background: pingsMe ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'transparent',
+              borderLeft: pingsMe ? '2px solid var(--accent)' : '2px solid transparent',
+            }}
+          >
+            {m.replyToId != null && (
+              <div
+                onClick={() => scrollToMessage(m.replyToId)}
+                style={{
+                  display: 'flex', alignItems: 'center', marginLeft: 16, marginBottom: 2,
+                  fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', maxWidth: 460,
+                }}
+              >
+                {/* Discord-style curved connector: drops from above, curves right into the quoted line */}
+                <svg width="26" height="14" viewBox="0 0 26 14" style={{ flexShrink: 0, overflow: 'visible' }}>
+                  <path d="M 6 0 V 6 C 6 10 9 10 13 10 H 22" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+                  <span style={{ fontWeight: 600, color: 'var(--accent)' }}>
+                    {m.replyToAuthorDisplayName || m.replyToAuthorUsername || 'someone'}
+                  </span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {m.replyToContent || ''}
+                  </span>
                 </span>
-                <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 8 }}>{formatTime(m.createdAt)}</span>
-                {m.edited && <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 6 }}>(edited)</span>}
               </div>
-              <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', marginTop: 2, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                {m.content}
+            )}
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <UserAvatar
+                src={m.authorAvatar}
+                name={m.authorDisplayName || m.authorUsername}
+                size={32}
+                onClick={m.authorId ? (e => setPopover({ userId: m.authorId, anchor: e.currentTarget, roleColor: m.authorRoleColor })) : undefined}
+              />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+                  <span
+                    onClick={m.authorId ? (e => setPopover({ userId: m.authorId, anchor: e.currentTarget, roleColor: m.authorRoleColor })) : undefined}
+                    style={{ color: m.authorRoleColor || 'var(--text-primary)', cursor: m.authorId ? 'pointer' : 'default', fontWeight: 600 }}
+                  >
+                    {m.authorDisplayName || m.authorUsername || 'you'}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 8 }}>{formatTime(m.createdAt)}</span>
+                  {m.edited && <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 6 }}>(edited)</span>}
+                </div>
+                <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', marginTop: 2, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {m.content}
+                </div>
               </div>
             </div>
+
+            {!m._optimistic && (
+              <button
+                onClick={() => setReplyTarget(m)}
+                title="Reply"
+                className="channel-message-reply-btn"
+                style={{
+                  position: 'absolute', top: 2, right: 2, opacity: 0,
+                  background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6,
+                  width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: 'var(--text-muted)',
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+                  <path d="M9 17 4 12l5-5" /><path d="M4 12h11a4 4 0 0 0 4-4V7" />
+                </svg>
+              </button>
+            )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {popover && (
@@ -186,6 +269,27 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
       {error && (
         <div style={{ margin: '0 14px 8px', padding: '8px 12px', borderRadius: 8, fontSize: 12.5, background: 'rgba(224,96,96,0.12)', color: '#e06060', border: '1px solid rgba(224,96,96,0.3)' }}>
           {error}
+        </div>
+      )}
+
+      {replyTarget && (
+        <div style={{
+          margin: '0 10px', padding: '6px 10px', borderRadius: '8px 8px 0 0',
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderBottom: 'none',
+          display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-muted)',
+        }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" width="12" height="12" style={{ flexShrink: 0, transform: 'scaleX(-1)' }}>
+            <path d="M9 17 4 12l5-5" /><path d="M4 12h11a4 4 0 0 0 4-4V7" />
+          </svg>
+          <span>
+            Replying to <strong style={{ color: 'var(--accent)' }}>{replyTarget.authorDisplayName || replyTarget.authorUsername || 'someone'}</strong>
+          </span>
+          <button
+            onClick={() => setReplyTarget(null)}
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: '0 4px' }}
+          >
+            ×
+          </button>
         </div>
       )}
 
