@@ -139,8 +139,7 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg-primary)' }}>
       <style>{`
         .channel-message-row:hover { background: var(--bg-hover, rgba(255,255,255,0.03)); }
-        .channel-message-row:hover .channel-message-reply-btn { opacity: 1; }
-        .channel-message-reply-btn:hover { color: var(--text-primary); }
+        .channel-message-reply-btn:hover { opacity: 1 !important; color: var(--text-primary); }
       `}</style>
       {!hideHeader && (
         <div style={{
@@ -240,13 +239,14 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
                 title="Reply"
                 className="channel-message-reply-btn"
                 style={{
-                  position: 'absolute', top: 2, right: 2, opacity: 0,
+                  position: 'absolute', top: 4, right: 8, zIndex: 5,
+                  opacity: 0.45,
                   background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6,
-                  width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', color: 'var(--text-muted)',
                 }}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                   <path d="M9 17 4 12l5-5" /><path d="M4 12h11a4 4 0 0 0 4-4V7" />
                 </svg>
               </button>
