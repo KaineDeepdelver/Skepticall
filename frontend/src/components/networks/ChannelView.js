@@ -118,10 +118,10 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
     const replyingTo = replyTarget;
     setMessages(prev => [...prev, {
       id: tmpId, content, authorId: currentUserId, createdAt: new Date().toISOString(), _optimistic: true,
-      replyToId: replyingTo?.id ?? null,
-      replyToAuthorUsername: replyingTo?.authorUsername ?? null,
-      replyToAuthorDisplayName: replyingTo?.authorDisplayName ?? null,
-      replyToContent: replyingTo?.content ?? null,
+      parentId: replyingTo?.id ?? null,
+      parentAuthorUsername: replyingTo?.authorUsername ?? null,
+      parentAuthorDisplayName: replyingTo?.authorDisplayName ?? null,
+      parentContent: replyingTo?.content ?? null,
     }]);
     setDraft('');
     setReplyTarget(null);
@@ -231,7 +231,7 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
 
         {messages.map(m => {
           const pingsMe = currentUserId != null && (
-            (m.replyToAuthorId != null && Number(m.replyToAuthorId) === Number(currentUserId)) ||
+            (m.parentAuthorId != null && Number(m.parentAuthorId) === Number(currentUserId)) ||
             (Array.isArray(m.mentionedUserIds) && m.mentionedUserIds.map(Number).includes(Number(currentUserId)))
           );
           return (
@@ -245,32 +245,32 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
               borderLeft: pingsMe ? '2px solid var(--accent)' : '2px solid transparent',
             }}
           >
-            {m.replyToId != null && (
+            {m.parentId != null && (
               <div
-                onClick={m.replyToDeleted ? undefined : () => scrollToMessage(m.replyToId)}
+                onClick={m.parentDeleted ? undefined : () => scrollToMessage(m.parentId)}
                 style={{
                   display: 'flex', alignItems: 'center', marginLeft: 16, marginBottom: 2,
-                  fontSize: 12, color: 'var(--text-muted)', cursor: m.replyToDeleted ? 'default' : 'pointer', maxWidth: 460,
+                  fontSize: 12, color: 'var(--text-muted)', cursor: m.parentDeleted ? 'default' : 'pointer', maxWidth: 460,
                 }}
               >
                 {/* Discord-style curved connector: drops from above, curves right into the quoted line */}
                 <svg width="26" height="14" viewBox="0 0 26 14" style={{ flexShrink: 0, overflow: 'visible' }}>
-                  <path d="M 6 0 V 6 C 6 10 9 10 13 10 H 22" fill="none" stroke={m.replyToDeleted ? 'var(--text-muted)' : 'var(--accent)'} strokeWidth="2" strokeLinecap="round" />
+                  <path d="M 6 0 V 6 C 6 10 9 10 13 10 H 22" fill="none" stroke={m.parentDeleted ? 'var(--text-muted)' : 'var(--accent)'} strokeWidth="2" strokeLinecap="round" />
                 </svg>
-                {m.replyToDeleted ? (
+                {m.parentDeleted ? (
                   <span style={{ fontStyle: 'italic', opacity: 0.75 }}>Original message was deleted</span>
                 ) : (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
                     <UserAvatar
-                      src={m.replyToAuthorAvatar}
-                      name={m.replyToAuthorDisplayName || m.replyToAuthorUsername}
+                      src={m.parentAuthorAvatar}
+                      name={m.parentAuthorDisplayName || m.parentAuthorUsername}
                       size={16}
                     />
                     <span style={{ fontWeight: 600, color: 'var(--accent)' }}>
-                      {m.replyToAuthorDisplayName || m.replyToAuthorUsername || 'someone'}
+                      {m.parentAuthorDisplayName || m.parentAuthorUsername || 'someone'}
                     </span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
-                      {m.replyToContent || ''}
+                      {m.parentContent || ''}
                     </span>
                   </span>
                 )}

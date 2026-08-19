@@ -33,16 +33,39 @@ public class ChannelMessage extends BaseEntity {
     @Builder.Default
     private Boolean edited = false;
 
-    // The id of the message this one is replying to, Discord-style.
-    // Deliberately a plain column, NOT a @ManyToOne/@JoinColumn FK. If it
-    // were a real FK, deleting the original message would either be
-    // blocked by the constraint or (with ON DELETE SET NULL) silently
-    // erase the fact that this was ever a reply. Neither matches Discord,
-    // which keeps the reference and shows "original message was deleted"
-    // once the target is gone. ChannelService resolves this id manually
-    // via a repository lookup and reports replyToDeleted=true in the DTO
-    // when that lookup comes back empty.
-    private Long replyToId;
+    // Explicit message type instead of inferring "is this a reply" from
+    // whether parentId happens to be set. NORMAL messages never have a
+    // parentId; REPLY messages always do, at creation time, permanently —
+    // it is never cleared, even after the parent is deleted (see below).
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    private MessageType type = MessageType.NORMAL;
+
+    public enum MessageType { NORMAL, REPLY }
+
+    // The id of the parent message for a REPLY. Deliberately a PLAIN
+    // column — explicitly NOT a @ManyToOne/@JoinColumn, and there must
+    // never be a foreign key constraint generated for it at the DB level
+    // either. A real FK would force one of two behaviors when the parent
+    // gets deleted: block the delete outright, or (ON DELETE SET NULL)
+    // have Postgres itself silently erase this value out from under us —
+    // which is exactly the bug that happened before this rewrite, because
+    // an earlier version of this entity used @OnDelete(SET_NULL), which
+    // leaves a real "ON DELETE SET NULL" constraint sitting on the table
+    // that ddl-auto=update does NOT retroactively remove. If you're
+    // migrating an existing DB, verify with:
+    //   SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
+    //   WHERE conrelid = 'channel_messages'::regclass AND contype = 'f';
+    // and drop any constraint on this column before this fix can work.
+    //
+    // parentId is set once at creation and never modified again — a
+    // REPLY's parentId is permanent regardless of what happens to the
+    // parent afterward. Whether the parent still exists is determined
+    // purely at read time in ChannelService, by looking it up: found →
+    // normal quote; not found → parentDeleted=true ("Original message was
+    // deleted"). A parent that is itself a REPLY works with zero extra
+    // logic — parentId is just an id, so reply-to-a-reply chains for free.
+    private Long parentId;
 
     // User IDs parsed out of @username tokens in `content` at send time
     // (see ChannelService#parseMentions), scoped to members of this

@@ -21,22 +21,26 @@ public class ChannelMessageDTO {
     private LocalDateTime createdAt;
     private String _tmpId; // optimistic-send correlation, mirrors GroupMessageDTO
 
-    // Reply-to preview — populated only when this message is a reply.
-    // replyToContent is truncated (see ChannelService) so the quoted strip
-    // in the UI can't blow up into a wall of text. replyToDeleted is true
-    // when replyToId is set but the referenced message no longer exists
-    // (it was deleted) — mirrors Discord's "Original message was deleted"
-    // treatment instead of silently dropping the quote.
-    private Long replyToId;
-    private boolean replyToDeleted;
-    private Long replyToAuthorId;
-    private String replyToAuthorUsername;
-    private String replyToAuthorDisplayName;
-    private String replyToAuthorAvatar;
-    private String replyToContent;
+    // "NORMAL" or "REPLY" — explicit, not inferred from parentId being
+    // non-null. A REPLY always has parentId set, permanently, even after
+    // the parent is deleted (see ChannelMessage.parentId for why).
+    private String type;
+
+    // Parent preview — populated only when type == "REPLY". parentContent
+    // is truncated (see ChannelService) so the quoted strip in the UI
+    // can't blow up into a wall of text. parentDeleted is true when
+    // parentId is set but that message no longer exists — mirrors
+    // Discord's "Original message was deleted" treatment.
+    private Long parentId;
+    private boolean parentDeleted;
+    private Long parentAuthorId;
+    private String parentAuthorUsername;
+    private String parentAuthorDisplayName;
+    private String parentAuthorAvatar;
+    private String parentContent;
 
     // User IDs @mentioned in `content`, scoped to this network's members.
-    // The client compares this (and replyToAuthorId) against its own user
+    // The client compares this (and parentAuthorId) against its own user
     // id to decide whether to show the "this pings you" highlight — see
     // ChannelView.js. Deliberately not computed per-viewer server-side,
     // since this DTO is broadcast once over the channel's WS topic to

@@ -112,12 +112,7 @@ public class ChannelService {
     // ── Messages ────────────────────────────────────────────────────────
 
     @Transactional
-    public ChannelMessageDTO postMessage(Long networkId, Long channelId, Long senderId, String content, String fileUrl) {
-        return postMessage(networkId, channelId, senderId, content, fileUrl, null);
-    }
-
-    @Transactional
-    public ChannelMessageDTO postMessage(Long networkId, Long channelId, Long senderId, String content, String fileUrl, Long replyToId) {
+    public ChannelMessageDTO postMessage(Long networkId, Long channelId, Long senderId, String content, String fileUrl, Long parentId) {
         Network network = networkService.requireNetwork(networkId);
         NetworkMember sender = networkService.requireMember(network, senderId);
         Channel channel = requireChannel(network, channelId);
@@ -130,11 +125,13 @@ public class ChannelService {
             throw new BusinessException(ErrorType.INVALID_OPERATION, "Can't post text messages in a voice channel");
         }
 
-        if (replyToId != null) {
-            ChannelMessage replyTarget = requireMessage(replyToId);
-            if (!replyTarget.getChannel().getId().equals(channelId)) {
+        if (parentId != null) {
+            ChannelMessage parent = requireMessage(parentId);
+            if (!parent.getChannel().getId().equals(channelId)) {
                 throw new BusinessException(ErrorType.INVALID_OPERATION, "Can't reply to a message from a different channel");
             }
+            // Replying to a reply is fine — parentId is just an id, so
+            // chains resolve naturally with no extra logic anywhere.
         }
 
         ChannelMessage msg = ChannelMessage.builder()
@@ -142,7 +139,8 @@ public class ChannelService {
                 .author(sender.getUser())
                 .content(content)
                 .fileUrl(fileUrl)
-                .replyToId(replyToId)
+                .type(parentId != null ? ChannelMessage.MessageType.REPLY : ChannelMessage.MessageType.NORMAL)
+                .parentId(parentId)
                 .mentionedUserIds(parseMentions(content, networkId))
                 .build();
         return toMessageDTO(channelMessageRepository.save(msg));
@@ -267,20 +265,21 @@ public class ChannelService {
                 .fileUrl(m.getFileUrl())
                 .edited(m.getEdited())
                 .createdAt(m.getCreatedAt())
+                .type(m.getType().name())
                 .mentionedUserIds(m.getMentionedUserIds());
 
-        if (m.getReplyToId() != null) {
-            builder.replyToId(m.getReplyToId());
-            channelMessageRepository.findById(m.getReplyToId()).ifPresentOrElse(
-                    replyTo -> {
-                        User replyAuthor = replyTo.getAuthor();
-                        builder.replyToAuthorId(replyAuthor.getId())
-                                .replyToAuthorUsername(replyAuthor.getUsername())
-                                .replyToAuthorDisplayName(replyAuthor.getDisplayName())
-                                .replyToAuthorAvatar(replyAuthor.getProfilePicture())
-                                .replyToContent(truncate(replyTo.getContent(), REPLY_SNIPPET_MAX_LEN));
+        if (m.getType() == ChannelMessage.MessageType.REPLY) {
+            builder.parentId(m.getParentId());
+            channelMessageRepository.findById(m.getParentId()).ifPresentOrElse(
+                    parent -> {
+                        User parentAuthor = parent.getAuthor();
+                        builder.parentAuthorId(parentAuthor.getId())
+                                .parentAuthorUsername(parentAuthor.getUsername())
+                                .parentAuthorDisplayName(parentAuthor.getDisplayName())
+                                .parentAuthorAvatar(parentAuthor.getProfilePicture())
+                                .parentContent(truncate(parent.getContent(), REPLY_SNIPPET_MAX_LEN));
                     },
-                    () -> builder.replyToDeleted(true)
+                    () -> builder.parentDeleted(true)
             );
         }
 
