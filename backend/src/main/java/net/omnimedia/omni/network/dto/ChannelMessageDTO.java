@@ -23,12 +23,12 @@ public class ChannelMessageDTO {
 
     // Reply-to preview — populated only when this message is a reply.
     // replyToContent is truncated (see ChannelService) so the quoted strip
-    // in the UI can't blow up into a wall of text. Note: if the original
-    // message later gets deleted, @OnDelete(SET_NULL) on the FK clears
-    // this whole reply relationship — there's no way to distinguish "never
-    // a reply" from "was a reply, original deleted" after that happens,
-    // by design, rather than shipping a field for that we can't populate.
+    // in the UI can't blow up into a wall of text. replyToDeleted is true
+    // when replyToId is set but the referenced message no longer exists
+    // (it was deleted) — mirrors Discord's "Original message was deleted"
+    // treatment instead of silently dropping the quote.
     private Long replyToId;
+    private boolean replyToDeleted;
     private Long replyToAuthorId;
     private String replyToAuthorUsername;
     private String replyToAuthorDisplayName;
