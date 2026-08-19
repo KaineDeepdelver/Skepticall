@@ -22,6 +22,8 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
   const [error, setError]       = useState('');
   const [popover, setPopover]   = useState(null); // { userId, anchor, roleColor }
   const [replyTarget, setReplyTarget] = useState(null); // the message object being replied to, or null
+  const [editingId, setEditingId] = useState(null);
+  const [editDraft, setEditDraft] = useState('');
   const listRef = useRef(null);
   const messageRefs = useRef({}); // id -> DOM node, so clicking a quoted preview can scroll to the original
 
@@ -135,11 +137,59 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
     }
   }
 
+  function startEdit(m) {
+    setEditingId(m.id);
+    setEditDraft(m.content || '');
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditDraft('');
+  }
+
+  async function saveEdit(m) {
+    const content = editDraft.trim();
+    if (!content) return;
+    if (content === m.content) { cancelEdit(); return; }
+    try {
+      const updated = await networkApi.editChannelMessage(networkId, channel.id, m.id, content);
+      setMessages(prev => prev.map(x => x.id === m.id ? updated : x));
+    } catch (e) {
+      setError(e.message || 'Failed to edit message.');
+    } finally {
+      cancelEdit();
+    }
+  }
+
+  async function handleDelete(m) {
+    // No WS broadcast on delete (see ChannelController), so this only
+    // reflects for the deleter unless everyone happens to reload — fine
+    // for now, matches the current backend contract.
+    try {
+      await networkApi.deleteChannelMessage(networkId, channel.id, m.id);
+      setMessages(prev => prev.filter(x => x.id !== m.id));
+    } catch (e) {
+      setError(e.message || 'Failed to delete message.');
+    }
+  }
+
+  function copyText(m) {
+    navigator.clipboard?.writeText(m.content || '');
+  }
+
+  const toolbarBtnStyle = {
+    background: 'none', border: 'none', borderRadius: 5,
+    width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', color: 'var(--text-muted)',
+  };
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg-primary)' }}>
       <style>{`
         .channel-message-row:hover { background: var(--bg-hover, rgba(255,255,255,0.03)); }
-        .channel-message-reply-btn:hover { opacity: 1 !important; color: var(--text-primary); }
+        .channel-message-row:hover .channel-message-toolbar { opacity: 1 !important; }
+        .channel-toolbar-btn:hover { background: var(--bg-hover, rgba(255,255,255,0.08)); color: var(--text-primary); }
+        .channel-toolbar-btn-danger:hover { background: rgba(224,96,96,0.15); color: #e06060; }
       `}</style>
       {!hideHeader && (
         <div style={{
@@ -227,29 +277,79 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
                   <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 8 }}>{formatTime(m.createdAt)}</span>
                   {m.edited && <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 6 }}>(edited)</span>}
                 </div>
-                <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', marginTop: 2, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {m.content}
-                </div>
+                {editingId === m.id ? (
+                  <div style={{ marginTop: 3 }}>
+                    <input
+                      className="auth-input"
+                      autoFocus
+                      value={editDraft}
+                      onChange={e => setEditDraft(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(m); }
+                        if (e.key === 'Escape') cancelEdit();
+                      }}
+                      style={{ fontSize: 13.5, padding: '5px 8px' }}
+                    />
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>
+                      escape to <span onClick={cancelEdit} style={{ cursor: 'pointer', color: 'var(--accent)' }}>cancel</span> · enter to <span onClick={() => saveEdit(m)} style={{ cursor: 'pointer', color: 'var(--accent)' }}>save</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', marginTop: 2, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    {m.content}
+                  </div>
+                )}
               </div>
             </div>
 
-            {!m._optimistic && (
-              <button
-                onClick={() => setReplyTarget(m)}
-                title="Reply"
-                className="channel-message-reply-btn"
+            {!m._optimistic && editingId !== m.id && (
+              <div
+                className="channel-message-toolbar"
                 style={{
-                  position: 'absolute', top: 4, right: 8, zIndex: 5,
-                  opacity: 0.45,
-                  background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6,
-                  width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', color: 'var(--text-muted)',
+                  position: 'absolute', top: -6, right: 8, zIndex: 5,
+                  display: 'flex', alignItems: 'center', gap: 1, opacity: 0.55,
+                  background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8,
+                  padding: 2, boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
                 }}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                  <path d="M9 17 4 12l5-5" /><path d="M4 12h11a4 4 0 0 0 4-4V7" />
-                </svg>
-              </button>
+                <button
+                  onClick={() => setReplyTarget(m)}
+                  title="Reply"
+                  className="channel-toolbar-btn"
+                  style={toolbarBtnStyle}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <path d="M9 17 4 12l5-5" /><path d="M4 12h11a4 4 0 0 0 4-4V7" />
+                  </svg>
+                </button>
+
+                {m.authorId === currentUserId && (
+                  <button onClick={() => startEdit(m)} title="Edit" className="channel-toolbar-btn" style={toolbarBtnStyle}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+                )}
+
+                <button onClick={() => copyText(m)} title="Copy text" className="channel-toolbar-btn" style={toolbarBtnStyle}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </button>
+
+                {m.authorId === currentUserId && (
+                  <button
+                    onClick={() => handleDelete(m)}
+                    title="Delete"
+                    className="channel-toolbar-btn channel-toolbar-btn-danger"
+                    style={toolbarBtnStyle}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             )}
           </div>
           );
