@@ -130,10 +130,9 @@ public class ChannelService {
             throw new BusinessException(ErrorType.INVALID_OPERATION, "Can't post text messages in a voice channel");
         }
 
-        ChannelMessage replyTo = null;
         if (replyToId != null) {
-            replyTo = requireMessage(replyToId);
-            if (!replyTo.getChannel().getId().equals(channelId)) {
+            ChannelMessage replyTarget = requireMessage(replyToId);
+            if (!replyTarget.getChannel().getId().equals(channelId)) {
                 throw new BusinessException(ErrorType.INVALID_OPERATION, "Can't reply to a message from a different channel");
             }
         }
@@ -143,7 +142,7 @@ public class ChannelService {
                 .author(sender.getUser())
                 .content(content)
                 .fileUrl(fileUrl)
-                .replyTo(replyTo)
+                .replyToId(replyToId)
                 .mentionedUserIds(parseMentions(content, networkId))
                 .build();
         return toMessageDTO(channelMessageRepository.save(msg));
@@ -256,7 +255,6 @@ public class ChannelService {
                 .map(this::topRoleColor)
                 .orElse(null);
 
-        ChannelMessage replyTo = m.getReplyTo();
         ChannelMessageDTO.ChannelMessageDTOBuilder builder = ChannelMessageDTO.builder()
                 .id(m.getId())
                 .channelId(m.getChannel().getId())
@@ -271,13 +269,18 @@ public class ChannelService {
                 .createdAt(m.getCreatedAt())
                 .mentionedUserIds(m.getMentionedUserIds());
 
-        if (replyTo != null) {
-            User replyAuthor = replyTo.getAuthor();
-            builder.replyToId(replyTo.getId())
-                    .replyToAuthorId(replyAuthor.getId())
-                    .replyToAuthorUsername(replyAuthor.getUsername())
-                    .replyToAuthorDisplayName(replyAuthor.getDisplayName())
-                    .replyToContent(truncate(replyTo.getContent(), REPLY_SNIPPET_MAX_LEN));
+        if (m.getReplyToId() != null) {
+            builder.replyToId(m.getReplyToId());
+            channelMessageRepository.findById(m.getReplyToId()).ifPresentOrElse(
+                    replyTo -> {
+                        User replyAuthor = replyTo.getAuthor();
+                        builder.replyToAuthorId(replyAuthor.getId())
+                                .replyToAuthorUsername(replyAuthor.getUsername())
+                                .replyToAuthorDisplayName(replyAuthor.getDisplayName())
+                                .replyToContent(truncate(replyTo.getContent(), REPLY_SNIPPET_MAX_LEN));
+                    },
+                    () -> builder.replyToDeleted(true)
+            );
         }
 
         return builder.build();
