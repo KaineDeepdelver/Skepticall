@@ -277,6 +277,7 @@ public class ChannelService {
                         builder.replyToAuthorId(replyAuthor.getId())
                                 .replyToAuthorUsername(replyAuthor.getUsername())
                                 .replyToAuthorDisplayName(replyAuthor.getDisplayName())
+                                .replyToAuthorAvatar(replyAuthor.getProfilePicture())
                                 .replyToContent(truncate(replyTo.getContent(), REPLY_SNIPPET_MAX_LEN));
                     },
                     () -> builder.replyToDeleted(true)

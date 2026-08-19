@@ -32,6 +32,7 @@ public class ChannelMessageDTO {
     private Long replyToAuthorId;
     private String replyToAuthorUsername;
     private String replyToAuthorDisplayName;
+    private String replyToAuthorAvatar;
     private String replyToContent;
 
     // User IDs @mentioned in `content`, scoped to this network's members.
