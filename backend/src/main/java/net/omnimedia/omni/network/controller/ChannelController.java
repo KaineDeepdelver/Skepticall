@@ -120,7 +120,7 @@ public class ChannelController {
         // parentId matches this id to show "Original message was deleted"
         // immediately instead of waiting for a refetch.
         messagingTemplate.convertAndSend("/topic/channel/" + channelId,
-                Map.of("wsEvent", "MESSAGE_DELETED", "id", messageId, "channelId", channelId));
+            (Object) Map.of("wsEvent", "MESSAGE_DELETED", "id", messageId, "channelId", channelId));
         return ResponseEntity.noContent().build();
     }
 }
