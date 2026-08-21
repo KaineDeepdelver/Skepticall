@@ -62,6 +62,19 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
   // WebSocket subscription and relied entirely on the initial REST fetch.
   const handleWsMessage = useCallback((msg) => {
     if (!msg || msg.channelId == null || !channel || Number(msg.channelId) !== Number(channel.id)) return;
+
+    if (msg.wsEvent === 'MESSAGE_DELETED') {
+      setMessages(prev => prev
+        .filter(m => m.id !== msg.id) // drop the deleted message itself
+        .map(m => m.parentId === msg.id
+          // Live-patch any reply pointing at it, without waiting for a
+          // reload — same fields ChannelService sets server-side when it
+          // resolves a REPLY whose parent lookup comes back empty.
+          ? { ...m, parentDeleted: true, parentAuthorId: null, parentAuthorUsername: null, parentAuthorDisplayName: null, parentAuthorAvatar: null, parentContent: null }
+          : m));
+      return;
+    }
+
     setMessages(prev => {
       // Already-known message (or an edit to one) — update in place rather
       // than appending a duplicate. Edits reuse the same message id.
