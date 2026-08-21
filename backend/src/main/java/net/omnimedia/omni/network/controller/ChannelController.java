@@ -110,11 +110,17 @@ public class ChannelController {
         Long requesterId = callerId(req);
         if (requesterId == null) return ResponseEntity.status(401).build();
         channelService.deleteMessage(networkId, requesterId, messageId);
-        // Not broadcasting a WS event here — deleteMessage returns void and
-        // there's no cheap way to get the deleted DTO after the fact without
-        // changing ChannelService's signature. Other members won't see a
-        // delete disappear live yet; it'll be gone next time they reload
-        // the channel. Worth fixing in a follow-up if live-delete matters.
+        // Broadcast the delete so it's live for everyone in the channel,
+        // not just reflected on next reload. Payload is deliberately
+        // minimal (not a full ChannelMessageDTO — the message is gone,
+        // there's nothing more to describe) with a type tag so the
+        // frontend can tell this apart from a normal posted-message
+        // broadcast on the same topic and handle it differently: remove
+        // it from its own list, AND patch any other loaded message whose
+        // parentId matches this id to show "Original message was deleted"
+        // immediately instead of waiting for a refetch.
+        messagingTemplate.convertAndSend("/topic/channel/" + channelId,
+                Map.of("wsEvent", "MESSAGE_DELETED", "id", messageId, "channelId", channelId));
         return ResponseEntity.noContent().build();
     }
 }
