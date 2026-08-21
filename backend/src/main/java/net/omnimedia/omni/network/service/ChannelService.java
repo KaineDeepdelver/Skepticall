@@ -265,9 +265,14 @@ public class ChannelService {
                 .fileUrl(m.getFileUrl())
                 .edited(m.getEdited())
                 .createdAt(m.getCreatedAt())
-                .type(m.getType().name())
+                .type((m.getType() != null ? m.getType() : ChannelMessage.MessageType.NORMAL).name())
                 .mentionedUserIds(m.getMentionedUserIds());
 
+        // m.getType() == REPLY, not just parentId != null: messages
+        // created before this migration have type=NULL in the DB (the
+        // column didn't exist yet, so nothing backfilled it), and treating
+        // null as "not a reply" here is the safe/correct read for them —
+        // they never had a parentId concept to begin with.
         if (m.getType() == ChannelMessage.MessageType.REPLY) {
             builder.parentId(m.getParentId());
             channelMessageRepository.findById(m.getParentId()).ifPresentOrElse(
