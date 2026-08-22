@@ -38,6 +38,19 @@ public class ChannelMessage extends BaseEntity {
     // for a value the client already knows precisely.
     private Integer durationSeconds;
 
+    // JSON array of ~32 normalized (0..1) peak-amplitude samples, captured
+    // client-side via an AnalyserNode on the live mic stream while
+    // recording (see ChannelView.js#startRecording). This is what makes
+    // the waveform in the UI reflect the actual recording — loud parts
+    // render tall, silence renders short — without needing to re-fetch
+    // and decode the uploaded audio file after the fact (which would
+    // require the storage host to send CORS headers, and wouldn't work
+    // at all in browsers that can't decode the recorded codec). Null for
+    // anything that isn't VOICE, or for voice notes recorded before this
+    // field existed — the frontend falls back to a placeholder in that case.
+    @Column(columnDefinition = "TEXT")
+    private String waveformPeaks;
+
     @Builder.Default
     private Boolean edited = false;
 

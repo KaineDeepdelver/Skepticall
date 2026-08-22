@@ -24,6 +24,10 @@ public class ChannelMessageDTO {
     // only populated for VOICE.
     private String mediaType;
     private Integer durationSeconds;
+    // JSON array string of ~32 normalized peak samples — see
+    // ChannelMessage.waveformPeaks for why this is captured at record
+    // time instead of derived from the file after upload.
+    private String waveformPeaks;
     private String _tmpId; // optimistic-send correlation, mirrors GroupMessageDTO
 
     // "NORMAL" or "REPLY" — explicit, not inferred from parentId being

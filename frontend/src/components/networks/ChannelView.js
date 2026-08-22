@@ -36,6 +36,50 @@ function seededPeaks(seed, count) {
   return Array.from({ length: count }, () => 0.25 + next() * 0.65);
 }
 
+// waveformPeaks comes down as a JSON string (see ChannelMessage.waveformPeaks).
+function parsePeaks(json) {
+  if (!json) return null;
+  try {
+    const arr = JSON.parse(json);
+    return Array.isArray(arr) && arr.length > 0 ? arr : null;
+  } catch {
+    return null;
+  }
+}
+
+// One amplitude reading from an AnalyserNode — peak deviation from
+// silence across the current buffer, 0..1.
+function sampleAmplitudeOnce(analyser, dataBuf) {
+  analyser.getByteTimeDomainData(dataBuf);
+  let peak = 0;
+  for (let i = 0; i < dataBuf.length; i++) {
+    const v = Math.abs(dataBuf[i] - 128) / 128;
+    if (v > peak) peak = v;
+  }
+  return peak;
+}
+
+// Reduce the raw amplitude-history samples (collected every ~100ms while
+// recording) down to WAVE_BAR_COUNT peak buckets, normalized 0..1, for
+// sending up with the upload as waveformPeaks.
+function downsamplePeaks(raw, count) {
+  if (!raw || raw.length === 0) return null;
+  const blockSize = Math.max(1, Math.ceil(raw.length / count));
+  const peaks = [];
+  for (let i = 0; i < count; i++) {
+    const start = i * blockSize;
+    let max = 0;
+    for (let j = 0; j < blockSize && start + j < raw.length; j++) {
+      if (raw[start + j] > max) max = raw[start + j];
+    }
+    // Very short clips may run out of raw samples before count buckets
+    // are filled — repeat the last real peak instead of trailing to zero.
+    peaks.push(start < raw.length ? max : (peaks[peaks.length - 1] ?? 0));
+  }
+  const peakMax = Math.max(...peaks, 0.02);
+  return peaks.map(p => Math.round((p / peakMax) * 1000) / 1000);
+}
+
 // Real per-message waveform: fetch the actual audio, decode it, and take
 // the peak amplitude of each of WAVE_BAR_COUNT time slices — this is what
 // makes the bars reflect the actual recording (loud parts tall, silence
@@ -78,35 +122,50 @@ function computeWaveform(src) {
   return promise;
 }
 
-// Voice note playback bubble — play/pause, a real waveform derived from
-// the actual recording, a playback-speed button, and a pitch-sync toggle
-// next to it. When sync is on, pitch moves with speed — faster sounds
-// chipmunky, slower sounds monstrous, like an old tape running at the
-// wrong speed. Toggled off, speed changes but pitch stays put (browser's
-// default pitch correction).
-function ChannelVoiceBubble({ src, durationHint = 0 }) {
+// Voice note playback bubble — play/pause, a real waveform, a
+// playback-speed button, and a pitch-sync toggle next to it. When sync is
+// on, pitch moves with speed — faster sounds chipmunky, slower sounds
+// monstrous, like an old tape running at the wrong speed. Toggled off,
+// speed changes but pitch stays put (browser's default pitch correction).
+//
+// Waveform accuracy, in priority order:
+//  1. `waveformPeaks` — real amplitude samples captured live at record
+//     time (see startRecording's AnalyserNode below) and sent up with the
+//     upload. This is the actual recording's envelope, always available
+//     for anything recorded after this feature shipped, and needs no
+//     network round-trip to render.
+//  2. computeWaveform(src) — best-effort fallback for older voice notes
+//     that predate waveformPeaks: re-fetches and decodes the uploaded
+//     file client-side. Only works if the storage host sends CORS
+//     headers for GET and the browser can decode the stored codec.
+//  3. A deterministic per-message placeholder — not audio-derived, just
+//     keeps different messages from looking identical while (2) is
+//     loading or if it fails outright.
+function ChannelVoiceBubble({ src, durationHint = 0, waveformPeaks }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(durationHint || 0);
   const [speedIdx, setSpeedIdx] = useState(0);
   const [pitchSynced, setPitchSynced] = useState(true);
-  const [peaks, setPeaks] = useState(() => seededPeaks(hashString(src), WAVE_BAR_COUNT));
+  const [peaks, setPeaks] = useState(() => parsePeaks(waveformPeaks) || seededPeaks(hashString(src), WAVE_BAR_COUNT));
   const total = WAVE_BAR_COUNT;
 
-  // Swap in the real, audio-derived waveform once it's decoded. Falls back
-  // to the seeded placeholder (set above and reset here on src change) if
-  // decoding fails — e.g. the storage host doesn't send CORS headers for a
-  // plain fetch, in which case <audio> playback still works fine but we
-  // can't read the raw samples to draw an accurate waveform.
+  // Real peaks captured at record time (see startRecording) are
+  // authoritative — use them as-is, no fetch/decode needed. Only fall
+  // back to the post-hoc decode (or the seeded placeholder while that's
+  // in flight) for voice notes that don't have them, e.g. anything sent
+  // before this field existed.
   useEffect(() => {
+    const real = parsePeaks(waveformPeaks);
+    if (real) { setPeaks(real); return; }
     let cancelled = false;
     setPeaks(seededPeaks(hashString(src), WAVE_BAR_COUNT));
-    computeWaveform(src).then(real => {
-      if (!cancelled && real) setPeaks(real);
+    computeWaveform(src).then(decoded => {
+      if (!cancelled && decoded) setPeaks(decoded);
     });
     return () => { cancelled = true; };
-  }, [src]);
+  }, [src, waveformPeaks]);
 
   function trySetDur(d) { if (d && isFinite(d) && d > 0) setDuration(d); }
 
@@ -242,6 +301,14 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
   const messageRefs = useRef({}); // id -> DOM node, so clicking a quoted preview can scroll to the original
   const recorderRef = useRef(null);
   const recTimerRef = useRef(null);
+  // Live-amplitude capture while recording (see startRecording) — an
+  // AnalyserNode on the mic stream, sampled a few times a second so the
+  // waveform can be built from what was actually said the moment
+  // recording stops, no re-fetch/decode of the uploaded file required.
+  const analyserRef = useRef(null);
+  const ampCtxRef = useRef(null);
+  const ampHistoryRef = useRef([]);
+  const ampTimerRef = useRef(null);
 
   function scrollToMessage(id) {
     const node = messageRefs.current[id];
@@ -327,6 +394,8 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
   useEffect(() => {
     return () => {
       clearInterval(recTimerRef.current);
+      clearInterval(ampTimerRef.current);
+      if (ampCtxRef.current && ampCtxRef.current.close) ampCtxRef.current.close();
       const mr = recorderRef.current;
       if (mr && (mr.state === 'recording' || mr.state === 'paused')) {
         mr._cancelled = true;
@@ -390,9 +459,33 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
       mr.ondataavailable = ev => { if (ev.data.size > 0) chunks.push(ev.data); };
       mr._durationSnapshot = 0;
       const replyingTo = replyTarget;
+
+      // Live amplitude capture — an AnalyserNode on the same mic stream,
+      // sampled a few times a second. This is what lets the waveform
+      // shown in the bubble reflect the real recording instead of a
+      // fetched/decoded (and possibly CORS-blocked) copy after the fact.
+      ampHistoryRef.current = [];
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const actx = new AudioCtx();
+        const srcNode = actx.createMediaStreamSource(stream);
+        const analyser = actx.createAnalyser();
+        analyser.fftSize = 1024;
+        srcNode.connect(analyser);
+        ampCtxRef.current = actx;
+        analyserRef.current = analyser;
+        startAmpSampling();
+      } catch {
+        // Best-effort — if this fails, upload just proceeds without
+        // waveformPeaks and the bubble falls back to its other strategies.
+      }
+
       mr.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
+        clearInterval(ampTimerRef.current);
+        if (ampCtxRef.current && ampCtxRef.current.close) ampCtxRef.current.close();
         const capturedDuration = mr._durationSnapshot;
+        const waveformPeaks = downsamplePeaks(ampHistoryRef.current, WAVE_BAR_COUNT);
         setRecording(false); setPaused(false); setRecSeconds(0); clearInterval(recTimerRef.current);
         if (!mr._cancelled && chunks.length) {
           const blob = new Blob(chunks, { type: mime });
@@ -400,6 +493,7 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
             const fd = new FormData();
             fd.append('file', new File([blob], `voice_${Date.now()}.webm`, { type: mime }));
             fd.append('durationSeconds', String(capturedDuration || 0));
+            if (waveformPeaks) fd.append('waveformPeaks', JSON.stringify(waveformPeaks));
             if (replyingTo) fd.append('parentId', replyingTo.id);
             try {
               const saved = await networkApi.uploadChannelVoiceMessage(networkId, channel.id, fd);
@@ -423,13 +517,28 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
     }
   }
 
+  // Starts (or restarts, after a pause/resume) the amplitude sampling
+  // interval against the currently-live AnalyserNode.
+  function startAmpSampling() {
+    const analyser = analyserRef.current;
+    if (!analyser) return;
+    const data = new Uint8Array(analyser.fftSize);
+    ampTimerRef.current = setInterval(() => {
+      ampHistoryRef.current.push(sampleAmplitudeOnce(analyser, data));
+    }, 100);
+  }
+
   function pauseRecording() {
     const mr = recorderRef.current; if (!mr) return;
-    if (mr.state === 'recording') { mr.pause(); setPaused(true); clearInterval(recTimerRef.current); }
-    else if (mr.state === 'paused') {
+    if (mr.state === 'recording') {
+      mr.pause(); setPaused(true);
+      clearInterval(recTimerRef.current);
+      clearInterval(ampTimerRef.current);
+    } else if (mr.state === 'paused') {
       mr.resume(); setPaused(false);
       let s = recSeconds;
       recTimerRef.current = setInterval(() => { s++; setRecSeconds(s); mr._durationSnapshot = s; if (s >= 300) sendRecording(); }, 1000);
+      startAmpSampling();
     }
   }
 
@@ -442,6 +551,7 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
 
   function cancelRecording() {
     clearInterval(recTimerRef.current);
+    clearInterval(ampTimerRef.current);
     const mr = recorderRef.current;
     if (!mr) return;
     mr._cancelled = true;
@@ -628,6 +738,7 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
                     <ChannelVoiceBubble
                       src={resolveUrl(m.fileUrl)}
                       durationHint={m.durationSeconds ? Number(m.durationSeconds) : 0}
+                      waveformPeaks={m.waveformPeaks}
                     />
                   </div>
                 ) : (

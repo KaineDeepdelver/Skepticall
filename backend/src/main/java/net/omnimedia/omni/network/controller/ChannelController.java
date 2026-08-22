@@ -114,13 +114,14 @@ public class ChannelController {
             @RequestParam MultipartFile file,
             @RequestParam(required = false) Integer durationSeconds,
             @RequestParam(required = false) Long parentId,
+            @RequestParam(required = false) String waveformPeaks,
             HttpServletRequest req) {
         Long senderId = callerId(req);
         if (senderId == null) return ResponseEntity.status(401).build();
         String fileUrl = r2Storage.upload(file, "channel-voice");
         ChannelMessageDTO saved = channelService.postMessage(
                 networkId, channelId, senderId, null, fileUrl, parentId,
-                ChannelMessage.MediaType.VOICE, durationSeconds);
+                ChannelMessage.MediaType.VOICE, durationSeconds, waveformPeaks);
         messagingTemplate.convertAndSend("/topic/channel/" + channelId, saved);
         return ResponseEntity.ok(saved);
     }

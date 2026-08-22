@@ -113,12 +113,12 @@ public class ChannelService {
 
     @Transactional
     public ChannelMessageDTO postMessage(Long networkId, Long channelId, Long senderId, String content, String fileUrl, Long parentId) {
-        return postMessage(networkId, channelId, senderId, content, fileUrl, parentId, ChannelMessage.MediaType.TEXT, null);
+        return postMessage(networkId, channelId, senderId, content, fileUrl, parentId, ChannelMessage.MediaType.TEXT, null, null);
     }
 
     /** Overload used for VOICE uploads — see ChannelController#uploadVoiceMessage. */
     @Transactional
-    public ChannelMessageDTO postMessage(Long networkId, Long channelId, Long senderId, String content, String fileUrl, Long parentId, ChannelMessage.MediaType mediaType, Integer durationSeconds) {
+    public ChannelMessageDTO postMessage(Long networkId, Long channelId, Long senderId, String content, String fileUrl, Long parentId, ChannelMessage.MediaType mediaType, Integer durationSeconds, String waveformPeaks) {
         Network network = networkService.requireNetwork(networkId);
         NetworkMember sender = networkService.requireMember(network, senderId);
         Channel channel = requireChannel(network, channelId);
@@ -147,6 +147,7 @@ public class ChannelService {
                 .fileUrl(fileUrl)
                 .mediaType(mediaType != null ? mediaType : ChannelMessage.MediaType.TEXT)
                 .durationSeconds(durationSeconds)
+                .waveformPeaks(waveformPeaks)
                 .type(parentId != null ? ChannelMessage.MessageType.REPLY : ChannelMessage.MessageType.NORMAL)
                 .parentId(parentId)
                 .mentionedUserIds(parseMentions(content, networkId))
@@ -276,6 +277,7 @@ public class ChannelService {
                 .type((m.getType() != null ? m.getType() : ChannelMessage.MessageType.NORMAL).name())
                 .mediaType((m.getMediaType() != null ? m.getMediaType() : ChannelMessage.MediaType.TEXT).name())
                 .durationSeconds(m.getDurationSeconds())
+                .waveformPeaks(m.getWaveformPeaks())
                 .mentionedUserIds(m.getMentionedUserIds());
 
         // m.getType() == REPLY, not just parentId != null: messages
