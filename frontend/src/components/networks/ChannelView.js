@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { networkApi } from '../../services/api';
+import { networkApi, resolveUrl } from '../../services/api';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import UserAvatar from '../UserAvatar';
 import NetworkUserPopover from './NetworkUserPopover';
@@ -10,7 +10,143 @@ function formatTime(iso) {
   } catch { return ''; }
 }
 
+function fmtDur(s) {
+  if (!s || isNaN(s)) return '0:00';
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+}
+
 const TYPE_LABEL = { TEXT: '', VOICE: '(voice)', ANNOUNCEMENT: '(announcements)' };
+
+// Cycle order for the playback-speed button on a voice note.
+const SPEED_STEPS = [1, 1.25, 1.5, 2, 0.5, 0.75];
+const WAVE_HEIGHTS = [7, 12, 5, 16, 9, 13, 6, 11, 8, 14, 6, 10, 4, 15, 9, 7, 12, 8, 5, 13, 10, 6, 9, 11];
+
+// Voice note playback bubble — play/pause, a scrubbing waveform, a
+// playback-speed button, and a pitch-sync toggle next to it. When sync is
+// on, pitch moves with speed — faster sounds chipmunky, slower sounds
+// monstrous, like an old tape running at the wrong speed. Toggled off,
+// speed changes but pitch stays put (browser's default pitch correction).
+function ChannelVoiceBubble({ src, durationHint = 0 }) {
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [duration, setDuration] = useState(durationHint || 0);
+  const [speedIdx, setSpeedIdx] = useState(0);
+  const [pitchSynced, setPitchSynced] = useState(true);
+  const total = WAVE_HEIGHTS.length;
+
+  function trySetDur(d) { if (d && isFinite(d) && d > 0) setDuration(d); }
+
+  function applyAudioSettings(a, idx = speedIdx, synced = pitchSynced) {
+    if (!a) return;
+    a.playbackRate = SPEED_STEPS[idx];
+    // preservesPitch=false lets pitch shift with playbackRate (chipmunk/
+    // beast effect); true keeps pitch level regardless of speed.
+    const preserve = !synced;
+    a.preservesPitch = preserve;
+    a.mozPreservesPitch = preserve;
+    a.webkitPreservesPitch = preserve;
+  }
+
+  useEffect(() => { applyAudioSettings(audioRef.current); }, [speedIdx, pitchSynced]);
+
+  function toggle() {
+    const a = audioRef.current; if (!a) return;
+    document.querySelectorAll('audio').forEach(x => { if (x !== a) x.pause(); });
+    if (a.paused) {
+      if (!(duration > 0) && a.readyState < 1) a.load();
+      applyAudioSettings(a);
+      a.play().then(() => setPlaying(true)).catch(() => {});
+    } else { a.pause(); setPlaying(false); }
+  }
+
+  function cycleSpeed(e) {
+    e.stopPropagation();
+    setSpeedIdx(i => (i + 1) % SPEED_STEPS.length);
+  }
+
+  function togglePitchSync(e) {
+    e.stopPropagation();
+    setPitchSynced(s => !s);
+  }
+
+  const displayDur = duration > 0 ? duration : (durationHint > 0 ? durationHint : null);
+  const played = displayDur && displayDur > 0 ? Math.round((current / displayDur) * total) : 0;
+  const durLabel = playing ? fmtDur(current) : (displayDur ? fmtDur(displayDur) : null);
+  const speed = SPEED_STEPS[speedIdx];
+  const speedLabel = `${speed}x`;
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8, padding: '7px 9px',
+      borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border)',
+      width: 300, maxWidth: '100%',
+    }}>
+      <button
+        onClick={toggle}
+        style={{
+          width: 30, height: 30, borderRadius: '50%', background: 'var(--accent)', border: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer',
+        }}
+      >
+        {playing
+          ? <svg viewBox="0 0 24 24" fill="#fff" width="12" height="12"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+          : <svg viewBox="0 0 24 24" fill="#fff" width="12" height="12" style={{ marginLeft: 1 }}><polygon points="5,3 19,12 5,21" /></svg>}
+      </button>
+
+      <audio
+        ref={audioRef}
+        src={src}
+        preload="metadata"
+        onLoadedMetadata={e => trySetDur(e.target.duration)}
+        onDurationChange={e => trySetDur(e.target.duration)}
+        onTimeUpdate={e => { setCurrent(e.target.currentTime); trySetDur(e.target.duration); }}
+        onEnded={() => { setPlaying(false); setCurrent(0); }}
+      />
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, height: 18 }}>
+          {WAVE_HEIGHTS.map((h, i) => (
+            <span
+              key={i}
+              style={{
+                width: 2, height: h, borderRadius: 1, flexShrink: 0,
+                background: i < played ? 'var(--accent)' : 'var(--border-input)',
+              }}
+            />
+          ))}
+        </div>
+        {durLabel && <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 3 }}>{durLabel}</div>}
+      </div>
+
+      <button
+        onClick={cycleSpeed}
+        title="Playback speed — click to change"
+        style={{
+          border: 'none', background: 'var(--bg-hover)', color: 'var(--text-secondary)',
+          borderRadius: 6, padding: '4px 8px', fontSize: 11.5, fontWeight: 600, flexShrink: 0, cursor: 'pointer',
+        }}
+      >
+        {speedLabel}
+      </button>
+
+      <button
+        onClick={togglePitchSync}
+        title={pitchSynced ? 'Pitch synced to speed (chipmunk/beast) — click to keep pitch normal' : 'Pitch stays normal — click to sync pitch with speed'}
+        style={{
+          border: 'none', borderRadius: 6, width: 26, height: 26, padding: 0, flexShrink: 0, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: pitchSynced ? 'var(--accent-glow)' : 'var(--bg-hover)',
+          color: pitchSynced ? 'var(--accent)' : 'var(--text-muted)',
+        }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 12h3l2 5 4-16 3 11 2-5h4" />
+        </svg>
+      </button>
+    </div>
+  );
+}
 
 export default function ChannelView({ networkId, channel, currentUserId, hideHeader = false }) {
   const [messages, setMessages] = useState([]);
@@ -25,8 +161,13 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState('');
   const [deleteModalTarget, setDeleteModalTarget] = useState(null); // message pending delete confirmation
+  const [recording, setRecording] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [recSeconds, setRecSeconds] = useState(0);
   const listRef = useRef(null);
   const messageRefs = useRef({}); // id -> DOM node, so clicking a quoted preview can scroll to the original
+  const recorderRef = useRef(null);
+  const recTimerRef = useRef(null);
 
   function scrollToMessage(id) {
     const node = messageRefs.current[id];
@@ -106,6 +247,20 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
     }
   }, [messages, page]);
 
+  // Stop any in-flight recording if the user switches channels mid-recording.
+  // Kept above the early returns below so hook order stays consistent
+  // across renders regardless of channel type (Rules of Hooks).
+  useEffect(() => {
+    return () => {
+      clearInterval(recTimerRef.current);
+      const mr = recorderRef.current;
+      if (mr && (mr.state === 'recording' || mr.state === 'paused')) {
+        mr._cancelled = true;
+        mr.stop();
+      }
+    };
+  }, [channel?.id]);
+
   if (!channel) {
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
@@ -149,6 +304,75 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
     } finally {
       setSending(false);
     }
+  }
+
+  async function startRecording() {
+    if (recording) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const chunks = [];
+      const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const mr = new MediaRecorder(stream, { mimeType: mime });
+      mr.ondataavailable = ev => { if (ev.data.size > 0) chunks.push(ev.data); };
+      mr._durationSnapshot = 0;
+      const replyingTo = replyTarget;
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const capturedDuration = mr._durationSnapshot;
+        setRecording(false); setPaused(false); setRecSeconds(0); clearInterval(recTimerRef.current);
+        if (!mr._cancelled && chunks.length) {
+          const blob = new Blob(chunks, { type: mime });
+          if (blob.size > 1000) {
+            const fd = new FormData();
+            fd.append('file', new File([blob], `voice_${Date.now()}.webm`, { type: mime }));
+            fd.append('durationSeconds', String(capturedDuration || 0));
+            if (replyingTo) fd.append('parentId', replyingTo.id);
+            try {
+              const saved = await networkApi.uploadChannelVoiceMessage(networkId, channel.id, fd);
+              // The channel's WS subscription may well deliver this same
+              // message first — dedupe by id rather than append blindly.
+              setMessages(prev => prev.some(m => m.id === saved.id) ? prev : [...prev, saved]);
+              setReplyTarget(null);
+            } catch (e) {
+              setError(e.message || 'Failed to send voice note.');
+            }
+          }
+        }
+      };
+      mr.start(100); recorderRef.current = mr; setRecording(true); setPaused(false);
+      let s = 0;
+      recTimerRef.current = setInterval(() => { s++; setRecSeconds(s); mr._durationSnapshot = s; if (s >= 300) sendRecording(); }, 1000);
+    } catch (err) {
+      console.error('Mic error:', err);
+      setRecording(false);
+      setError('Could not access microphone.');
+    }
+  }
+
+  function pauseRecording() {
+    const mr = recorderRef.current; if (!mr) return;
+    if (mr.state === 'recording') { mr.pause(); setPaused(true); clearInterval(recTimerRef.current); }
+    else if (mr.state === 'paused') {
+      mr.resume(); setPaused(false);
+      let s = recSeconds;
+      recTimerRef.current = setInterval(() => { s++; setRecSeconds(s); mr._durationSnapshot = s; if (s >= 300) sendRecording(); }, 1000);
+    }
+  }
+
+  function sendRecording() {
+    clearInterval(recTimerRef.current);
+    const mr = recorderRef.current;
+    if (!mr || (mr.state !== 'recording' && mr.state !== 'paused')) return;
+    mr.stop();
+  }
+
+  function cancelRecording() {
+    clearInterval(recTimerRef.current);
+    const mr = recorderRef.current;
+    if (!mr) return;
+    mr._cancelled = true;
+    if (mr.state === 'recording' || mr.state === 'paused') mr.stop();
+    else { setRecording(false); setPaused(false); setRecSeconds(0); }
   }
 
   function startEdit(m) {
@@ -325,6 +549,13 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
                       escape to <span onClick={cancelEdit} style={{ cursor: 'pointer', color: 'var(--accent)' }}>cancel</span> · enter to <span onClick={() => saveEdit(m)} style={{ cursor: 'pointer', color: 'var(--accent)' }}>save</span>
                     </div>
                   </div>
+                ) : m.mediaType === 'VOICE' ? (
+                  <div style={{ marginTop: 4 }}>
+                    <ChannelVoiceBubble
+                      src={resolveUrl(m.fileUrl)}
+                      durationHint={m.durationSeconds ? Number(m.durationSeconds) : 0}
+                    />
+                  </div>
                 ) : (
                   <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', marginTop: 2, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                     {m.content}
@@ -492,16 +723,60 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
         </div>
       )}
 
-      <div className="channel-input-bar" style={{ paddingTop: 10, paddingLeft: 10, paddingRight: 10, borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-        <input
-          className="auth-input"
-          placeholder={channel.type === 'ANNOUNCEMENT' ? `Announce in #${channel.name}` : `Message #${channel.name}`}
-          value={draft}
-          onChange={e => setDraft(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-          disabled={sending}
-        />
-      </div>
+      {recording ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          <span style={{ width: 10, height: 10, borderRadius: '50%', background: paused ? 'var(--text-muted)' : '#ff4444', flexShrink: 0, animation: paused ? 'none' : 'rec-blink 1s ease-in-out infinite' }} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: paused ? 'var(--text-muted)' : '#ff4444', minWidth: 70 }}>{paused ? 'Paused' : 'Recording…'}</span>
+          <span style={{ fontSize: 13, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', minWidth: 36 }}>
+            {Math.floor(recSeconds / 60)}:{String(recSeconds % 60).padStart(2, '0')}
+          </span>
+          <button
+            onClick={cancelRecording}
+            style={{ marginLeft: 'auto', background: 'rgba(224,96,96,0.12)', border: '1px solid #e06060', color: '#e06060', borderRadius: 20, padding: '6px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={pauseRecording}
+            style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-input)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-primary)' }}
+          >
+            {paused
+              ? <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><polygon points="5,3 19,12 5,21" /></svg>
+              : <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>}
+          </button>
+          <button
+            onClick={sendRecording}
+            style={{ background: 'var(--accent)', border: 'none', color: 'var(--accent-text)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+          </button>
+        </div>
+      ) : (
+        <div className="channel-input-bar" style={{ paddingTop: 10, paddingLeft: 10, paddingRight: 10, borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            className="auth-input"
+            style={{ flex: 1 }}
+            placeholder={channel.type === 'ANNOUNCEMENT' ? `Announce in #${channel.name}` : `Message #${channel.name}`}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            disabled={sending}
+          />
+          <button
+            className="icon-btn"
+            onClick={startRecording}
+            title="Voice message"
+            style={{ flexShrink: 0 }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

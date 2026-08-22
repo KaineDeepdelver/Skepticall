@@ -280,6 +280,9 @@ export const networkApi = {
     req(`/networks/${networkId}/channels/${channelId}/messages?page=${page}&size=${size}`),
   postChannelMessage: (networkId, channelId, content, fileUrl, parentId) =>
     req(`/networks/${networkId}/channels/${channelId}/messages`, { method: 'POST', body: { content, fileUrl, parentId } }),
+  // Voice notes — multipart, mirrors messageApi's DM/group upload.
+  uploadChannelVoiceMessage: (networkId, channelId, fd) =>
+    upload(`/networks/${networkId}/channels/${channelId}/messages/upload`, fd),
   editChannelMessage: (networkId, channelId, messageId, content) =>
     req(`/networks/${networkId}/channels/${channelId}/messages/${messageId}`, { method: 'PATCH', body: { content } }),
   deleteChannelMessage: (networkId, channelId, messageId) =>

@@ -19,6 +19,11 @@ public class ChannelMessageDTO {
     private String fileUrl;
     private Boolean edited;
     private LocalDateTime createdAt;
+
+    // "TEXT" or "VOICE" — see ChannelMessage.MediaType. durationSeconds is
+    // only populated for VOICE.
+    private String mediaType;
+    private Integer durationSeconds;
     private String _tmpId; // optimistic-send correlation, mirrors GroupMessageDTO
 
     // "NORMAL" or "REPLY" — explicit, not inferred from parentId being

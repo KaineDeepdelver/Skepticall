@@ -30,8 +30,26 @@ public class ChannelMessage extends BaseEntity {
 
     private String fileUrl;
 
+    // Duration of the attached voice clip, in whole seconds — mirrors the
+    // DM/group voice-message contract (see message.entity.Message /
+    // group.entity.GroupMessage). Null for anything that isn't a VOICE
+    // mediaType. Captured client-side while recording since decoding an
+    // audio/webm blob's real duration server-side isn't worth the effort
+    // for a value the client already knows precisely.
+    private Integer durationSeconds;
+
     @Builder.Default
     private Boolean edited = false;
+
+    // What kind of content this message carries. Deliberately separate
+    // from `type` below (NORMAL/REPLY), which is about reply-threading,
+    // not content — a voice note can be a REPLY too, and this field
+    // shouldn't be conflated with that one.
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    private MediaType mediaType = MediaType.TEXT;
+
+    public enum MediaType { TEXT, VOICE }
 
     // Explicit message type instead of inferring "is this a reply" from
     // whether parentId happens to be set. NORMAL messages never have a

@@ -2,14 +2,17 @@ package net.omnimedia.omni.network.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import net.omnimedia.omni.config.R2StorageService;
 import net.omnimedia.omni.network.dto.ChannelDTO;
 import net.omnimedia.omni.network.dto.ChannelMessageDTO;
 import net.omnimedia.omni.network.entity.Channel;
+import net.omnimedia.omni.network.entity.ChannelMessage;
 import net.omnimedia.omni.network.service.ChannelService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -20,6 +23,7 @@ import java.util.Map;
 public class ChannelController {
     private final ChannelService channelService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final R2StorageService r2Storage;
 
     private Long callerId(HttpServletRequest req) {
         return (Long) req.getAttribute("authenticatedUserId");
@@ -92,6 +96,31 @@ public class ChannelController {
         Long parentId = body.containsKey("parentId") && body.get("parentId") != null
                 ? Long.parseLong(body.get("parentId").toString()) : null;
         ChannelMessageDTO saved = channelService.postMessage(networkId, channelId, senderId, content, fileUrl, parentId);
+        messagingTemplate.convertAndSend("/topic/channel/" + channelId, saved);
+        return ResponseEntity.ok(saved);
+    }
+
+    /**
+     * POST /networks/{networkId}/channels/{channelId}/messages/upload
+     * multipart/form-data: file, durationSeconds?, parentId?
+     * Voice-note upload for network channels — same shape as
+     * MessageRestController#uploadMessage (DMs/groups), routed through the
+     * channel's own postMessage() so permissions, mention-parsing, and
+     * reply-threading all apply identically to a voice note as to text.
+     */
+    @PostMapping(value = "/{channelId}/messages/upload", consumes = "multipart/form-data")
+    public ResponseEntity<?> uploadVoiceMessage(
+            @PathVariable Long networkId, @PathVariable Long channelId,
+            @RequestParam MultipartFile file,
+            @RequestParam(required = false) Integer durationSeconds,
+            @RequestParam(required = false) Long parentId,
+            HttpServletRequest req) {
+        Long senderId = callerId(req);
+        if (senderId == null) return ResponseEntity.status(401).build();
+        String fileUrl = r2Storage.upload(file, "channel-voice");
+        ChannelMessageDTO saved = channelService.postMessage(
+                networkId, channelId, senderId, null, fileUrl, parentId,
+                ChannelMessage.MediaType.VOICE, durationSeconds);
         messagingTemplate.convertAndSend("/topic/channel/" + channelId, saved);
         return ResponseEntity.ok(saved);
     }

@@ -113,6 +113,12 @@ public class ChannelService {
 
     @Transactional
     public ChannelMessageDTO postMessage(Long networkId, Long channelId, Long senderId, String content, String fileUrl, Long parentId) {
+        return postMessage(networkId, channelId, senderId, content, fileUrl, parentId, ChannelMessage.MediaType.TEXT, null);
+    }
+
+    /** Overload used for VOICE uploads — see ChannelController#uploadVoiceMessage. */
+    @Transactional
+    public ChannelMessageDTO postMessage(Long networkId, Long channelId, Long senderId, String content, String fileUrl, Long parentId, ChannelMessage.MediaType mediaType, Integer durationSeconds) {
         Network network = networkService.requireNetwork(networkId);
         NetworkMember sender = networkService.requireMember(network, senderId);
         Channel channel = requireChannel(network, channelId);
@@ -139,6 +145,8 @@ public class ChannelService {
                 .author(sender.getUser())
                 .content(content)
                 .fileUrl(fileUrl)
+                .mediaType(mediaType != null ? mediaType : ChannelMessage.MediaType.TEXT)
+                .durationSeconds(durationSeconds)
                 .type(parentId != null ? ChannelMessage.MessageType.REPLY : ChannelMessage.MessageType.NORMAL)
                 .parentId(parentId)
                 .mentionedUserIds(parseMentions(content, networkId))
@@ -266,6 +274,8 @@ public class ChannelService {
                 .edited(m.getEdited())
                 .createdAt(m.getCreatedAt())
                 .type((m.getType() != null ? m.getType() : ChannelMessage.MessageType.NORMAL).name())
+                .mediaType((m.getMediaType() != null ? m.getMediaType() : ChannelMessage.MediaType.TEXT).name())
+                .durationSeconds(m.getDurationSeconds())
                 .mentionedUserIds(m.getMentionedUserIds());
 
         // m.getType() == REPLY, not just parentId != null: messages
