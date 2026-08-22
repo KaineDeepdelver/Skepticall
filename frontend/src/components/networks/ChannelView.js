@@ -19,13 +19,71 @@ const TYPE_LABEL = { TEXT: '', VOICE: '(voice)', ANNOUNCEMENT: '(announcements)'
 
 // Cycle order for the playback-speed button on a voice note.
 const SPEED_STEPS = [1, 1.25, 1.5, 2, 0.5, 0.75];
-const WAVE_HEIGHTS = [7, 12, 5, 16, 9, 13, 6, 11, 8, 14, 6, 10, 4, 15, 9, 7, 12, 8, 5, 13, 10, 6, 9, 11];
+const WAVE_BAR_COUNT = 32;
 
-// Voice note playback bubble — play/pause, a scrubbing waveform, a
-// playback-speed button, and a pitch-sync toggle next to it. When sync is
-// on, pitch moves with speed — faster sounds chipmunky, slower sounds
-// monstrous, like an old tape running at the wrong speed. Toggled off,
-// speed changes but pitch stays put (browser's default pitch correction).
+// Deterministic per-message placeholder so different voice notes at least
+// don't all render the exact same static pattern while the real waveform
+// is being computed (or if decoding fails, e.g. a storage host without
+// CORS enabled for fetch). Not audio-derived — just a stable fallback.
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) || 1;
+}
+function seededPeaks(seed, count) {
+  let s = seed;
+  const next = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  return Array.from({ length: count }, () => 0.25 + next() * 0.65);
+}
+
+// Real per-message waveform: fetch the actual audio, decode it, and take
+// the peak amplitude of each of WAVE_BAR_COUNT time slices — this is what
+// makes the bars reflect the actual recording (loud parts tall, silence
+// short) instead of a generic decorative shape. Cached per src so a
+// message re-rendering (or appearing twice in the list briefly) doesn't
+// redecode the same audio.
+const waveformCache = new Map(); // src -> Promise<number[] | null>
+function computeWaveform(src) {
+  if (waveformCache.has(src)) return waveformCache.get(src);
+  const promise = (async () => {
+    try {
+      const res = await fetch(src);
+      const arrayBuf = await res.arrayBuffer();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+      const audioBuf = await new Promise((resolve, reject) => {
+        const maybePromise = ctx.decodeAudioData(arrayBuf, resolve, reject);
+        if (maybePromise && typeof maybePromise.then === 'function') maybePromise.then(resolve, reject);
+      });
+      const raw = audioBuf.getChannelData(0);
+      const blockSize = Math.max(1, Math.floor(raw.length / WAVE_BAR_COUNT));
+      const peaks = [];
+      for (let i = 0; i < WAVE_BAR_COUNT; i++) {
+        const start = i * blockSize;
+        let max = 0;
+        for (let j = 0; j < blockSize && start + j < raw.length; j++) {
+          const v = Math.abs(raw[start + j]);
+          if (v > max) max = v;
+        }
+        peaks.push(max);
+      }
+      const peakMax = Math.max(...peaks, 0.02);
+      if (ctx.close) ctx.close();
+      return peaks.map(p => p / peakMax);
+    } catch {
+      return null; // caller keeps its seeded fallback
+    }
+  })();
+  waveformCache.set(src, promise);
+  return promise;
+}
+
+// Voice note playback bubble — play/pause, a real waveform derived from
+// the actual recording, a playback-speed button, and a pitch-sync toggle
+// next to it. When sync is on, pitch moves with speed — faster sounds
+// chipmunky, slower sounds monstrous, like an old tape running at the
+// wrong speed. Toggled off, speed changes but pitch stays put (browser's
+// default pitch correction).
 function ChannelVoiceBubble({ src, durationHint = 0 }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
@@ -33,7 +91,22 @@ function ChannelVoiceBubble({ src, durationHint = 0 }) {
   const [duration, setDuration] = useState(durationHint || 0);
   const [speedIdx, setSpeedIdx] = useState(0);
   const [pitchSynced, setPitchSynced] = useState(true);
-  const total = WAVE_HEIGHTS.length;
+  const [peaks, setPeaks] = useState(() => seededPeaks(hashString(src), WAVE_BAR_COUNT));
+  const total = WAVE_BAR_COUNT;
+
+  // Swap in the real, audio-derived waveform once it's decoded. Falls back
+  // to the seeded placeholder (set above and reset here on src change) if
+  // decoding fails — e.g. the storage host doesn't send CORS headers for a
+  // plain fetch, in which case <audio> playback still works fine but we
+  // can't read the raw samples to draw an accurate waveform.
+  useEffect(() => {
+    let cancelled = false;
+    setPeaks(seededPeaks(hashString(src), WAVE_BAR_COUNT));
+    computeWaveform(src).then(real => {
+      if (!cancelled && real) setPeaks(real);
+    });
+    return () => { cancelled = true; };
+  }, [src]);
 
   function trySetDur(d) { if (d && isFinite(d) && d > 0) setDuration(d); }
 
@@ -75,6 +148,7 @@ function ChannelVoiceBubble({ src, durationHint = 0 }) {
   const durLabel = playing ? fmtDur(current) : (displayDur ? fmtDur(displayDur) : null);
   const speed = SPEED_STEPS[speedIdx];
   const speedLabel = `${speed}x`;
+  const barHeights = peaks.map(p => Math.round(4 + p * 20)); // 4px..24px
 
   return (
     <div style={{
@@ -105,12 +179,12 @@ function ChannelVoiceBubble({ src, durationHint = 0 }) {
       />
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2, height: 18 }}>
-          {WAVE_HEIGHTS.map((h, i) => (
+        <div style={{ display: 'flex', alignItems: 'center', height: 24, width: '100%', justifyContent: 'space-between' }}>
+          {barHeights.map((h, i) => (
             <span
               key={i}
               style={{
-                width: 2, height: h, borderRadius: 1, flexShrink: 0,
+                width: 2.5, height: h, borderRadius: 1, flexShrink: 0,
                 background: i < played ? 'var(--accent)' : 'var(--border-input)',
               }}
             />
