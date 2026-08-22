@@ -164,7 +164,7 @@ export default function SignUp() {
 
       {step === 'email' && (
         <form className="auth-card" onSubmit={handleEmailSubmit}>
-          <div className="auth-logo">Omni</div>
+          <div className="auth-logo">Skepticall</div>
           <div className="auth-title">Create your account</div>
           <input
             className="auth-input"

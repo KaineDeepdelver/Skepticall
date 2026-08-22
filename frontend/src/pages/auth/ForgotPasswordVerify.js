@@ -51,7 +51,7 @@ export default function ForgotPasswordVerify() {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <div className="auth-logo">Omni</div>
+        <div className="auth-logo">Skepticall</div>
         <div className="auth-title">Check your email</div>
         <div className="auth-chip">{email}</div>
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 12px' }}>

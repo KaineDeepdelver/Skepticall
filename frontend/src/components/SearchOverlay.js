@@ -133,7 +133,7 @@ export default function SearchOverlay({ onClose }) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ display: 'block', margin: '0 auto 12px', opacity: 0.3 }}>
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
-              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Search Omni</div>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Search Skepticall</div>
               <div style={{ fontSize: 13 }}>Find people, posts, and videos</div>
             </div>
           ) : searching ? (

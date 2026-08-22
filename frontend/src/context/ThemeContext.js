@@ -157,7 +157,7 @@ function applyAccent(from, to, accent) {
 const THEME_PRESETS = [
   // ── DARK THEMES ──────────────────────────────────────────────────────────
   {
-    id: 'default', label: 'Omni Dark', dark: true,
+    id: 'default', label: 'Skepticall Dark', dark: true,
     swatch: 'linear-gradient(135deg, #0D0D1A 50%, #825AFF)',
     vars: null, // falls back to CSS :root defaults
   },

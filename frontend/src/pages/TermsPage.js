@@ -20,7 +20,7 @@ export default function TermsPage() {
         <div className="legal-body">
 
           <h2>1. Acceptance of Terms</h2>
-          <p>By creating an account or using Omni ("the Service"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Service.</p>
+          <p>By creating an account or using Skepticall ("the Service"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Service.</p>
 
           <h2>2. Your Account</h2>
           <p>You are responsible for maintaining the confidentiality of your credentials. You agree to provide accurate information when registering and to keep it up to date. You may not impersonate any person or entity, or misrepresent your affiliation with any person or entity.</p>
@@ -36,7 +36,7 @@ export default function TermsPage() {
           </ul>
 
           <h2>4. Content Ownership</h2>
-          <p>You retain ownership of content you post. By posting content, you grant Omni a non-exclusive, royalty-free licence to display and distribute that content in connection with the Service.</p>
+          <p>You retain ownership of content you post. By posting content, you grant Skepticall a non-exclusive, royalty-free licence to display and distribute that content in connection with the Service.</p>
 
           <h2>5. Privacy</h2>
           <p>Your use of the Service is also governed by our <a href="/privacy-policy" style={{ color: 'var(--accent)' }}>Privacy Policy</a>, which is incorporated into these Terms by reference.</p>
@@ -48,7 +48,7 @@ export default function TermsPage() {
           <p>The Service is provided "as is" without warranties of any kind. We do not guarantee uninterrupted or error-free operation.</p>
 
           <h2>8. Limitation of Liability</h2>
-          <p>To the maximum extent permitted by law, Omni shall not be liable for any indirect, incidental, or consequential damages arising from your use of the Service.</p>
+          <p>To the maximum extent permitted by law, Skepticall shall not be liable for any indirect, incidental, or consequential damages arising from your use of the Service.</p>
 
           <h2>9. Changes to Terms</h2>
           <p>We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance of the updated Terms.</p>

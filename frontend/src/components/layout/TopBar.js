@@ -171,7 +171,7 @@ export default function TopBar() {
                 onChange={e => setSearchVal(e.target.value)}
                 onFocus={() => setSearchFocus(true)}
                 onBlur={() => setSearchFocus(false)}
-                placeholder="Search Omni…"
+                placeholder="Search Skepticall…"
               />
               {searchVal && (
                 <button

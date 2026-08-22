@@ -29,7 +29,7 @@ export default function ForgotPasswordEmail() {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <div className="auth-logo">Omni</div>
+        <div className="auth-logo">Skepticall</div>
         <div className="auth-title">Forgot password?</div>
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 16px' }}>
           Enter your email and we'll send you a reset code.

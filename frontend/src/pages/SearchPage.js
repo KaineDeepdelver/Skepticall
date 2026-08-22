@@ -431,7 +431,7 @@ export default function SearchPage() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, opacity: 0.15 }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" width="72" height="72"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </div>
-            <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-secondary)' }}>Search Omni</div>
+            <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-secondary)' }}>Search Skepticall</div>
             <div style={{ fontSize: 14 }}>Find posts, people, and videos</div>
           </div>
         )}

@@ -380,7 +380,7 @@ function OmniLogoPreview({ accentId, customFrom, customTo, presets }) {
   const to   = preset?.id === 'custom' ? customTo   : (preset?.to   || '#7c3aed');
   const uid  = React.useId().replace(/:/g, '');
   return (
-    <svg height="32" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+    <svg height="32" viewBox="0 0 240 40" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id={`prev-${uid}`} x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%"   stopColor={from} />
@@ -388,7 +388,8 @@ function OmniLogoPreview({ accentId, customFrom, customTo, presets }) {
         </linearGradient>
       </defs>
       <text x="0" y="32" fontFamily="'Inter','SF Pro Display',system-ui,sans-serif"
-        fontSize="36" fontWeight="800" letterSpacing="-1" fill={`url(#prev-${uid})`}>Omni</text>
+        fontSize="34" fontWeight="800" letterSpacing="-0.5" textLength="236" lengthAdjust="spacingAndGlyphs"
+        fill={`url(#prev-${uid})`}>SKEPTICALL</text>
     </svg>
   );
 }
@@ -907,7 +908,7 @@ export default function Settings() {
         </SettingRow>
         <div style={{ margin: '24px 20px 0', padding: '14px 16px', background: 'var(--bg-hover)', borderRadius: 10, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
           <strong style={{ color: 'var(--text-primary)' }}>How presence works</strong><br />
-          Omni broadcasts your online status when you are active in the app. Toggling "Appear Offline" stops that broadcast immediately without disconnecting you.
+          Skepticall broadcasts your online status when you are active in the app. Toggling "Appear Offline" stops that broadcast immediately without disconnecting you.
         </div>
       </>
     );

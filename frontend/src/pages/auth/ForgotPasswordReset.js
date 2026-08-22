@@ -32,7 +32,7 @@ export default function ForgotPasswordReset() {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <div className="auth-logo">Omni</div>
+        <div className="auth-logo">Skepticall</div>
         <div className="auth-title">Set new password</div>
         <input className="auth-input" type="password" placeholder="New password"
           value={password} onChange={e => setPassword(e.target.value)} autoFocus />
