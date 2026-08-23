@@ -5,7 +5,7 @@ import React, {
 import { useAuth } from './AuthContext';
 import { useWS }   from './WebSocketContext';
 
-const ICE_SERVERS = {
+export const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.relay.metered.ca:80' },
     { urls: 'turn:global.relay.metered.ca:80', username: 'cde1451e34792ad0af312bf7', credential: 'sX0fgEuL7XNIE+Uc' },

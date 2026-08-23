@@ -237,6 +237,21 @@ public class ChannelService {
         return channel;
     }
 
+    /**
+     * Looks a channel up by id alone (no networkId on hand) and verifies the
+     * given user belongs to whichever network owns it. Used by
+     * VoiceChannelWsController, whose payloads only carry a channelId — the
+     * REST endpoints above always have networkId in the URL and go through
+     * requireChannel(network, channelId) instead, which additionally checks
+     * the channel wasn't moved to a different network out from under the URL.
+     */
+    public Channel requireChannelForMember(Long channelId, Long userId) {
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new BusinessException(ErrorType.NOT_FOUND, "Channel not found [channelId=" + channelId + "]"));
+        networkService.requireMember(channel.getNetwork(), userId);
+        return channel;
+    }
+
     private ChannelMessage requireMessage(Long messageId) {
         return channelMessageRepository.findById(messageId)
                 .orElseThrow(() -> new BusinessException(ErrorType.NOT_FOUND, "Message not found [messageId=" + messageId + "]"));

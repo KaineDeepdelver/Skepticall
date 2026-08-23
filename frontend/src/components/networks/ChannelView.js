@@ -3,6 +3,7 @@ import { networkApi, resolveUrl } from '../../services/api';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import UserAvatar from '../UserAvatar';
 import NetworkUserPopover from './NetworkUserPopover';
+import VoiceChannelRoom from './VoiceChannelRoom';
 
 function formatTime(iso) {
   try {
@@ -413,12 +414,7 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
   }
 
   if (channel.type === 'VOICE') {
-    return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: 'var(--text-muted)' }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="34" height="34"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-        <div style={{ fontSize: 13 }}>Voice channels aren't wired up yet — coming in a later pass.</div>
-      </div>
-    );
+    return <VoiceChannelRoom networkId={networkId} channel={channel} currentUserId={currentUserId} />;
   }
 
   async function handleSend() {
