@@ -41,6 +41,12 @@ export default function VoiceChannelRoom({ networkId, channel, currentUserId }) 
   const remoteStreamsRef = useRef({});  // userId -> MediaStream
   const iceBufRef = useRef({});         // userId -> candidate[] buffered before remoteDescription is set
   const audioRefs = useRef({});         // userId -> <audio> element
+  // Synchronous (not state) guard against a double-fire of handleJoin —
+  // matters because React StrictMode's dev-mode double-effect-invocation
+  // runs mount→cleanup→mount back to back, faster than getUserMedia's
+  // promise can resolve, so state-based checks (joined/connecting) alone
+  // wouldn't have committed yet by the time the second call happens.
+  const joinInFlightRef = useRef(false);
 
   function buildPeer(remoteUserId) {
     const pc = new RTCPeerConnection(ICE_SERVERS);
@@ -181,7 +187,8 @@ export default function VoiceChannelRoom({ networkId, channel, currentUserId }) 
   }, [channel?.id]);
 
   async function handleJoin() {
-    if (joined || connecting) return;
+    if (joined || connecting || joinInFlightRef.current) return;
+    joinInFlightRef.current = true;
     setConnecting(true); setError('');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -194,8 +201,18 @@ export default function VoiceChannelRoom({ networkId, channel, currentUserId }) 
       setError('Could not access microphone.');
     } finally {
       setConnecting(false);
+      joinInFlightRef.current = false;
     }
   }
+
+  // Auto-join the moment this channel is opened — clicking a voice channel
+  // should behave like Discord's "click to join," not require a second,
+  // separate confirmation click. If mic permission is denied, the button
+  // below still appears so the person can retry after fixing permissions.
+  useEffect(() => {
+    if (channel?.id) handleJoin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channel?.id]);
 
   function handleLeave() {
     publish('/app/voice.leave', { channelId: channel.id });
@@ -267,17 +284,19 @@ export default function VoiceChannelRoom({ networkId, channel, currentUserId }) 
       {error && <div style={{ fontSize: 12.5, color: '#e06060' }}>{error}</div>}
 
       {!selfInRoom ? (
-        <button
-          onClick={handleJoin}
-          disabled={connecting}
-          style={{
-            padding: '10px 28px', borderRadius: 24, border: 'none', background: 'var(--accent)',
-            color: '#fff', fontSize: 14, fontWeight: 600, cursor: connecting ? 'default' : 'pointer',
-            opacity: connecting ? 0.7 : 1,
-          }}
-        >
-          {connecting ? 'Joining…' : 'Join Voice'}
-        </button>
+        connecting ? (
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Joining…</div>
+        ) : (
+          <button
+            onClick={handleJoin}
+            style={{
+              padding: '10px 28px', borderRadius: 24, border: 'none', background: 'var(--accent)',
+              color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            {error ? 'Retry Join' : 'Join Voice'}
+          </button>
+        )
       ) : (
         <div style={{ display: 'flex', gap: 10 }}>
           <button
