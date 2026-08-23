@@ -158,7 +158,6 @@ export default function VoiceChannelRoom({ networkId, channel, currentUserId }) 
       case 'VOICE_ICE':    if (String(msg.targetUserId) === String(currentUserId)) handleIce(msg.senderId, msg.candidate); break;
       default: break;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserId]);
 
   const { publish, subscribeToChannel } = useWebSocket(currentUserId, handleWsMessage);
@@ -183,7 +182,6 @@ export default function VoiceChannelRoom({ networkId, channel, currentUserId }) 
         cleanupLocal();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channel?.id]);
 
   async function handleJoin() {
@@ -211,7 +209,7 @@ export default function VoiceChannelRoom({ networkId, channel, currentUserId }) 
   // below still appears so the person can retry after fixing permissions.
   useEffect(() => {
     if (channel?.id) handleJoin();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [channel?.id]);
 
   function handleLeave() {
