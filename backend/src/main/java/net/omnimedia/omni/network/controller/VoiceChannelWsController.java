@@ -112,7 +112,10 @@ public class VoiceChannelWsController {
         Map<String, Object> out = new HashMap<>(payload);
         out.put("_type", type);
         out.put("senderId", userId);
-        messaging.convertAndSend("/topic/channel/" + channelId, out);
+        // Cast to Object — a raw Map<String,Object> here is ambiguous
+        // between convertAndSend(dest, payload) and the convertAndSend(dest,
+        // payload, headers-as-Map<String,Object>) overload.
+        messaging.convertAndSend("/topic/channel/" + channelId, (Object) out);
     }
 
     // == Cleanup on ungraceful disconnect (tab closed, network drop) — ===
@@ -134,7 +137,7 @@ public class VoiceChannelWsController {
         msg.put("_type", "VOICE_ROSTER");
         msg.put("channelId", channelId);
         msg.put("participants", roster);
-        messaging.convertAndSend("/topic/channel/" + channelId, msg);
+        messaging.convertAndSend("/topic/channel/" + channelId, (Object) msg);
     }
 
     private static Long asLong(Object o) {
