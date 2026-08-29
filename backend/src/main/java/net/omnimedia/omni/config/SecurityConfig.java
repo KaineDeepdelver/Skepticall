@@ -77,7 +77,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/users/*").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/users/by-username/**").permitAll()
 
-                        .requestMatchers("/ws/**", "/uploads/**").permitAll()
+                        .requestMatchers("/ws/**", "/ws-native/**", "/uploads/**").permitAll()
 
                         .requestMatchers("/admin/**").hasRole("ADMIN")
 
