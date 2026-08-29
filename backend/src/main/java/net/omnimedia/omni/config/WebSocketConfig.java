@@ -19,7 +19,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*") // important for dev
-                .withSockJS(); // 👈 REQUIRED for SockJS
+                .withSockJS(); // 👈 REQUIRED for SockJS (web client)
+
+        // Native clients (React Native, no SockJS available in Hermes)
+        // connect here directly with a plain WebSocket — no SockJS
+        // handshake/session framing involved. Hitting the SockJS
+        // endpoint's raw `/ws/websocket` shortcut instead of this looked
+        // like it worked (the WebSocket itself opens fine) but never
+        // actually got wired into the STOMP sub-protocol handler —
+        // CONNECT frames sent that way were silently dropped, which is
+        // why mobile could never complete a STOMP handshake while web
+        // (going through real SockJS negotiation) worked fine.
+        registry.addEndpoint("/ws-native")
+                .setAllowedOriginPatterns("*");
     }
 
     @Override
