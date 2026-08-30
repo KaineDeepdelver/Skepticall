@@ -730,7 +730,7 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 .bubble-file svg { width: 18px; height: 18px; flex-shrink: 0; }
 
 /* Voice bubble */
-.bubble-voice { display: flex; align-items: center; gap: 8px; padding: 2px 0; width: 220px; }
+.bubble-voice { display: flex; align-items: center; gap: 6px; padding: 2px 0; width: 280px; }
 .voice-play-btn {
   width: 36px; height: 36px; border-radius: 50%;
   background: var(--accent-glow); border: 1.5px solid var(--accent);
@@ -747,6 +747,16 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 .bubble-row.sent .voice-bar.played { background: color-mix(in srgb, var(--bubble-out-text) 90%, transparent); }
 .voice-duration { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; align-self: flex-start; line-height: 1; }
 .bubble-row.sent .voice-duration { color: var(--time-out); }
+.voice-speed-btn {
+  border: none; background: var(--bg-hover); color: var(--text-secondary);
+  border-radius: 6px; padding: 4px 7px; font-size: 11px; font-weight: 600; flex-shrink: 0; cursor: pointer;
+}
+.voice-pitch-btn {
+  border: none; border-radius: 6px; width: 24px; height: 24px; padding: 0; flex-shrink: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-hover); color: var(--text-muted);
+}
+.voice-pitch-btn.active { background: var(--accent-glow); color: var(--accent); }
 
 /* Context menu */
 .bubble-menu {
