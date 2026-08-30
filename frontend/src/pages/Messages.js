@@ -53,11 +53,90 @@ function highlight(text, query) {
     '<mark style="background:transparent;color:var(--accent)">$1</mark>');
 }
 
-function WaveformBars({ played, total = 28 }) {
-  const heights = [3, 5, 8, 6, 10, 7, 12, 9, 6, 11, 8, 5, 10, 13, 9, 7, 11, 6, 8, 10, 7, 5, 9, 12, 8, 6, 10, 4];
-  return (<div className="voice-waveform">{heights.slice(0, total)
-    .map((h, i) =>
-      (<span key={i} className={`voice-bar${i < played ? ' played' : ''}`} style={{ height: h }} />))}</div>);
+// Ported from ChannelView.js's voice-note implementation, which captures
+// real amplitude data at record time instead of rendering a fixed
+// decorative shape for every voice note — see the full rationale on
+// ChannelVoiceBubble below.
+const SPEED_STEPS = [1, 1.25, 1.5, 2, 0.5, 0.75];
+const WAVE_BAR_COUNT = 28; // matches this file's previous fixed-bar count
+
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) || 1;
+}
+function seededPeaks(seed, count) {
+  let s = seed;
+  const next = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  return Array.from({ length: count }, () => 0.25 + next() * 0.65);
+}
+function parsePeaks(json) {
+  if (!json) return null;
+  try {
+    const arr = JSON.parse(json);
+    return Array.isArray(arr) && arr.length > 0 ? arr : null;
+  } catch {
+    return null;
+  }
+}
+function sampleAmplitudeOnce(analyser, dataBuf) {
+  analyser.getByteTimeDomainData(dataBuf);
+  let peak = 0;
+  for (let i = 0; i < dataBuf.length; i++) {
+    const v = Math.abs(dataBuf[i] - 128) / 128;
+    if (v > peak) peak = v;
+  }
+  return peak;
+}
+function downsamplePeaks(raw, count) {
+  if (!raw || raw.length === 0) return null;
+  const blockSize = Math.max(1, Math.ceil(raw.length / count));
+  const peaks = [];
+  for (let i = 0; i < count; i++) {
+    const start = i * blockSize;
+    let max = 0;
+    for (let j = 0; j < blockSize && start + j < raw.length; j++) {
+      if (raw[start + j] > max) max = raw[start + j];
+    }
+    peaks.push(start < raw.length ? max : (peaks[peaks.length - 1] ?? 0));
+  }
+  const peakMax = Math.max(...peaks, 0.02);
+  return peaks.map(p => Math.round((p / peakMax) * 1000) / 1000);
+}
+const waveformCache = new Map();
+function computeWaveform(src) {
+  if (waveformCache.has(src)) return waveformCache.get(src);
+  const promise = (async () => {
+    try {
+      const res = await fetch(src);
+      const arrayBuf = await res.arrayBuffer();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+      const audioBuf = await new Promise((resolve, reject) => {
+        const maybePromise = ctx.decodeAudioData(arrayBuf, resolve, reject);
+        if (maybePromise && typeof maybePromise.then === 'function') maybePromise.then(resolve, reject);
+      });
+      const raw = audioBuf.getChannelData(0);
+      const blockSize = Math.max(1, Math.floor(raw.length / WAVE_BAR_COUNT));
+      const peaks = [];
+      for (let i = 0; i < WAVE_BAR_COUNT; i++) {
+        const start = i * blockSize;
+        let max = 0;
+        for (let j = 0; j < blockSize && start + j < raw.length; j++) {
+          const v = Math.abs(raw[start + j]);
+          if (v > max) max = v;
+        }
+        peaks.push(max);
+      }
+      const peakMax = Math.max(...peaks, 0.02);
+      if (ctx.close) ctx.close();
+      return peaks.map(p => p / peakMax);
+    } catch {
+      return null;
+    }
+  })();
+  waveformCache.set(src, promise);
+  return promise;
 }
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 769px)').matches);
@@ -110,38 +189,87 @@ function Tick({ status }) {
   );
 }
 
-/* ── VOICE BUBBLE ── */
-function VoiceBubble({ src, durationHint = 0 }) {
+/* ── VOICE BUBBLE ──
+   Waveform accuracy, in priority order (see ChannelVoiceBubble in
+   ChannelView.js, where this was ported from, for the full rationale):
+    1. waveformPeaks — real amplitude captured live at record time.
+    2. computeWaveform(src) — best-effort decode of the uploaded file,
+       for voice notes sent before waveformPeaks existed.
+    3. A deterministic per-message placeholder while (2) is in flight
+       or fails. */
+function VoiceBubble({ src, durationHint = 0, waveformPeaks }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(durationHint || 0);
-  const total = 28;
+  const [speedIdx, setSpeedIdx] = useState(0);
+  const [pitchSynced, setPitchSynced] = useState(true);
+  const [peaks, setPeaks] = useState(() => parsePeaks(waveformPeaks) || seededPeaks(hashString(src || ''), WAVE_BAR_COUNT));
+  const total = WAVE_BAR_COUNT;
+
+  useEffect(() => {
+    const real = parsePeaks(waveformPeaks);
+    if (real) { setPeaks(real); return; }
+    let cancelled = false;
+    setPeaks(seededPeaks(hashString(src || ''), WAVE_BAR_COUNT));
+    if (src) {
+      computeWaveform(src).then(decoded => {
+        if (!cancelled && decoded) setPeaks(decoded);
+      });
+    }
+    return () => { cancelled = true; };
+  }, [src, waveformPeaks]);
+
   function trySetDur(d) { if (d && isFinite(d) && d > 0) setDuration(d); }
   function handleMeta(e) { trySetDur(e.target.duration); }
   function handleDurationChange(e) { trySetDur(e.target.duration); }
   function handleTimeUpdate(e) { setCurrent(e.target.currentTime); trySetDur(e.target.duration); }
+
+  function applyAudioSettings(a, idx = speedIdx, synced = pitchSynced) {
+    if (!a) return;
+    a.playbackRate = SPEED_STEPS[idx];
+    const preserve = !synced;
+    a.preservesPitch = preserve;
+    a.mozPreservesPitch = preserve;
+    a.webkitPreservesPitch = preserve;
+  }
+  useEffect(() => { applyAudioSettings(audioRef.current); }, [speedIdx, pitchSynced]);
+
   function toggle() {
     const a = audioRef.current; if (!a) return;
     document.querySelectorAll('audio').forEach(x => { if (x !== a) x.pause(); });
     if (a.paused) {
-      // Force duration load if not yet known
       if (!(duration > 0) && a.readyState < 1) { a.load(); }
+      applyAudioSettings(a);
       a.play().then(() => setPlaying(true)).catch(() => { });
     } else { a.pause(); setPlaying(false); }
   }
-  // Use durationHint as fallback display when audio metadata not yet loaded
+  function cycleSpeed(e) { e.stopPropagation(); setSpeedIdx(i => (i + 1) % SPEED_STEPS.length); }
+  function togglePitchSync(e) { e.stopPropagation(); setPitchSynced(s => !s); }
+
   const displayDur = duration > 0 ? duration : (durationHint > 0 ? durationHint : null);
   const played = displayDur && displayDur > 0 ? Math.round((current / displayDur) * total) : 0;
   const durLabel = playing ? fmtDur(current) : (displayDur ? fmtDur(displayDur) : null);
+  const speedLabel = `${SPEED_STEPS[speedIdx]}x`;
+
   return (
     <div className="bubble-voice">
       <button className="voice-play-btn" onClick={toggle}>{playing ? <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg> : <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>}</button>
       <audio ref={audioRef} src={src} preload="metadata" onLoadedMetadata={handleMeta} onDurationChange={handleDurationChange} onTimeUpdate={handleTimeUpdate} onEnded={() => { setPlaying(false); setCurrent(0); }} />
       <div className="voice-wave-wrap">
-        <WaveformBars played={played} />
+        <div className="voice-waveform">{peaks.map((p, i) => (
+          <span key={i} className={`voice-bar${i < played ? ' played' : ''}`} style={{ height: Math.round(3 + p * 17) }} />
+        ))}</div>
         {durLabel && <span className="voice-duration">{durLabel}</span>}
       </div>
+      <button className="voice-speed-btn" onClick={cycleSpeed} title="Playback speed — click to change">{speedLabel}</button>
+      <button
+        className={`voice-pitch-btn${pitchSynced ? ' active' : ''}`}
+        onClick={togglePitchSync}
+        title={pitchSynced ? 'Pitch synced to speed (chipmunk/beast) — click to keep pitch normal' : 'Pitch stays normal — click to sync pitch with speed'}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2 5 4-16 3 11 2-5h4" /></svg>
+      </button>
     </div>
   );
 }
@@ -203,7 +331,7 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
   if (isDeleted) { inner = <><span className="bubble-deleted">⊘ This message was deleted</span><span className="bubble-gap short" /><span className="bubble-footer"><span className="bubble-time">{timeStr}</span></span></>; }
   else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt="img" loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
   else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}<svg viewBox="0 0 24 24" fill="white" width="20" height="20" style={{ marginLeft: 4 }}><polygon points="5,3 19,12 5,21" /></svg></span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
-  else if (msgType === 'VOICE') { inner = <div className="bubble-voice-wrap">{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<VoiceBubble src={fileSrc} durationHint={msg.durationSeconds ? Number(msg.durationSeconds) : 0} /><div className="bubble-voice-footer">{msg.edited && <span className="bubble-edited">edited ·</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</div></div>; }
+  else if (msgType === 'VOICE') { inner = <div className="bubble-voice-wrap">{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<VoiceBubble src={fileSrc} durationHint={msg.durationSeconds ? Number(msg.durationSeconds) : 0} waveformPeaks={msg.waveformPeaks} /><div className="bubble-voice-footer">{msg.edited && <span className="bubble-edited">edited ·</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</div></div>; }
   else if (msgType === 'FILE') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<a className="bubble-file" href={fileSrc} target="_blank" rel="noreferrer" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg><span>{fileSrc?.split('/').pop()}</span></a><span className="bubble-inner" style={{ display: 'block', minHeight: 4 }} />{footer}</>; }
   else if (msgType === 'CALL') { inner = <span className="bubble-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.39 18a19.5 19.5 0 0 1-3.39-3.39A19.79 19.79 0 0 1 2.12 6.18 2 2 0 0 1 4.11 4h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 11.91a16 16 0 0 0 4 4l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 20 16z" /></svg>{msg.content}{footer}</span>; }
   else {
@@ -726,6 +854,14 @@ export default function Messages() {
   const fileInputRef = useRef(null);
   const recorderRef = useRef(null);
   const recTimerRef = useRef(null);
+  // Live-amplitude capture while recording — an AnalyserNode on the mic
+  // stream, sampled a few times a second, ported from ChannelView.js's
+  // voice notes so DM voice notes get a real waveform too instead of a
+  // decorative placeholder.
+  const analyserRef = useRef(null);
+  const ampCtxRef = useRef(null);
+  const ampHistoryRef = useRef([]);
+  const ampTimerRef = useRef(null);
   const searchTimerRef = useRef(null);
 
   /* ── Call context ── */
@@ -1083,6 +1219,14 @@ export default function Messages() {
   }
 
   /* ── Voice recording ── */
+  function startAmpSampling() {
+    const analyser = analyserRef.current;
+    if (!analyser) return;
+    const data = new Uint8Array(analyser.fftSize);
+    ampTimerRef.current = setInterval(() => {
+      ampHistoryRef.current.push(sampleAmplitudeOnce(analyser, data));
+    }, 100);
+  }
   async function startRecording() {
     if (recording) return;
     try {
@@ -1092,9 +1236,29 @@ export default function Messages() {
       const mr = new MediaRecorder(stream, { mimeType: mime });
       mr.ondataavailable = ev => { if (ev.data.size > 0) chunks.push(ev.data); };
       mr._durationSnapshot = 0;
+
+      ampHistoryRef.current = [];
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const actx = new AudioCtx();
+        const srcNode = actx.createMediaStreamSource(stream);
+        const analyser = actx.createAnalyser();
+        analyser.fftSize = 1024;
+        srcNode.connect(analyser);
+        ampCtxRef.current = actx;
+        analyserRef.current = analyser;
+        startAmpSampling();
+      } catch {
+        // Best-effort — upload just proceeds without waveformPeaks and the
+        // bubble falls back to its other strategies.
+      }
+
       mr.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
+        clearInterval(ampTimerRef.current);
+        if (ampCtxRef.current && ampCtxRef.current.close) ampCtxRef.current.close();
         const capturedDuration = mr._durationSnapshot;
+        const waveformPeaks = downsamplePeaks(ampHistoryRef.current, WAVE_BAR_COUNT);
         setRecording(false); setPaused(false); setRecSeconds(0); clearInterval(recTimerRef.current);
         if (!mr._cancelled && chunks.length) {
           const blob = new Blob(chunks, { type: mime });
@@ -1107,6 +1271,7 @@ export default function Messages() {
               fd.append('receiverId', activeConvo?.userId);
             }
             fd.append('type', 'VOICE'); fd.append('durationSeconds', String(capturedDuration || 0));
+            if (waveformPeaks) fd.append('waveformPeaks', JSON.stringify(waveformPeaks));
             if (replyingTo) { fd.append('replyToId', replyingTo.id); fd.append('replyPreview', replyingTo.content?.slice(0, 200)); }
             try { await api.uploadMessage(fd); setReplyingTo(null); } catch { }
           }
@@ -1119,12 +1284,20 @@ export default function Messages() {
   }
   function pauseRecording() {
     const mr = recorderRef.current; if (!mr) return;
-    if (mr.state === 'recording') { mr.pause(); setPaused(true); clearInterval(recTimerRef.current); }
-    else if (mr.state === 'paused') { mr.resume(); setPaused(false); let s = recSeconds; recTimerRef.current = setInterval(() => { s++; setRecSeconds(s); mr._durationSnapshot = s; if (s >= 300) sendRecording(); }, 1000); }
+    if (mr.state === 'recording') {
+      mr.pause(); setPaused(true);
+      clearInterval(recTimerRef.current);
+      clearInterval(ampTimerRef.current);
+    } else if (mr.state === 'paused') {
+      mr.resume(); setPaused(false);
+      let s = recSeconds;
+      recTimerRef.current = setInterval(() => { s++; setRecSeconds(s); mr._durationSnapshot = s; if (s >= 300) sendRecording(); }, 1000);
+      startAmpSampling();
+    }
   }
   function sendRecording() { clearInterval(recTimerRef.current); const mr = recorderRef.current; if (!mr || (mr.state !== 'recording' && mr.state !== 'paused')) return; mr.stop(); }
   function cancelRecording() {
-    clearInterval(recTimerRef.current); const mr = recorderRef.current; if (!mr) return;
+    clearInterval(recTimerRef.current); clearInterval(ampTimerRef.current); const mr = recorderRef.current; if (!mr) return;
     mr._cancelled = true;
     if (mr.state === 'recording' || mr.state === 'paused') mr.stop();
     else { setRecording(false); setPaused(false); setRecSeconds(0); }
