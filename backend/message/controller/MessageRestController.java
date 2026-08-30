@@ -26,6 +26,8 @@ public class MessageRestController {
     @Autowired private SimpMessagingTemplate messagingTemplate;
     @Autowired private GroupService groupService;
     @Autowired private R2StorageService r2Storage;
+    @Autowired private net.omnimedia.omni.media.util.VideoTrimService videoTrimService;
+    @Autowired private net.omnimedia.omni.media.util.ImageMarkupService imageMarkupService;
 
     private Long callerId(HttpServletRequest req) {
         return (Long) req.getAttribute("authenticatedUserId");
@@ -78,13 +80,27 @@ public class MessageRestController {
             @RequestParam(required = false) String replyPreview,
             @RequestParam(required = false) Integer durationSeconds,
             @RequestParam(required = false) String waveformPeaks,
+            @RequestParam(required = false) String strokes,
+            @RequestParam(required = false) Double trimStart,
+            @RequestParam(required = false) Double trimEnd,
             HttpServletRequest req
     ) {
         Long senderId = callerId(req);
         if (senderId == null) return ResponseEntity.status(401).build();
 
         try {
-            String fileUrl = r2Storage.upload(file, type.toLowerCase());
+            String fileUrl;
+            if ("VIDEO".equalsIgnoreCase(type) && trimStart != null && trimEnd != null) {
+                String orig = file.getOriginalFilename();
+                String ext = (orig != null && orig.contains(".")) ? orig.substring(orig.lastIndexOf('.') + 1) : "mp4";
+                byte[] trimmed = videoTrimService.trim(file.getBytes(), ext, trimStart, trimEnd);
+                fileUrl = r2Storage.uploadBytes(trimmed, "video/mp4", "trimmed.mp4", type.toLowerCase());
+            } else if ("IMAGE".equalsIgnoreCase(type) && strokes != null && !strokes.isBlank()) {
+                byte[] marked = imageMarkupService.applyStrokes(file.getBytes(), strokes);
+                fileUrl = r2Storage.uploadBytes(marked, "image/png", "marked.png", type.toLowerCase());
+            } else {
+                fileUrl = r2Storage.upload(file, type.toLowerCase());
+            }
 
             // ── Group upload ──
             if (groupId != null) {
