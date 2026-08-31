@@ -720,7 +720,7 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
    Thin it to a single equal value on every side instead, so the frame
    around an attachment is uniform; .bubble is inline-block so it already
    shrinks to the frame's width, keeping the attachment centered. */
-.bubble.bubble-has-media { padding: 6px; }
+.bubble.bubble-has-media { padding: 0; }
 .bubble.bubble-has-media .bubble-inner { display: block; padding: 6px 8px 2px; }
 /* Media bubbles drop the solid sent/received fill entirely — that fill is
    what a text bubble needs as a background, but behind a photo/video it
