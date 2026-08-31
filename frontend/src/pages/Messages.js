@@ -380,14 +380,14 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
             )}
             {senderName}
           </span>
-          <div className={`bubble${isDeleted ? ' deleted' : ''}${isSelected ? ' bubble-selected' : ''}`}
+          <div className={`bubble${isDeleted ? ' deleted' : ''}${isSelected ? ' bubble-selected' : ''}${isMedia ? ' bubble-has-media' : ''}`}
             onContextMenu={selectMode || isDeleted ? undefined : onContextMenu}
             style={isSelected ? { outline: '2px solid var(--accent)', outlineOffset: 2 } : undefined}>
             {inner}
           </div>
         </div>
       ) : (
-        <div className={`bubble${isDeleted ? ' deleted' : ''}${isSelected ? ' bubble-selected' : ''}`}
+        <div className={`bubble${isDeleted ? ' deleted' : ''}${isSelected ? ' bubble-selected' : ''}${isMedia ? ' bubble-has-media' : ''}`}
           onContextMenu={selectMode || isDeleted ? undefined : onContextMenu}
           onClick={selectMode ? e => { e.stopPropagation(); onSelect?.(msg.id); } : undefined}
           style={isSelected ? { outline: '2px solid var(--accent)', outlineOffset: 2 } : undefined}>
