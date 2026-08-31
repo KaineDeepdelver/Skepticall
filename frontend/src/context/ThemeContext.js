@@ -386,12 +386,25 @@ function applyThemePreset(preset, setThemeFn) {
   if (setThemeFn) setThemeFn(preset.dark === false ? 'light' : 'dark');
 }
 
-export { ACCENT_PRESETS, THEME_ACCENTS, THEME_DEFAULT_ACCENT, THEME_PRESETS };
+// Bubble shape presets — keyed by id, applied as [data-bubble-style] on <html>
+const BUBBLE_STYLES = [
+  { id: 'classic', label: 'Classic' },
+  { id: 'telegram-tail', label: 'Telegram tail' },
+];
+
+export { ACCENT_PRESETS, THEME_ACCENTS, THEME_DEFAULT_ACCENT, THEME_PRESETS, BUBBLE_STYLES };
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => localStorage.getItem('omni_theme') || 'dark');
   const [accentId, setAccentId] = useState(() => localStorage.getItem('omni_accent_id') || 'blue-violet');
   const [themePresetId, setThemePresetId] = useState(() => localStorage.getItem('omni_theme_preset') || 'default');
+  const [bubbleStyleId, setBubbleStyleId] = useState(() => localStorage.getItem('omni_bubble_style') || 'classic');
+
+  // Apply bubble style
+  useEffect(() => {
+    document.documentElement.setAttribute('data-bubble-style', bubbleStyleId);
+    localStorage.setItem('omni_bubble_style', bubbleStyleId);
+  }, [bubbleStyleId]);
 
   // Apply theme
   useEffect(() => {
@@ -411,8 +424,9 @@ export function ThemeProvider({ children }) {
   // Sync from other tabs
   useEffect(() => {
     const handler = (e) => {
-      if (e.key === 'omni_theme'     && e.newValue) setTheme(e.newValue);
-      if (e.key === 'omni_accent_id' && e.newValue) setAccentId(e.newValue);
+      if (e.key === 'omni_theme'        && e.newValue) setTheme(e.newValue);
+      if (e.key === 'omni_accent_id'    && e.newValue) setAccentId(e.newValue);
+      if (e.key === 'omni_bubble_style' && e.newValue) setBubbleStyleId(e.newValue);
     };
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
@@ -461,12 +475,13 @@ export function ThemeProvider({ children }) {
   };
 
   const setThemePreset = (id) => setThemePresetId(id);
+  const setBubbleStyle = (id) => setBubbleStyleId(id);
 
   // Accents available for the current theme
   const currentAccents = THEME_ACCENTS[themePresetId] || THEME_ACCENTS['default'];
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, accentId, setAccent, ACCENT_PRESETS, currentAccents, THEME_ACCENTS, themePresetId, setThemePreset, THEME_PRESETS }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, accentId, setAccent, ACCENT_PRESETS, currentAccents, THEME_ACCENTS, themePresetId, setThemePreset, THEME_PRESETS, bubbleStyleId, setBubbleStyle, BUBBLE_STYLES }}>
       {children}
     </ThemeContext.Provider>
   );

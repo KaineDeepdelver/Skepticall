@@ -706,6 +706,72 @@ strong, b { font-weight: 700; }
 .bubble-row.received .bubble-reply-quote { background: rgba(130,90,255,0.10); color: var(--text-secondary); border-color: var(--accent); }
 .bubble-row.sent     .bubble-reply-quote { background: rgba(0,0,0,0.2); color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.6); }
 
+/* ── Telegram-tail bubble style (opt-in via [data-bubble-style]) ─────────── */
+[data-bubble-style="telegram-tail"] .bubble-row.sent .bubble {
+  border-radius: 14px 4px 14px 14px;
+}
+[data-bubble-style="telegram-tail"] .bubble-row.received .bubble {
+  border-radius: 4px 14px 14px 14px;
+}
+[data-bubble-style="telegram-tail"] .bubble-row.sent .bubble::before {
+  content: '';
+  position: absolute;
+  right: -6px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px 6px 0 0;
+  border-color: var(--accent-to, var(--accent)) transparent transparent transparent;
+}
+[data-bubble-style="telegram-tail"] .bubble-row.received .bubble::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 6px 8px 0;
+  border-color: transparent var(--bubble-in-bg) transparent transparent;
+}
+[data-bubble-style="telegram-tail"] .bubble-row.sent .bubble.deleted::before,
+[data-bubble-style="telegram-tail"] .bubble-row.received .bubble.deleted::before {
+  display: none;
+}
+/* Attachment frames follow the same near-corner cut so images/files/voice
+   notes read as one family with text bubbles instead of staying square. */
+[data-bubble-style="telegram-tail"] .bubble-row.sent .bubble-media-frame {
+  border-radius: 10px 3px 10px 10px;
+}
+[data-bubble-style="telegram-tail"] .bubble-row.received .bubble-media-frame {
+  border-radius: 3px 10px 10px 10px;
+}
+
+/* ── Fresh-message pop-in + typewriter caret ──────────────────────────────── */
+@keyframes bubblePopIn {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.bubble.bubble-fresh {
+  animation: bubblePopIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes typingCaretBlink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+.typing-caret {
+  display: inline-block;
+  width: 2px;
+  height: 13px;
+  margin-left: 1px;
+  vertical-align: -2px;
+  background: currentColor;
+  opacity: 0.7;
+  animation: typingCaretBlink 0.8s step-start infinite;
+}
+
 /* Media */
 .bubble-media-frame {
   position: relative; display: inline-block;

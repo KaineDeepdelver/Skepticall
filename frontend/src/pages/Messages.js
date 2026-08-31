@@ -294,6 +294,44 @@ function renderText(text) {
   });
 }
 
+/* ── Typewriter reveal ──────────────────────────────────────────────────────
+   Plays once when a bubble first mounts with _justArrived set (a message
+   that just arrived live, sent or received — not one loaded from history).
+   If the underlying text changes later (an edit), it just snaps to the new
+   text instead of re-typing. */
+function TypewriterText({ text, speed = 22 }) {
+  const [count, setCount] = useState(0);
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    if (!text) { setCount(0); doneRef.current = true; return; }
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setCount(i);
+      if (i >= text.length) {
+        clearInterval(id);
+        doneRef.current = true;
+      }
+    }, speed);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (doneRef.current) setCount(text ? text.length : 0);
+  }, [text]);
+
+  const revealed = text ? text.slice(0, count) : '';
+  const finished = !text || count >= text.length;
+  return (
+    <>
+      {renderText(revealed)}
+      {!finished && <span className="typing-caret" aria-hidden="true" />}
+    </>
+  );
+}
+
 /* ── BUBBLE ── */
 function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMode, isSelected, onSelect }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -329,8 +367,8 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
 
   let inner;
   if (isDeleted) { inner = <><span className="bubble-deleted">⊘ This message was deleted</span><span className="bubble-gap short" /><span className="bubble-footer"><span className="bubble-time">{timeStr}</span></span></>; }
-  else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt="img" loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
-  else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}<svg viewBox="0 0 24 24" fill="white" width="20" height="20" style={{ marginLeft: 4 }}><polygon points="5,3 19,12 5,21" /></svg></span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
+  else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt="img" loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg._justArrived ? <TypewriterText text={msg.content} /> : msg.content}</span>}</>; }
+  else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}<svg viewBox="0 0 24 24" fill="white" width="20" height="20" style={{ marginLeft: 4 }}><polygon points="5,3 19,12 5,21" /></svg></span></div>{msg.content && <span className="bubble-inner">{msg._justArrived ? <TypewriterText text={msg.content} /> : msg.content}</span>}</>; }
   else if (msgType === 'VOICE') { inner = <div className="bubble-voice-wrap">{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<VoiceBubble src={fileSrc} durationHint={msg.durationSeconds ? Number(msg.durationSeconds) : 0} waveformPeaks={msg.waveformPeaks} /><div className="bubble-voice-footer">{msg.edited && <span className="bubble-edited">edited ·</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</div></div>; }
   else if (msgType === 'FILE') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<a className="bubble-file" href={fileSrc} target="_blank" rel="noreferrer" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg><span>{fileSrc?.split('/').pop()}</span></a><span className="bubble-inner" style={{ display: 'block', minHeight: 4 }} />{footer}</>; }
   else if (msgType === 'CALL') { inner = <span className="bubble-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.39 18a19.5 19.5 0 0 1-3.39-3.39A19.79 19.79 0 0 1 2.12 6.18 2 2 0 0 1 4.11 4h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 11.91a16 16 0 0 0 4 4l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 20 16z" /></svg>{msg.content}{footer}</span>; }
@@ -340,7 +378,7 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
     inner = (
       <>
         {msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}
-        <span className="bubble-inner">{renderText(msg.content)}{gap}</span>
+        <span className="bubble-inner">{msg._justArrived ? <TypewriterText text={msg.content} /> : renderText(msg.content)}{gap}</span>
         {linkUrl && <LinkPreview url={linkUrl} isSent={isSent} />}
         {footer}
       </>
@@ -380,14 +418,14 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
             )}
             {senderName}
           </span>
-          <div className={`bubble${isDeleted ? ' deleted' : ''}${isSelected ? ' bubble-selected' : ''}${isMedia ? ' bubble-has-media' : ''}`}
+          <div className={`bubble${isDeleted ? ' deleted' : ''}${isSelected ? ' bubble-selected' : ''}${isMedia ? ' bubble-has-media' : ''}${msg._justArrived ? ' bubble-fresh' : ''}`}
             onContextMenu={selectMode || isDeleted ? undefined : onContextMenu}
             style={isSelected ? { outline: '2px solid var(--accent)', outlineOffset: 2 } : undefined}>
             {inner}
           </div>
         </div>
       ) : (
-        <div className={`bubble${isDeleted ? ' deleted' : ''}${isSelected ? ' bubble-selected' : ''}${isMedia ? ' bubble-has-media' : ''}`}
+        <div className={`bubble${isDeleted ? ' deleted' : ''}${isSelected ? ' bubble-selected' : ''}${isMedia ? ' bubble-has-media' : ''}${msg._justArrived ? ' bubble-fresh' : ''}`}
           onContextMenu={selectMode || isDeleted ? undefined : onContextMenu}
           onClick={selectMode ? e => { e.stopPropagation(); onSelect?.(msg.id); } : undefined}
           style={isSelected ? { outline: '2px solid var(--accent)', outlineOffset: 2 } : undefined}>
@@ -822,6 +860,16 @@ export default function Messages() {
   const [activeConvo, setActiveConvo] = useState(null);
   const activeConvoRef = useRef(null); // always has latest activeConvo for WS handler
   const [messages, setMessages] = useState([]);
+  // Clears the "just arrived" flag (used for the typewriter/pop-in effect)
+  // a little after a message lands, so it never replays if the row's key
+  // later changes (e.g. an optimistic tmpId resolving to a real id) or the
+  // list re-renders for an unrelated reason.
+  const scheduleClearJustArrived = useCallback((key) => {
+    if (!key) return;
+    setTimeout(() => {
+      setMessages(prev => prev.map(m => (m.id === key || m._tmpId === key) ? { ...m, _justArrived: false } : m));
+    }, 1500);
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchPeople, setSearchPeople] = useState([]);
   const [msgFilter, setMsgFilter] = useState('all');
@@ -915,10 +963,11 @@ export default function Messages() {
               ? prev.findIndex(m => m._optimistic && m._tmpId === tmpId)
               : prev.findIndex(m => m._optimistic && m.senderId === msg.senderId && m.content === msg.content);
             if (idx !== -1) {
-              return prev.map((m, i) => i === idx ? { ...msg, status: 'SENT', _optimistic: false } : m);
+              return prev.map((m, i) => i === idx ? { ...msg, status: 'SENT', _optimistic: false, _justArrived: m._justArrived } : m);
             }
           }
-          return [...prev, { ...msg, status: 'SENT' }];
+          scheduleClearJustArrived(msg.id);
+          return [...prev, { ...msg, status: 'SENT', _justArrived: true }];
         });
       }
       if (msg.type !== 'DELETE' && msg.type !== 'EDIT') {
@@ -949,10 +998,11 @@ export default function Messages() {
             ? prev.findIndex(m => m._optimistic && m._tmpId === tmpId)
             : prev.findIndex(m => m._optimistic && m.senderId === msg.senderId && m.content === msg.content && !prev.some(p => p.id === msg.id));
           if (idx !== -1) {
-            return prev.map((m, i) => i === idx ? { ...msg, status: 'SENT', _optimistic: false } : m);
+            return prev.map((m, i) => i === idx ? { ...msg, status: 'SENT', _optimistic: false, _justArrived: m._justArrived } : m);
           }
         }
-        return [...prev, { ...msg, status: msg.senderId !== thisUserId ? 'READ' : (msg.status || 'SENT') }];
+        scheduleClearJustArrived(msg.id);
+        return [...prev, { ...msg, status: msg.senderId !== thisUserId ? 'READ' : (msg.status || 'SENT'), _justArrived: true }];
       });
     }
     bumpConvo(otherId, msg.content || '[attachment]');
@@ -1127,7 +1177,9 @@ export default function Messages() {
         createdAt: new Date().toISOString(),
         _optimistic: true,
         _tmpId,
+        _justArrived: true,
       };
+      scheduleClearJustArrived(_tmpId);
       setMessages(prev => [...prev, optimistic]);
       send('/app/group.message', { groupId: activeConvo.groupId, content, type: 'TEXT', _tmpId });
     } else {
@@ -1142,8 +1194,10 @@ export default function Messages() {
         sentAt: new Date().toISOString(),
         _optimistic: true,
         _tmpId,
+        _justArrived: true,
       };
       if (replyingTo) { optimistic.replyToId = replyingTo.id; optimistic.replyPreview = replyingTo.content?.slice(0, 200); }
+      scheduleClearJustArrived(_tmpId);
       setMessages(prev => [...prev, optimistic]);
       const payload = { receiverId: activeConvo.userId, content, type: 'TEXT', _tmpId };
       if (replyingTo) { payload.replyToId = replyingTo.id; payload.replyPreview = replyingTo.content?.slice(0, 200); }
@@ -1360,7 +1414,7 @@ export default function Messages() {
 
       if (editingId === msg.id) {
         items.push(
-          <div key={msg.id || msg._tmpId} className={`bubble-row${isSent ? ' sent' : ' received'}`}>
+          <div key={msg._tmpId || msg.id} className={`bubble-row${isSent ? ' sent' : ' received'}`}>
             <div className="bubble">
               <input className="bubble-edit-input" value={editText} autoFocus onChange={e => setEditText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submitEdit(msg.id); if (e.key === 'Escape') setEditingId(null); }} onBlur={() => submitEdit(msg.id)} />
             </div>
@@ -1368,7 +1422,7 @@ export default function Messages() {
         );
       } else {
         items.push(<Bubble
-          key={msg.id || msg._tmpId}
+          key={msg._tmpId || msg.id}
           msg={msg}
           isSent={isSent}
           isGroup={!!(activeConvo?.isGroup)}

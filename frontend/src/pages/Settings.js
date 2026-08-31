@@ -505,7 +505,7 @@ function BannerCard({ bannerSrc, avatarSrc, displayName, username, onBannerClick
 // == SETTINGS PAGE ==
 export default function Settings() {
   const { user, logout, updateUser } = useAuth();
-  const { theme, toggleTheme, accentId, setAccent, ACCENT_PRESETS, currentAccents, themePresetId, setThemePreset, THEME_PRESETS } = useTheme();
+  const { theme, toggleTheme, accentId, setAccent, ACCENT_PRESETS, currentAccents, themePresetId, setThemePreset, THEME_PRESETS, bubbleStyleId, setBubbleStyle, BUBBLE_STYLES } = useTheme();
   const navigate                     = useNavigate();
   const location                     = useLocation();
 
@@ -846,6 +846,57 @@ export default function Settings() {
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
           {theme === 'light' ? 'Showing light themes. Switch to dark mode to see dark themes.' : 'Showing dark themes. Switch to light mode to see light themes.'}
+        </div>
+
+        <SectionTitle mt={24}>Message Bubbles</SectionTitle>
+        <div style={{ marginTop: 8 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {BUBBLE_STYLES.map(style => (
+              <button
+                key={style.id}
+                onClick={() => setBubbleStyle(style.id)}
+                title={style.label}
+                style={{
+                  width: 96, borderRadius: 10,
+                  border: bubbleStyleId === style.id ? '2px solid var(--accent)' : '2px solid transparent',
+                  outline: '1px solid var(--border-input)', cursor: 'pointer',
+                  background: 'var(--bg-input)', padding: 0, overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', alignItems: 'stretch',
+                  transform: bubbleStyleId === style.id ? 'scale(1.04)' : 'scale(1)',
+                  transition: 'transform 0.15s, border 0.15s',
+                }}
+              >
+                <div data-bubble-style={style.id} style={{ height: 52, padding: '8px 8px 6px', display: 'flex', flexDirection: 'column', gap: 4, background: 'var(--bg-body)' }}>
+                  <span style={{
+                    alignSelf: 'flex-start', maxWidth: '70%', background: 'var(--bubble-in-bg)', color: 'var(--bubble-in-text)',
+                    borderRadius: style.id === 'telegram-tail' ? '4px 12px 12px 12px' : '14px 14px 14px 4px',
+                    padding: '4px 8px', fontSize: 9, position: 'relative',
+                  }}>
+                    hey
+                    {style.id === 'telegram-tail' && (
+                      <span style={{ position: 'absolute', left: -4, bottom: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 4px 6px 0', borderColor: 'transparent var(--bubble-in-bg) transparent transparent' }} />
+                    )}
+                  </span>
+                  <span style={{
+                    alignSelf: 'flex-end', maxWidth: '70%', background: 'var(--bubble-out-bg)', color: 'var(--bubble-out-text)',
+                    borderRadius: style.id === 'telegram-tail' ? '12px 4px 12px 12px' : '14px 14px 4px 14px',
+                    padding: '4px 8px', fontSize: 9, position: 'relative',
+                  }}>
+                    hi
+                    {style.id === 'telegram-tail' && (
+                      <span style={{ position: 'absolute', right: -4, bottom: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '6px 4px 0 0', borderColor: 'var(--accent-to, var(--accent)) transparent transparent transparent' }} />
+                    )}
+                  </span>
+                </div>
+                <div style={{ fontSize: 10, fontWeight: 600, padding: '5px 4px', color: 'var(--text-primary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {style.label}
+                </div>
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
+            Applies to text, image, file, and voice messages. New messages also pop in and type out letter by letter.
+          </div>
         </div>
 
         <SectionTitle mt={24}>Font Size</SectionTitle>
