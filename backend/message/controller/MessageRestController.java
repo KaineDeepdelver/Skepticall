@@ -83,6 +83,7 @@ public class MessageRestController {
             @RequestParam(required = false) String strokes,
             @RequestParam(required = false) Double trimStart,
             @RequestParam(required = false) Double trimEnd,
+            @RequestParam(required = false) String _tmpId,
             HttpServletRequest req
     ) {
         Long senderId = callerId(req);
@@ -132,6 +133,22 @@ public class MessageRestController {
             if (replyPreview != null) dto.setReplyPreview(replyPreview);
 
             MessageDTO saved = messageService.saveMessage(dto);
+            // Echo the client's correlation token back, same as
+            // MessageWsController does for text sends — it's not persisted
+            // (saveMessage()'s mapper doesn't touch _tmpId), so it has to be
+            // re-set on the returned DTO explicitly before broadcasting.
+            // Without this, the RN/web clients had no reliable way to match
+            // an attachment's WS echo back to the specific optimistic bubble
+            // that sent it — they fell back to "the oldest still-pending
+            // upload of the same type", which breaks the moment two uploads
+            // of the same type are in flight at once (e.g. sending several
+            // photos from the multi-select review sheet): a later upload's
+            // echo could resolve an earlier upload's placeholder by mistake,
+            // and once BOTH uploads' HTTP responses arrived, two list
+            // entries could end up sharing the same real id — surfacing as
+            // React's "two children with the same key" warning, since the
+            // message list's keyExtractor keys primarily on id.
+            saved.set_tmpId(_tmpId);
 
             messagingTemplate.convertAndSend("/topic/messages/" + receiverId, saved);
             messagingTemplate.convertAndSend("/topic/messages/" + senderId,   saved);
