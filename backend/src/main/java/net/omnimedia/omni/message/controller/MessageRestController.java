@@ -26,6 +26,8 @@ public class MessageRestController {
     @Autowired private SimpMessagingTemplate messagingTemplate;
     @Autowired private GroupService groupService;
     @Autowired private R2StorageService r2Storage;
+    @Autowired private net.omnimedia.omni.media.util.VideoTrimService videoTrimService;
+    @Autowired private net.omnimedia.omni.media.util.ImageMarkupService imageMarkupService;
 
     private Long callerId(HttpServletRequest req) {
         return (Long) req.getAttribute("authenticatedUserId");
@@ -77,13 +79,29 @@ public class MessageRestController {
             @RequestParam(required = false) String replyToId,
             @RequestParam(required = false) String replyPreview,
             @RequestParam(required = false) Integer durationSeconds,
+            @RequestParam(required = false) String waveformPeaks,
+            @RequestParam(required = false) String strokes,
+            @RequestParam(required = false) Double trimStart,
+            @RequestParam(required = false) Double trimEnd,
+            @RequestParam(required = false) String _tmpId,
             HttpServletRequest req
     ) {
         Long senderId = callerId(req);
         if (senderId == null) return ResponseEntity.status(401).build();
 
         try {
-            String fileUrl = r2Storage.upload(file, type.toLowerCase());
+            String fileUrl;
+            if ("VIDEO".equalsIgnoreCase(type) && trimStart != null && trimEnd != null) {
+                String orig = file.getOriginalFilename();
+                String ext = (orig != null && orig.contains(".")) ? orig.substring(orig.lastIndexOf('.') + 1) : "mp4";
+                byte[] trimmed = videoTrimService.trim(file.getBytes(), ext, trimStart, trimEnd);
+                fileUrl = r2Storage.uploadBytes(trimmed, "video/mp4", "trimmed.mp4", type.toLowerCase());
+            } else if ("IMAGE".equalsIgnoreCase(type) && strokes != null && !strokes.isBlank()) {
+                byte[] marked = imageMarkupService.applyStrokes(file.getBytes(), strokes);
+                fileUrl = r2Storage.uploadBytes(marked, "image/png", "marked.png", type.toLowerCase());
+            } else {
+                fileUrl = r2Storage.upload(file, type.toLowerCase());
+            }
 
             // ── Group upload ──
             if (groupId != null) {
@@ -103,6 +121,11 @@ public class MessageRestController {
             dto.setType(type.toUpperCase());
             dto.setFileUrl(fileUrl);
             dto.setEdited(false);
+            // durationSeconds was previously accepted as a request param
+            // but never actually assigned to the DTO here — DM voice notes
+            // were silently losing their duration on every upload.
+            dto.setDurationSeconds(durationSeconds);
+            dto.setWaveformPeaks(waveformPeaks);
             if (content != null && !content.isBlank()) dto.setContent(content);
             if (replyToId != null) {
                 try { dto.setReplyToId(Long.parseLong(replyToId)); } catch (NumberFormatException ignored) {}
@@ -110,6 +133,22 @@ public class MessageRestController {
             if (replyPreview != null) dto.setReplyPreview(replyPreview);
 
             MessageDTO saved = messageService.saveMessage(dto);
+            // Echo the client's correlation token back, same as
+            // MessageWsController does for text sends — it's not persisted
+            // (saveMessage()'s mapper doesn't touch _tmpId), so it has to be
+            // re-set on the returned DTO explicitly before broadcasting.
+            // Without this, the RN/web clients had no reliable way to match
+            // an attachment's WS echo back to the specific optimistic bubble
+            // that sent it — they fell back to "the oldest still-pending
+            // upload of the same type", which breaks the moment two uploads
+            // of the same type are in flight at once (e.g. sending several
+            // photos from the multi-select review sheet): a later upload's
+            // echo could resolve an earlier upload's placeholder by mistake,
+            // and once BOTH uploads' HTTP responses arrived, two list
+            // entries could end up sharing the same real id — surfacing as
+            // React's "two children with the same key" warning, since the
+            // message list's keyExtractor keys primarily on id.
+            saved.set_tmpId(_tmpId);
 
             messagingTemplate.convertAndSend("/topic/messages/" + receiverId, saved);
             messagingTemplate.convertAndSend("/topic/messages/" + senderId,   saved);

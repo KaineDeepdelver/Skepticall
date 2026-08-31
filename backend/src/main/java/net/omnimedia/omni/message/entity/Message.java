@@ -39,6 +39,13 @@ public class Message extends BaseEntity {
     private String status;
     private Integer durationSeconds; // SENT, DELIVERED, READ
 
+    // JSON array of ~32 normalized (0..1) peak-amplitude samples captured
+    // client-side while recording a VOICE message — see ChannelMessage's
+    // identically-named field for the full rationale. Null for non-VOICE
+    // messages or voice notes recorded before this field existed.
+    @Column(columnDefinition = "TEXT")
+    private String waveformPeaks;
+
     // == /tempo self-destruct ==
     // Set when the message is sent with /tempo prefix. Null for normal messages.
     private LocalDateTime tempoExpiresAt;

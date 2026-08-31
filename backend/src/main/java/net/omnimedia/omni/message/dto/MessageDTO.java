@@ -26,6 +26,11 @@ public class MessageDTO {
     // Voice duration hint (seconds)
     private Integer durationSeconds;
 
+    // JSON array of real amplitude peaks captured at record time — see
+    // Message.waveformPeaks. Powers an actual waveform in the voice-note
+    // player instead of a decorative placeholder.
+    private String waveformPeaks;
+
     // Read status
     private String status; // SENT, DELIVERED, READ
 

@@ -34,6 +34,7 @@ public class MessageMapper {
         entity.setReplyPreview(dto.getReplyPreview());
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : "SENT");
         entity.setDurationSeconds(dto.getDurationSeconds());
+        entity.setWaveformPeaks(dto.getWaveformPeaks());
         entity.setTempoExpiresAt(dto.getTempoExpiresAt());
 
         return entity;
@@ -54,6 +55,7 @@ public class MessageMapper {
         dto.setReplyPreview(entity.getReplyPreview());
         dto.setStatus(entity.getStatus() != null ? entity.getStatus() : "SENT");
         dto.setDurationSeconds(entity.getDurationSeconds());
+        dto.setWaveformPeaks(entity.getWaveformPeaks());
         dto.setTempoExpiresAt(entity.getTempoExpiresAt());
 
         return dto;

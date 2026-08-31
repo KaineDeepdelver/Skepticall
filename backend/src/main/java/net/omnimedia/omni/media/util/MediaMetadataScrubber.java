@@ -6,10 +6,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -51,45 +51,61 @@ public class MediaMetadataScrubber {
     private volatile Boolean ffmpegAvailable;
 
     public static class ScrubResult {
-        public final byte[] bytes;
+        /** Path to the file that should actually be uploaded — either
+         *  {@code inputPath} unchanged (passthrough) or a separate scrubbed
+         *  temp file. Caller is responsible for cleanup either way. */
+        public final Path path;
         public final String contentType;
 
-        public ScrubResult(byte[] bytes, String contentType) {
-            this.bytes = bytes;
+        public ScrubResult(Path path, String contentType) {
+            this.path = path;
             this.contentType = contentType;
         }
     }
 
     /**
-     * Returns a metadata-scrubbed copy of the given file's bytes. Falls
-     * back to the original bytes (best-effort, never throws) if the format
-     * isn't recognized or scrubbing fails for any reason.
+     * Returns a metadata-scrubbed copy of the file at {@code inputPath} as
+     * a new temp file, or {@code inputPath} itself when no scrubbing is
+     * needed/possible. Falls back to the original file (best-effort, never
+     * throws) if the format isn't recognized or scrubbing fails for any
+     * reason.
+     *
+     * Images are small enough that reading them fully into memory for the
+     * segment-level rewrite is fine. Video is handled entirely file-to-file
+     * (see scrubVideo) so a multi-hundred-MB upload never has to sit in the
+     * JVM heap as a byte[].
      */
-    public ScrubResult scrub(byte[] original, String filename, String contentType) {
+    public ScrubResult scrub(Path inputPath, String filename, String contentType) {
         String ext = extensionOf(filename, contentType);
 
         try {
             switch (ext) {
                 case "jpg":
                 case "jpeg":
-                    return new ScrubResult(scrubJpeg(original), contentType);
+                    return new ScrubResult(writeToTempFile(scrubJpeg(Files.readAllBytes(inputPath)), ext), contentType);
                 case "png":
-                    return new ScrubResult(scrubPng(original), contentType);
+                    return new ScrubResult(writeToTempFile(scrubPng(Files.readAllBytes(inputPath)), ext), contentType);
                 case "webp":
-                    return new ScrubResult(scrubWebp(original), contentType);
+                    return new ScrubResult(writeToTempFile(scrubWebp(Files.readAllBytes(inputPath)), ext), contentType);
                 case "mp4":
                 case "mov":
                 case "m4v":
                 case "webm":
-                    return new ScrubResult(scrubVideo(original, ext), contentType);
+                    return new ScrubResult(scrubVideo(inputPath, ext), contentType);
                 default:
-                    return new ScrubResult(original, contentType);
+                    return new ScrubResult(inputPath, contentType);
             }
         } catch (Exception e) {
             log.warn("Metadata scrub failed for '{}' ({}), uploading original file unscrubbed: {}",
                     filename, ext, e.getMessage());
-            return new ScrubResult(original, contentType);
+            return new ScrubResult(inputPath, contentType);
         }
+    }
+
+    private Path writeToTempFile(byte[] data, String ext) throws IOException {
+        Path out = Files.createTempFile("scrub_", "." + ext);
+        Files.write(out, data);
+        return out;
     }
 
     // ── JPEG ─────────────────────────────────────────────────────────────
@@ -176,54 +192,52 @@ public class MediaMetadataScrubber {
 
     // ── Video (requires ffmpeg on PATH) ─────────────────────────────────
 
-    private byte[] scrubVideo(byte[] original, String ext) throws IOException, InterruptedException {
+    /**
+     * Runs ffmpeg directly against the already-on-disk {@code inputPath}
+     * and returns the path to a new scrubbed temp file — or {@code
+     * inputPath} itself, unchanged, if ffmpeg isn't available or fails.
+     * The video's bytes are never brought into the JVM heap: ffmpeg reads
+     * and writes files on disk, and stdout/stderr are drained without
+     * being retained.
+     */
+    private Path scrubVideo(Path inputPath, String ext) throws IOException, InterruptedException {
         if (!isFfmpegAvailable()) {
             log.warn("ffmpeg not found on PATH — video uploaded without metadata scrubbing. " +
                     "Install ffmpeg in the deploy environment to enable this.");
-            return original;
+            return inputPath;
         }
 
-        File tmpDir = Files.createTempDirectory("media-scrub").toFile();
-        File in = new File(tmpDir, "in." + ext);
-        File out = new File(tmpDir, "out." + ext);
-        try {
-            Files.write(in.toPath(), original);
-
-            // -map_metadata -1 drops all container/stream metadata
-            // (location, device, creation time, author, etc.).
-            // -c copy stream-copies audio/video without re-encoding, so
-            // there's no quality loss and it's fast.
-            ProcessBuilder pb = new ProcessBuilder(
-                    "ffmpeg", "-y", "-i", in.getAbsolutePath(),
-                    "-map_metadata", "-1",
-                    "-c", "copy",
-                    out.getAbsolutePath()
-            );
-            pb.redirectErrorStream(true);
-            Process proc = pb.start();
-            // Drain stdout/stderr so ffmpeg never blocks on a full pipe buffer.
-            try (InputStream is = proc.getInputStream()) {
-                is.readAllBytes();
-            }
-            boolean finished = proc.waitFor(60, java.util.concurrent.TimeUnit.SECONDS);
-            if (!finished) {
-                proc.destroyForcibly();
-                log.warn("ffmpeg timed out scrubbing video metadata — uploading original file.");
-                return original;
-            }
-            if (proc.exitValue() != 0 || !out.exists() || out.length() == 0) {
-                log.warn("ffmpeg exited with code {} — uploading original file.", proc.exitValue());
-                return original;
-            }
-            return Files.readAllBytes(out.toPath());
-        } finally {
-            //noinspection ResultOfMethodCallIgnored
-            in.delete();
-            //noinspection ResultOfMethodCallIgnored
-            out.delete();
-            //noinspection ResultOfMethodCallIgnored
-            tmpDir.delete();
+        Path out = Files.createTempFile("scrub_", "." + ext);
+        // -map_metadata -1 drops all container/stream metadata
+        // (location, device, creation time, author, etc.).
+        // -c copy stream-copies audio/video without re-encoding, so
+        // there's no quality loss and it's fast.
+        ProcessBuilder pb = new ProcessBuilder(
+                "ffmpeg", "-y", "-i", inputPath.toAbsolutePath().toString(),
+                "-map_metadata", "-1",
+                "-c", "copy",
+                out.toAbsolutePath().toString()
+        );
+        pb.redirectErrorStream(true);
+        Process proc = pb.start();
+        // Drain stdout/stderr so ffmpeg never blocks on a full pipe buffer
+        // (discarded rather than retained — we don't need the log text).
+        try (InputStream is = proc.getInputStream()) {
+            is.readAllBytes();
         }
+        boolean finished = proc.waitFor(60, java.util.concurrent.TimeUnit.SECONDS);
+        if (!finished) {
+            proc.destroyForcibly();
+            log.warn("ffmpeg timed out scrubbing video metadata — uploading original file.");
+            Files.deleteIfExists(out);
+            return inputPath;
+        }
+        if (proc.exitValue() != 0 || !Files.exists(out) || Files.size(out) == 0) {
+            log.warn("ffmpeg exited with code {} — uploading original file.", proc.exitValue());
+            Files.deleteIfExists(out);
+            return inputPath;
+        }
+        return out;
     }
 
     private boolean isFfmpegAvailable() {
