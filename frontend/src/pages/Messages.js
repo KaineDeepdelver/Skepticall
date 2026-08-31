@@ -315,7 +315,6 @@ function TypewriterText({ text, speed = 22 }) {
       }
     }, speed);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
