@@ -722,6 +722,18 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
    shrinks to the frame's width, keeping the attachment centered. */
 .bubble.bubble-has-media { padding: 6px; }
 .bubble.bubble-has-media .bubble-inner { display: block; padding: 6px 8px 2px; }
+/* Media bubbles drop the solid sent/received fill entirely — that fill is
+   what a text bubble needs as a background, but behind a photo/video it
+   just shows through the padding as a heavy colored frame (worst on sent
+   bubbles, which use the solid accent gradient). A thin neutral border
+   (same color for sent and received, unlike the text bubbles) replaces it
+   so there's still a visible edge without tinting the frame. Higher
+   specificity than .bubble-row.sent/.received .bubble so it actually wins
+   the cascade. */
+.bubble-row.sent .bubble.bubble-has-media,
+.bubble-row.received .bubble.bubble-has-media {
+  background: transparent; box-shadow: none; border: 1px solid var(--border);
+}
 .bubble-media-overlay {
   position: absolute; bottom: 6px; right: 6px;
   display: flex; align-items: center; gap: 3px;
