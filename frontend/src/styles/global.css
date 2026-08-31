@@ -714,6 +714,14 @@ strong, b { font-weight: 700; }
 .bubble-media { display: block; max-width: 260px; max-height: 260px; border-radius: 8px; object-fit: cover; margin: 0; }
 video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 .bubble-bundle-grid { border-radius: 10px; overflow: hidden; line-height: 0; display: inline-block; }
+/* .bubble's own padding (9px 13px 9px 14px) is sized for text and is
+   uneven top/bottom vs left/right on purpose for reading comfort — wrapped
+   around a photo/video frame that same padding reads as a lopsided border.
+   Thin it to a single equal value on every side instead, so the frame
+   around an attachment is uniform; .bubble is inline-block so it already
+   shrinks to the frame's width, keeping the attachment centered. */
+.bubble.bubble-has-media { padding: 3px; }
+.bubble.bubble-has-media .bubble-inner { display: block; padding: 6px 8px 2px; }
 .bubble-media-overlay {
   position: absolute; bottom: 6px; right: 6px;
   display: flex; align-items: center; gap: 3px;
@@ -1325,8 +1333,6 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 /* ── Bubble extras ───────────────────────────────────────────────────────── */
 .bubble-timestamp { font-size: 11px; color: var(--time-in); margin-top: 4px; text-align: right; }
 .bubble-row.sent .bubble-timestamp { color: var(--time-out); }
-.bubble-media-frame { padding: 0 14px 10px; max-width: 320px; }
-.bubble-media { border-radius: 10px; max-width: 100%; max-height: 280px; display: block; }
 .bubble-file-msg { display: flex; align-items: center; gap: 10px; padding: 2px 0; }
 .bubble-file-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.10); }
 .bubble-file-icon svg { width: 20px; height: 20px; }
