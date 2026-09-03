@@ -319,7 +319,7 @@ export default function CallScreen() {
             autoPlay
             playsInline
             muted={swapped}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', background: '#000', zIndex: 0 }}
           />
 
           {/* PiP — tap to swap */}
