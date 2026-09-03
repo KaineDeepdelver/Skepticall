@@ -791,6 +791,16 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 }
 .bubble-file svg { width: 18px; height: 18px; flex-shrink: 0; }
 
+/* Call log — WhatsApp-style pill, distinct from a chat bubble */
+.bubble-call {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+  border-radius: 16px; border: 1px solid var(--border-input);
+  color: var(--text-secondary); font-size: 12.5px; font-weight: 600;
+}
+.bubble-call svg { width: 14px; height: 14px; flex-shrink: 0; }
+.bubble-call-failed { color: #e05353; border-color: rgba(224,83,83,0.35); }
+
+
 /* Voice bubble */
 .bubble-voice { display: flex; align-items: center; gap: 6px; padding: 2px 0; width: 280px; }
 .voice-play-btn {
