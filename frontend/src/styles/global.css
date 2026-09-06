@@ -760,6 +760,7 @@ strong, b { font-weight: 700; }
 .bubble-media-frame {
   position: relative; display: inline-block;
   padding: 0; border-radius: 10px; overflow: hidden; line-height: 0;
+  max-width: 100%; /* safety net alongside the JS panel-width clamp in useMediaSize() */
 }
 .bubble-media { display: block; width: 100%; height: 100%; border-radius: 8px; object-fit: cover; margin: 0; }
 video.bubble-media { width: 100%; height: 100%; border-radius: 8px; display: block; object-fit: cover; }
