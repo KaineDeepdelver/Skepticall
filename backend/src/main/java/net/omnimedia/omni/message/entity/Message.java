@@ -36,6 +36,12 @@ public class Message extends BaseEntity {
 
     private Long   replyToId;
     private String replyPreview;
+    // Display name of the sender of the message being replied to, snapshotted
+    // client-side at reply time (same approach as replyPreview itself — this
+    // whole reply-preview mechanism has never derived from the DB row it
+    // points to, it's just an opaque string the client captured when the user
+    // tapped "reply"). Null for messages sent before this field existed.
+    private String replyPreviewSender;
     private String status;
     private Integer durationSeconds; // SENT, DELIVERED, READ
 

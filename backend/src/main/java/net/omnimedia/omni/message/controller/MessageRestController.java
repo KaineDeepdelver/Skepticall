@@ -78,6 +78,7 @@ public class MessageRestController {
             @RequestParam(required = false) String content,
             @RequestParam(required = false) String replyToId,
             @RequestParam(required = false) String replyPreview,
+            @RequestParam(required = false) String replyPreviewSender,
             @RequestParam(required = false) Integer durationSeconds,
             @RequestParam(required = false) String waveformPeaks,
             @RequestParam(required = false) String strokes,
@@ -131,6 +132,7 @@ public class MessageRestController {
                 try { dto.setReplyToId(Long.parseLong(replyToId)); } catch (NumberFormatException ignored) {}
             }
             if (replyPreview != null) dto.setReplyPreview(replyPreview);
+            if (replyPreviewSender != null) dto.setReplyPreviewSender(replyPreviewSender);
 
             MessageDTO saved = messageService.saveMessage(dto);
             // Echo the client's correlation token back, same as

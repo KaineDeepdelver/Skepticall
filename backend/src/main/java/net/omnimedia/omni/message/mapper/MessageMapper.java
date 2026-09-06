@@ -32,6 +32,7 @@ public class MessageMapper {
         entity.setEdited(dto.getEdited() != null ? dto.getEdited() : false);
         entity.setReplyToId(dto.getReplyToId());
         entity.setReplyPreview(dto.getReplyPreview());
+        entity.setReplyPreviewSender(dto.getReplyPreviewSender());
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : "SENT");
         entity.setDurationSeconds(dto.getDurationSeconds());
         entity.setWaveformPeaks(dto.getWaveformPeaks());
@@ -53,6 +54,7 @@ public class MessageMapper {
         dto.setEdited(entity.getEdited());
         dto.setReplyToId(entity.getReplyToId());
         dto.setReplyPreview(entity.getReplyPreview());
+        dto.setReplyPreviewSender(entity.getReplyPreviewSender());
         dto.setStatus(entity.getStatus() != null ? entity.getStatus() : "SENT");
         dto.setDurationSeconds(entity.getDurationSeconds());
         dto.setWaveformPeaks(entity.getWaveformPeaks());

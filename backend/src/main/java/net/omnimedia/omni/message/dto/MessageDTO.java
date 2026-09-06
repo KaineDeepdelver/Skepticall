@@ -22,6 +22,7 @@ public class MessageDTO {
     // Reply support
     private Long   replyToId;
     private String replyPreview;
+    private String replyPreviewSender;
 
     // Voice duration hint (seconds)
     private Integer durationSeconds;
