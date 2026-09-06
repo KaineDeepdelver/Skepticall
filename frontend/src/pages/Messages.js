@@ -26,6 +26,72 @@ function fmtTime(iso) {
   //return `${dayStr} ${timeStr}`;  // e.g. "Wed 10:33 PM"
   return `${timeStr}`; // e.g. "10:33 PM"
 }
+
+// == Media bubble sizing ==
+// Chat apps size image/video bubbles to the media's own aspect ratio
+// (portrait stays tall, landscape stays wide) instead of forcing every
+// attachment into a fixed square with object-fit:cover. This mirrors the
+// mobile app's MediaBubbleImage fitToBox() approach.
+const MEDIA_MAX_WIDTH = 260;
+const MEDIA_MAX_HEIGHT = 320;
+const MEDIA_MIN_SIDE = 120;
+const MEDIA_FALLBACK_SIZE = { width: 220, height: 220 };
+const mediaSizeCache = new Map(); // url -> {width, height}
+
+function fitToBox(naturalWidth, naturalHeight) {
+  const ratio = naturalWidth / naturalHeight || 1;
+  let width = MEDIA_MAX_WIDTH;
+  let height = width / ratio;
+  if (height > MEDIA_MAX_HEIGHT) { height = MEDIA_MAX_HEIGHT; width = height * ratio; }
+  if (width < MEDIA_MIN_SIDE) width = MEDIA_MIN_SIDE;
+  if (height < MEDIA_MIN_SIDE) height = MEDIA_MIN_SIDE;
+  return { width: Math.round(width), height: Math.round(height) };
+}
+
+// Resolves the natural dimensions of an image or video URL (via a
+// throwaway Image/video element) and returns a clamped {width, height}
+// box. Cached by URL since the same attachment re-renders often (message
+// list re-renders, WS reconcile, etc).
+function useMediaSize(src, kind) {
+  const [size, setSize] = useState(() => (src && mediaSizeCache.has(src)) ? mediaSizeCache.get(src) : null);
+  useEffect(() => {
+    if (!src) { setSize(null); return; }
+    if (mediaSizeCache.has(src)) { setSize(mediaSizeCache.get(src)); return; }
+    let cancelled = false;
+    if (kind === 'VIDEO') {
+      const el = document.createElement('video');
+      el.preload = 'metadata';
+      el.onloadedmetadata = () => {
+        if (cancelled) return;
+        const box = fitToBox(el.videoWidth || 1, el.videoHeight || 1);
+        mediaSizeCache.set(src, box);
+        setSize(box);
+      };
+      el.onerror = () => { if (!cancelled) setSize(MEDIA_FALLBACK_SIZE); };
+      el.src = src;
+    } else {
+      const img = new Image();
+      img.onload = () => {
+        if (cancelled) return;
+        const box = fitToBox(img.naturalWidth || 1, img.naturalHeight || 1);
+        mediaSizeCache.set(src, box);
+        setSize(box);
+      };
+      img.onerror = () => { if (!cancelled) setSize(MEDIA_FALLBACK_SIZE); };
+      img.src = src;
+    }
+    return () => { cancelled = true; };
+  }, [src, kind]);
+  return size || MEDIA_FALLBACK_SIZE;
+}
+
+function formatDuration(totalSeconds) {
+  const s = Math.max(0, Math.round(Number(totalSeconds) || 0));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, '0')}`;
+}
+
 function fmtDateLabel(iso) {
   if (!iso) return '';
   const d = new Date(iso), now = new Date(), yest = new Date(now);
@@ -338,6 +404,9 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
   const msgType = (msg.type || 'TEXT').toUpperCase();
   const timeStr = fmtTime(msg.sentAt ?? msg.createdAt);
   const fileSrc = msg.fileUrl ? resolveUrl(msg.fileUrl.startsWith('http') ? msg.fileUrl : `${API_BASE}${msg.fileUrl}`) : null;
+  const isImageKind = msgType === 'IMAGE' || msgType === 'GIF';
+  const isVideoKind = msgType === 'VIDEO';
+  const mediaBox = useMediaSize(isImageKind || isVideoKind ? fileSrc : null, isVideoKind ? 'VIDEO' : 'IMAGE');
 
   // Sender info — GroupMessageDTO has senderAvatar/senderDisplayName/senderUsername
   // DM received messages don't carry this so avatar/name are omitted
@@ -366,8 +435,8 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
 
   let inner;
   if (isDeleted) { inner = <><span className="bubble-deleted">⊘ This message was deleted</span><span className="bubble-gap short" /><span className="bubble-footer"><span className="bubble-time">{timeStr}</span></span></>; }
-  else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt="img" loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg._justArrived ? <TypewriterText text={msg.content} /> : msg.content}</span>}</>; }
-  else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}<svg viewBox="0 0 24 24" fill="white" width="20" height="20" style={{ marginLeft: 4 }}><polygon points="5,3 19,12 5,21" /></svg></span></div>{msg.content && <span className="bubble-inner">{msg._justArrived ? <TypewriterText text={msg.content} /> : msg.content}</span>}</>; }
+  else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt="img" loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg._justArrived ? <TypewriterText text={msg.content} /> : msg.content}</span>}</>; }
+  else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="video-play-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5,3 19,12 5,21" /></svg></span><span className="video-meta-bar">{msg.durationSeconds != null && <span className="video-duration-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z" /></svg>{formatDuration(msg.durationSeconds)}</span>}<span className="video-time-badge">{hasEdited && <span className="bubble-edited">Edited</span>}{timeStr}{isSent && <Tick status={msg.status || 'SENT'} />}</span></span></div>{msg.content && <span className="bubble-inner">{msg._justArrived ? <TypewriterText text={msg.content} /> : msg.content}</span>}</>; }
   else if (msgType === 'VOICE') { inner = <div className="bubble-voice-wrap">{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<VoiceBubble src={fileSrc} durationHint={msg.durationSeconds ? Number(msg.durationSeconds) : 0} waveformPeaks={msg.waveformPeaks} /><div className="bubble-voice-footer">{msg.edited && <span className="bubble-edited">edited ·</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</div></div>; }
   else if (msgType === 'FILE') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<a className="bubble-file" href={fileSrc} target="_blank" rel="noreferrer" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg><span>{fileSrc?.split('/').pop()}</span></a><span className="bubble-inner" style={{ display: 'block', minHeight: 4 }} />{footer}</>; }
   else if (msgType === 'CALL') {
@@ -809,7 +878,7 @@ function DmSearchModal({ messages, userId, convoName, query, onQueryChange, onCl
           {results.length > 0 && (
             <div style={{ padding: '6px 0 8px' }}>
               {results.map((msg, idx) => {
-                const isSent = msg.senderId === userId;
+                const isSent = String(msg.senderId) === String(userId);
                 const timeStr = fmtTime(msg.sentAt ?? msg.createdAt);
                 const dateStr = fmtDateLabel(msg.sentAt ?? msg.createdAt);
                 const showDate = idx === 0 || fmtDateLabel(results[idx - 1].sentAt ?? results[idx - 1].createdAt) !== dateStr;
@@ -986,9 +1055,9 @@ export default function Messages() {
       return;
     }
     const type = msg.type;
-    const otherId = msg.senderId === userIdRef.current ? msg.receiverId : msg.senderId;
+    const otherId = String(msg.senderId) === String(userIdRef.current) ? msg.receiverId : msg.senderId;
     if (type === 'READ_RECEIPT') {
-      setMessages(prev => prev.map(m => m.senderId === msg.senderId && m.receiverId === msg.receiverId ? { ...m, status: 'READ' } : m));
+      setMessages(prev => prev.map(m => String(m.senderId) === String(msg.senderId) && String(m.receiverId) === String(msg.receiverId) ? { ...m, status: 'READ' } : m));
       return;
     }
     if (type === 'EDIT') { setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, content: msg.content, edited: true } : m)); bumpConvo(otherId, msg.content); return; }
@@ -996,23 +1065,23 @@ export default function Messages() {
     // Only append to messages if this convo is currently open
     const ac = activeConvoRef.current;
     const thisUserId = userIdRef.current;
-    const otherParty = msg.senderId === thisUserId ? msg.receiverId : msg.senderId;
+    const otherParty = String(msg.senderId) === String(thisUserId) ? msg.receiverId : msg.senderId;
     if (ac && !ac.isGroup && (String(ac.userId) === String(otherParty))) {
       setMessages(prev => {
         // Dedup: skip if real id already exists
         if (msg.id && prev.some(m => m.id === msg.id)) return prev;
         // Replace optimistic placeholder from self — match by _tmpId (exact), not content
-        if (msg.senderId === thisUserId) {
+        if (String(msg.senderId) === String(thisUserId)) {
           const tmpId = msg._tmpId;
           const idx = tmpId
             ? prev.findIndex(m => m._optimistic && m._tmpId === tmpId)
-            : prev.findIndex(m => m._optimistic && m.senderId === msg.senderId && m.content === msg.content && !prev.some(p => p.id === msg.id));
+            : prev.findIndex(m => m._optimistic && String(m.senderId) === String(msg.senderId) && m.content === msg.content && !prev.some(p => p.id === msg.id));
           if (idx !== -1) {
             return prev.map((m, i) => i === idx ? { ...msg, status: 'SENT', _optimistic: false, _justArrived: m._justArrived } : m);
           }
         }
         scheduleClearJustArrived(msg.id);
-        return [...prev, { ...msg, status: msg.senderId !== thisUserId ? 'READ' : (msg.status || 'SENT'), _justArrived: true }];
+        return [...prev, { ...msg, status: String(msg.senderId) !== String(thisUserId) ? 'READ' : (msg.status || 'SENT'), _justArrived: true }];
       });
     }
     bumpConvo(otherId, msg.content || '[attachment]');
@@ -1168,6 +1237,7 @@ export default function Messages() {
           fd.append('receiverId', activeConvo.userId);
         }
         fd.append('type', att.kind);
+        if (att.durationSeconds != null) fd.append('durationSeconds', String(att.durationSeconds));
         if (i === 0 && content) fd.append('content', content);
         if (replyingTo) { fd.append('replyToId', replyingTo.id); fd.append('replyPreview', replyingTo.content?.slice(0, 200)); }
         try { await api.uploadMessage(fd); } catch (e) { console.error(e); }
@@ -1276,7 +1346,19 @@ export default function Messages() {
       else if (mime.startsWith('image/')) kind = 'IMAGE';
       else if (mime.startsWith('video/')) kind = 'VIDEO';
       const reader = new FileReader();
-      reader.onload = ev => resolve({ file, kind, dataUrl: ev.target.result });
+      reader.onload = ev => {
+        if (kind !== 'VIDEO') { resolve({ file, kind, dataUrl: ev.target.result }); return; }
+        // Capture the video's duration client-side (same approach as the
+        // voice recorder) so the bubble can show a duration badge without
+        // needing the server to probe the file.
+        const probe = document.createElement('video');
+        probe.preload = 'metadata';
+        probe.onloadedmetadata = () => {
+          resolve({ file, kind, dataUrl: ev.target.result, durationSeconds: Math.round(probe.duration || 0) });
+        };
+        probe.onerror = () => resolve({ file, kind, dataUrl: ev.target.result });
+        probe.src = ev.target.result;
+      };
       reader.readAsDataURL(file);
     }));
     Promise.all(reads).then(newAtts => setAttachments(prev => [...prev, ...newAtts]));
@@ -1387,7 +1469,7 @@ export default function Messages() {
       const msg = messages[i];
       const label = fmtDateLabel(msg.sentAt ?? msg.createdAt);
       if (label !== lastDate) { items.push(<div key={`d-${i}`} className="date-sep">{label}</div>); lastDate = label; }
-      const isSent = msg.senderId === userId;
+      const isSent = String(msg.senderId) === String(userId);
 
       // Try to bundle consecutive media from the same sender
       const mtype = (msg.type || 'TEXT').toUpperCase();
@@ -1398,7 +1480,7 @@ export default function Messages() {
           const next = messages[j];
           const nextType = (next.type || 'TEXT').toUpperCase();
           const sameDate = fmtDateLabel(next.sentAt ?? next.createdAt) === label;
-          const sameSender = next.senderId === msg.senderId;
+          const sameSender = String(next.senderId) === String(msg.senderId);
           const closeInTime = Math.abs(new Date(next.sentAt ?? next.createdAt) - new Date(msg.sentAt ?? msg.createdAt)) < BUNDLE_GAP_MS;
           const isMedia = MEDIA_TYPES.has(nextType);
           const noReply = !next.replyToId;
