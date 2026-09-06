@@ -130,11 +130,28 @@ function lightenHex(hex, amount = 0.2) {
   return `#${lr.toString(16).padStart(2,'0')}${lg.toString(16).padStart(2,'0')}${lb.toString(16).padStart(2,'0')}`;
 }
 
+// Darken a hex color (mix with black) — used for the reply-quote tint on
+// sent bubbles, so it stays readable against any selected accent color
+// instead of a flat rgba(0,0,0,0.2) overlay.
+function darkenHex(hex, amount = 0.35) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  const dr = Math.round(r * (1 - amount));
+  const dg = Math.round(g * (1 - amount));
+  const db = Math.round(b * (1 - amount));
+  return `#${dr.toString(16).padStart(2,'0')}${dg.toString(16).padStart(2,'0')}${db.toString(16).padStart(2,'0')}`;
+}
+
 function applyAccent(from, to, accent) {
   const root = document.documentElement;
   root.style.setProperty('--accent',        accent);
   root.style.setProperty('--accent-hover',  lightenHex(accent, 0.2));
   root.style.setProperty('--accent-glow',   `rgba(${hexToRgb(accent)}, 0.22)`);
+  // Darker tone of the selected accent — for the reply-quote strip inside
+  // outgoing (sent) bubbles, so it tracks whatever accent color is picked
+  // in Settings instead of a fixed black overlay.
+  root.style.setProperty('--accent-quote',  darkenHex(accent, 0.35));
   root.style.setProperty('--gradient',      `linear-gradient(135deg, ${from} 0%, ${to} 100%)`);
   root.style.setProperty('--accent-from',   from);
   root.style.setProperty('--accent-to',     to);
