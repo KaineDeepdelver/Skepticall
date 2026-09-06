@@ -101,6 +101,7 @@ body, .convo-panel, .chat-panel, .chat-header, .chat-input-bar,
   --accent-glow:    rgba(124, 92, 252, 0.20);
   --accent-from:    #7c5cfc;
   --accent-to:      #a78bfa;
+  --accent-quote:   #504a9e; /* darkened --accent fallback; ThemeContext overrides per selected accent */
 
   /* Signal / danger */
   --signal:         #7c5cfc;
@@ -703,8 +704,13 @@ strong, b { font-weight: 700; }
   margin-bottom: 6px; border-radius: 4px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.bubble-row.received .bubble-reply-quote { background: rgba(130,90,255,0.10); color: var(--text-secondary); border-color: var(--accent); }
-.bubble-row.sent     .bubble-reply-quote { background: rgba(0,0,0,0.2); color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.6); }
+/* Received bubble stays a plain grey surface, so its reply-quote strip is
+   just a darker shade of that same grey — no accent tint. */
+.bubble-row.received .bubble-reply-quote { background: rgba(0,0,0,0.18); color: var(--text-secondary); border-color: var(--border); }
+/* Sent bubble follows the selected accent color, so its reply-quote strip
+   uses --accent-quote (a darkened tone of that same accent, computed in
+   ThemeContext) instead of a fixed black overlay. */
+.bubble-row.sent     .bubble-reply-quote { background: var(--accent-quote, rgba(0,0,0,0.2)); color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.6); }
 
 /* ── Telegram-tail bubble style (opt-in via [data-bubble-style]) ─────────── */
 [data-bubble-style="telegram-tail"] .bubble-row.sent .bubble {
@@ -747,12 +753,16 @@ strong, b { font-weight: 700; }
 }
 
 /* Media */
+/* == Media frame sizing ==
+   Frame gets an explicit width/height set inline by useMediaSize() (clamped
+   to the media's real aspect ratio, min 120px / max 260x320) — the <img>/
+   <video> inside just fills that frame at 100%, no fixed box + cover crop. */
 .bubble-media-frame {
   position: relative; display: inline-block;
   padding: 0; border-radius: 10px; overflow: hidden; line-height: 0;
 }
-.bubble-media { display: block; max-width: 260px; max-height: 260px; border-radius: 8px; object-fit: cover; margin: 0; }
-video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
+.bubble-media { display: block; width: 100%; height: 100%; border-radius: 8px; object-fit: cover; margin: 0; }
+video.bubble-media { width: 100%; height: 100%; border-radius: 8px; display: block; object-fit: cover; }
 .bubble-bundle-grid { border-radius: 10px; overflow: hidden; line-height: 0; display: inline-block; }
 /* .bubble's own padding (9px 13px 9px 14px) is sized for text and is
    uneven top/bottom vs left/right on purpose for reading comfort — wrapped
@@ -783,6 +793,32 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
 }
 .bubble-media-overlay .bubble-time   { color: rgba(255,255,255,0.92) !important; font-size: 11px; }
 .bubble-media-overlay .bubble-edited { color: rgba(255,255,255,0.75) !important; font-size: 10px; }
+
+/* == Video bubble — WhatsApp-style overlay ==
+   Big centered translucent play button, and a bottom gradient bar with the
+   duration on the left (camera icon + length) and time+ticks on the right,
+   instead of the old single small corner pill. */
+.video-play-badge {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(255,255,255,0.85);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  pointer-events: none;
+}
+.video-play-badge svg { color: #2b2b2b; margin-left: 2px; }
+.video-meta-bar {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 8px 7px;
+  background: linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0));
+  pointer-events: none;
+}
+.video-duration-badge, .video-time-badge {
+  display: flex; align-items: center; gap: 4px;
+  color: #fff; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.video-duration-badge .bubble-edited, .video-time-badge .bubble-edited { color: rgba(255,255,255,0.75); font-size: 10px; }
 
 .bubble-file {
   display: flex; align-items: center; gap: 8px; padding: 8px 10px;
@@ -1565,8 +1601,8 @@ video.bubble-media { max-width: 260px; border-radius: 8px; display: block; }
   .chat-messages { padding: 12px 6px; }
   .bubble-row { padding: 0 6px; }
   .bubble { max-width: 82%; font-size: 14px; }
-  .bubble-media-frame { padding: 0; width: 100%; box-sizing: border-box; }
-  .bubble-media, video.bubble-media { max-width: 100%; width: 100%; max-height: 220px; border-radius: 6px; }
+  .bubble-media-frame { padding: 0; max-width: 100%; box-sizing: border-box; }
+  .bubble-media, video.bubble-media { max-width: 100%; max-height: 100%; border-radius: 6px; }
   .msg-textarea::placeholder { font-size: 13px; }
 
   /* ── Networks — single-pane mobile: list screen and chat screen swap
