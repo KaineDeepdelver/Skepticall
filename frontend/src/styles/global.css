@@ -155,6 +155,7 @@ body, .convo-panel, .chat-panel, .chat-header, .chat-input-bar,
   --accent-glow:    rgba(107, 63, 231, 0.15);
   --accent-from:    #6b3fe7;
   --accent-to:      #9c6bf5;
+  --accent-quote:   #462996; /* darkened --accent fallback for this theme; ThemeContext overrides per selected accent */
   --signal:         #6b3fe7;
   --danger:         #f4212e;
   --bubble-in-bg:   #f0f2f5;
@@ -705,8 +706,12 @@ strong, b { font-weight: 700; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Received bubble stays a plain grey surface, so its reply-quote strip is
-   just a darker shade of that same grey — no accent tint. */
-.bubble-row.received .bubble-reply-quote { background: rgba(0,0,0,0.18); color: var(--text-secondary); border-color: var(--border); }
+   just a darker shade of that same grey — no accent tint. Border uses
+   --text-muted rather than --border: --border is almost white in the
+   light theme, which left the quote strip with no visible edge at all —
+   just a floating grey box with no border. --text-muted is a legible
+   mid-grey in both themes. */
+.bubble-row.received .bubble-reply-quote { background: rgba(0,0,0,0.18); color: var(--text-secondary); border-color: var(--text-muted); }
 /* Sent bubble follows the selected accent color, so its reply-quote strip
    uses --accent-quote (a darkened tone of that same accent, computed in
    ThemeContext) instead of a fixed black overlay. */
@@ -736,20 +741,6 @@ strong, b { font-weight: 700; }
 }
 .bubble.bubble-fresh {
   animation: bubblePopIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-@keyframes typingCaretBlink {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0; }
-}
-.typing-caret {
-  display: inline-block;
-  width: 2px;
-  height: 13px;
-  margin-left: 1px;
-  vertical-align: -2px;
-  background: currentColor;
-  opacity: 0.7;
-  animation: typingCaretBlink 0.8s step-start infinite;
 }
 
 /* Media */
