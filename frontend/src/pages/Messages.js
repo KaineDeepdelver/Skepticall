@@ -36,53 +36,80 @@ const MEDIA_MAX_WIDTH = 260;
 const MEDIA_MAX_HEIGHT = 320;
 const MEDIA_MIN_SIDE = 120;
 const MEDIA_FALLBACK_SIZE = { width: 220, height: 220 };
-const mediaSizeCache = new Map(); // url -> {width, height}
+const naturalSizeCache = new Map(); // url -> {w, h}
 
-function fitToBox(naturalWidth, naturalHeight) {
+function fitToBox(naturalWidth, naturalHeight, maxWidth = MEDIA_MAX_WIDTH, maxHeight = MEDIA_MAX_HEIGHT) {
   const ratio = naturalWidth / naturalHeight || 1;
-  let width = MEDIA_MAX_WIDTH;
+  let width = maxWidth;
   let height = width / ratio;
-  if (height > MEDIA_MAX_HEIGHT) { height = MEDIA_MAX_HEIGHT; width = height * ratio; }
+  if (height > maxHeight) { height = maxHeight; width = height * ratio; }
   if (width < MEDIA_MIN_SIDE) width = MEDIA_MIN_SIDE;
   if (height < MEDIA_MIN_SIDE) height = MEDIA_MIN_SIDE;
   return { width: Math.round(width), height: Math.round(height) };
 }
 
+// .bubble caps at max-width:70% of the chat column and is display:inline-block
+// (shrink-to-fit), so a frame given a fixed pixel width wider than that 70%
+// was overflowing/getting clipped on narrower desktop windows — the bubble
+// has no way to know its own eventual width up front to constrain a
+// percentage child against it. Reading the actual chat column's live width
+// and capping against that sidesteps the problem entirely.
+function getSafeMaxWidth() {
+  if (typeof document === 'undefined') return MEDIA_MAX_WIDTH;
+  const panel = document.querySelector('.chat-messages');
+  const panelWidth = panel ? panel.clientWidth : 700;
+  // 70% to match .bubble's own cap, minus ~24px for the bubble's border/mat
+  // padding so the frame never asks for more than the bubble can give it.
+  return Math.max(MEDIA_MIN_SIDE, Math.min(MEDIA_MAX_WIDTH, Math.floor(panelWidth * 0.7) - 24));
+}
+
 // Resolves the natural dimensions of an image or video URL (via a
 // throwaway Image/video element) and returns a clamped {width, height}
-// box. Cached by URL since the same attachment re-renders often (message
-// list re-renders, WS reconcile, etc).
+// box. Natural size is cached by URL (probing it is the expensive part —
+// re-running on every re-render/resize would be wasteful); the clamped box
+// itself is recomputed on resize so it stays correct if the window/panel
+// gets narrower or wider.
 function useMediaSize(src, kind) {
-  const [size, setSize] = useState(() => (src && mediaSizeCache.has(src)) ? mediaSizeCache.get(src) : null);
+  const [natural, setNatural] = useState(() => (src && naturalSizeCache.has(src)) ? naturalSizeCache.get(src) : null);
+  const [maxWidth, setMaxWidth] = useState(getSafeMaxWidth);
+
   useEffect(() => {
-    if (!src) { setSize(null); return; }
-    if (mediaSizeCache.has(src)) { setSize(mediaSizeCache.get(src)); return; }
+    if (!src) { setNatural(null); return; }
+    if (naturalSizeCache.has(src)) { setNatural(naturalSizeCache.get(src)); return; }
     let cancelled = false;
     if (kind === 'VIDEO') {
       const el = document.createElement('video');
       el.preload = 'metadata';
       el.onloadedmetadata = () => {
         if (cancelled) return;
-        const box = fitToBox(el.videoWidth || 1, el.videoHeight || 1);
-        mediaSizeCache.set(src, box);
-        setSize(box);
+        const dims = { w: el.videoWidth || 1, h: el.videoHeight || 1 };
+        naturalSizeCache.set(src, dims);
+        setNatural(dims);
       };
-      el.onerror = () => { if (!cancelled) setSize(MEDIA_FALLBACK_SIZE); };
+      el.onerror = () => { if (!cancelled) setNatural(null); };
       el.src = src;
     } else {
       const img = new Image();
       img.onload = () => {
         if (cancelled) return;
-        const box = fitToBox(img.naturalWidth || 1, img.naturalHeight || 1);
-        mediaSizeCache.set(src, box);
-        setSize(box);
+        const dims = { w: img.naturalWidth || 1, h: img.naturalHeight || 1 };
+        naturalSizeCache.set(src, dims);
+        setNatural(dims);
       };
-      img.onerror = () => { if (!cancelled) setSize(MEDIA_FALLBACK_SIZE); };
+      img.onerror = () => { if (!cancelled) setNatural(null); };
       img.src = src;
     }
     return () => { cancelled = true; };
   }, [src, kind]);
-  return size || MEDIA_FALLBACK_SIZE;
+
+  useEffect(() => {
+    function onResize() { setMaxWidth(getSafeMaxWidth()); }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  if (!natural) return MEDIA_FALLBACK_SIZE;
+  return fitToBox(natural.w, natural.h, maxWidth);
 }
 
 function formatDuration(totalSeconds) {
