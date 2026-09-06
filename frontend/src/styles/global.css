@@ -704,9 +704,17 @@ strong, b { font-weight: 700; }
 /* Reply quote */
 .bubble-reply-quote {
   font-size: 12px; border-left: 3px solid; padding: 5px 8px;
-  margin-bottom: 6px; border-radius: 4px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 6px; border-radius: 4px; overflow: hidden;
 }
+.bubble-reply-quote-name {
+  display: block; font-weight: 700; font-size: 12px;
+  margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bubble-reply-quote-text {
+  display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bubble-row.received .bubble-reply-quote-name { color: var(--accent); }
+.bubble-row.sent     .bubble-reply-quote-name { color: #ffffff; }
 /* Received bubble stays a plain grey surface, so its reply-quote strip is
    just a darker shade of that same grey — no accent tint. Border uses
    --reply-quote-border (a low-contrast tint defined per theme below) —

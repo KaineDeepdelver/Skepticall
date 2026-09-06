@@ -387,43 +387,6 @@ function renderText(text) {
   });
 }
 
-/* ── Typewriter reveal ──────────────────────────────────────────────────────
-   Plays once when a bubble first mounts with _justArrived set (a message
-   that just arrived live, sent or received — not one loaded from history).
-   If the underlying text changes later (an edit), it just snaps to the new
-   text instead of re-typing. */
-function TypewriterText({ text, speed = 22 }) {
-  const [count, setCount] = useState(0);
-  const doneRef = useRef(false);
-
-  useEffect(() => {
-    if (!text) { setCount(0); doneRef.current = true; return; }
-    let i = 0;
-    const id = setInterval(() => {
-      i++;
-      setCount(i);
-      if (i >= text.length) {
-        clearInterval(id);
-        doneRef.current = true;
-      }
-    }, speed);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    if (doneRef.current) setCount(text ? text.length : 0);
-  }, [text]);
-
-  const revealed = text ? text.slice(0, count) : '';
-  const finished = !text || count >= text.length;
-  return (
-    <>
-      {renderText(revealed)}
-      {!finished && <span className="typing-caret" aria-hidden="true" />}
-    </>
-  );
-}
-
 /* ── BUBBLE ── */
 function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMode, isSelected, onSelect }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -462,10 +425,10 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
 
   let inner;
   if (isDeleted) { inner = <><span className="bubble-deleted">⊘ This message was deleted</span><span className="bubble-gap short" /><span className="bubble-footer"><span className="bubble-time">{timeStr}</span></span></>; }
-  else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt="img" loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg._justArrived ? <TypewriterText text={msg.content} /> : msg.content}</span>}</>; }
-  else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="video-play-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5,3 19,12 5,21" /></svg></span><span className="video-meta-bar">{msg.durationSeconds != null && <span className="video-duration-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z" /></svg>{formatDuration(msg.durationSeconds)}</span>}<span className="video-time-badge">{hasEdited && <span className="bubble-edited">Edited</span>}{timeStr}{isSent && <Tick status={msg.status || 'SENT'} />}</span></span></div>{msg.content && <span className="bubble-inner">{msg._justArrived ? <TypewriterText text={msg.content} /> : msg.content}</span>}</>; }
-  else if (msgType === 'VOICE') { inner = <div className="bubble-voice-wrap">{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<VoiceBubble src={fileSrc} durationHint={msg.durationSeconds ? Number(msg.durationSeconds) : 0} waveformPeaks={msg.waveformPeaks} /><div className="bubble-voice-footer">{msg.edited && <span className="bubble-edited">edited ·</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</div></div>; }
-  else if (msgType === 'FILE') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}<a className="bubble-file" href={fileSrc} target="_blank" rel="noreferrer" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg><span>{fileSrc?.split('/').pop()}</span></a><span className="bubble-inner" style={{ display: 'block', minHeight: 4 }} />{footer}</>; }
+  else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt="img" loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
+  else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="video-play-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5,3 19,12 5,21" /></svg></span><span className="video-meta-bar">{msg.durationSeconds != null && <span className="video-duration-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z" /></svg>{formatDuration(msg.durationSeconds)}</span>}<span className="video-time-badge">{hasEdited && <span className="bubble-edited">Edited</span>}{timeStr}{isSent && <Tick status={msg.status || 'SENT'} />}</span></span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
+  else if (msgType === 'VOICE') { inner = <div className="bubble-voice-wrap">{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<VoiceBubble src={fileSrc} durationHint={msg.durationSeconds ? Number(msg.durationSeconds) : 0} waveformPeaks={msg.waveformPeaks} /><div className="bubble-voice-footer">{msg.edited && <span className="bubble-edited">edited ·</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</div></div>; }
+  else if (msgType === 'FILE') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<a className="bubble-file" href={fileSrc} target="_blank" rel="noreferrer" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg><span>{fileSrc?.split('/').pop()}</span></a><span className="bubble-inner" style={{ display: 'block', minHeight: 4 }} />{footer}</>; }
   else if (msgType === 'CALL') {
     const isFailedCall = msg.callStatus && msg.callStatus !== 'completed';
     inner = (
@@ -483,8 +446,8 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
     const hasUrl = !!linkUrl || (msg.content && /(https?:\/\/)/i.test(msg.content));
     inner = (
       <>
-        {msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreview}</div>}
-        <span className="bubble-inner">{msg._justArrived ? <TypewriterText text={msg.content} /> : renderText(msg.content)}{gap}</span>
+        {msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}
+        <span className="bubble-inner">{renderText(msg.content)}{gap}</span>
         {linkUrl && <LinkPreview url={linkUrl} isSent={isSent} />}
         {footer}
       </>
@@ -1266,7 +1229,7 @@ export default function Messages() {
         fd.append('type', att.kind);
         if (att.durationSeconds != null) fd.append('durationSeconds', String(att.durationSeconds));
         if (i === 0 && content) fd.append('content', content);
-        if (replyingTo) { fd.append('replyToId', replyingTo.id); fd.append('replyPreview', replyingTo.content?.slice(0, 200)); }
+        if (replyingTo) { fd.append('replyToId', replyingTo.id); fd.append('replyPreview', replyingTo.content?.slice(0, 200)); fd.append('replyPreviewSender', replyingTo.senderName || ''); }
         try { await api.uploadMessage(fd); } catch (e) { console.error(e); }
       }
       setAttachments([]); setText(''); setReplyingTo(null);
@@ -1303,11 +1266,11 @@ export default function Messages() {
         _tmpId,
         _justArrived: true,
       };
-      if (replyingTo) { optimistic.replyToId = replyingTo.id; optimistic.replyPreview = replyingTo.content?.slice(0, 200); }
+      if (replyingTo) { optimistic.replyToId = replyingTo.id; optimistic.replyPreview = replyingTo.content?.slice(0, 200); optimistic.replyPreviewSender = replyingTo.senderName; }
       scheduleClearJustArrived(_tmpId);
       setMessages(prev => [...prev, optimistic]);
       const payload = { receiverId: activeConvo.userId, content, type: 'TEXT', _tmpId };
-      if (replyingTo) { payload.replyToId = replyingTo.id; payload.replyPreview = replyingTo.content?.slice(0, 200); }
+      if (replyingTo) { payload.replyToId = replyingTo.id; payload.replyPreview = replyingTo.content?.slice(0, 200); payload.replyPreviewSender = replyingTo.senderName; }
       send('/app/message.send', payload);
     }
     setText(''); setReplyingTo(null);
@@ -1445,7 +1408,7 @@ export default function Messages() {
             }
             fd.append('type', 'VOICE'); fd.append('durationSeconds', String(capturedDuration || 0));
             if (waveformPeaks) fd.append('waveformPeaks', JSON.stringify(waveformPeaks));
-            if (replyingTo) { fd.append('replyToId', replyingTo.id); fd.append('replyPreview', replyingTo.content?.slice(0, 200)); }
+            if (replyingTo) { fd.append('replyToId', replyingTo.id); fd.append('replyPreview', replyingTo.content?.slice(0, 200)); fd.append('replyPreviewSender', replyingTo.senderName || ''); }
             try { await api.uploadMessage(fd); setReplyingTo(null); } catch { }
           }
         }
