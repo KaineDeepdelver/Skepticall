@@ -102,6 +102,7 @@ body, .convo-panel, .chat-panel, .chat-header, .chat-input-bar,
   --accent-from:    #7c5cfc;
   --accent-to:      #a78bfa;
   --accent-quote:   #504a9e; /* darkened --accent fallback; ThemeContext overrides per selected accent */
+  --reply-quote-border: rgba(255,255,255,0.14); /* subtle — the quote fill is already dark here */
 
   /* Signal / danger */
   --signal:         #7c5cfc;
@@ -156,6 +157,7 @@ body, .convo-panel, .chat-panel, .chat-header, .chat-input-bar,
   --accent-from:    #6b3fe7;
   --accent-to:      #9c6bf5;
   --accent-quote:   #462996; /* darkened --accent fallback for this theme; ThemeContext overrides per selected accent */
+  --reply-quote-border: rgba(0,0,0,0.14); /* subtle dark tint — light theme's quote fill is still fairly light */
   --signal:         #6b3fe7;
   --danger:         #f4212e;
   --bubble-in-bg:   #f0f2f5;
@@ -707,11 +709,14 @@ strong, b { font-weight: 700; }
 }
 /* Received bubble stays a plain grey surface, so its reply-quote strip is
    just a darker shade of that same grey — no accent tint. Border uses
-   --text-muted rather than --border: --border is almost white in the
-   light theme, which left the quote strip with no visible edge at all —
-   just a floating grey box with no border. --text-muted is a legible
-   mid-grey in both themes. */
-.bubble-row.received .bubble-reply-quote { background: rgba(0,0,0,0.18); color: var(--text-secondary); border-color: var(--text-muted); }
+   --reply-quote-border (a low-contrast tint defined per theme below) —
+   --text-muted was tried here but it's a fairly light grey in both themes,
+   which against the quote's dark fill read as a bright outline slapped on
+   a near-black box, like a chunk of dark theme dropped into the bubble.
+   --border was tried before that and was the opposite problem: almost
+   invisible (near-white) in the light theme. This splits the difference:
+   visible, but low-contrast against the quote's own fill either way. */
+.bubble-row.received .bubble-reply-quote { background: rgba(0,0,0,0.18); color: var(--text-secondary); border-color: var(--reply-quote-border); }
 /* Sent bubble follows the selected accent color, so its reply-quote strip
    uses --accent-quote (a darkened tone of that same accent, computed in
    ThemeContext) instead of a fixed black overlay. */
