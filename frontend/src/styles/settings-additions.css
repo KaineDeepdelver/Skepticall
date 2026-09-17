@@ -1,0 +1,141 @@
+/* ── Settings panel title ──────────────────────────────────────────────── */
+.settings-panel-title {
+  font-size: 18px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 20px; margin-top: 0;
+}
+
+/* ── Settings chip (Appearance tab) ────────────────────────────────────── */
+.settings-chip {
+  padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+  background: var(--bg-hover); border: 1px solid var(--border);
+  color: var(--text-primary); cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.settings-chip.active {
+  background: var(--accent-glow); border-color: var(--accent); color: var(--accent);
+}
+
+/* ── Profile tab — banner + avatar edits ───────────────────────────────── */
+.profile-banner-edit {
+  width: 100%; height: 120px; border-radius: 12px;
+  position: relative; cursor: pointer; overflow: hidden;
+  border: 1px solid var(--border);
+}
+.profile-banner-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; color: #fff; font-size: 13px; font-weight: 600;
+  opacity: 0; transition: opacity 0.2s;
+}
+.profile-banner-edit:hover .profile-banner-overlay { opacity: 1; }
+
+.profile-avatar-edit {
+  width: 72px; height: 72px; border-radius: 50%;
+  position: relative; cursor: pointer; overflow: hidden;
+  border: 3px solid var(--bg-sidebar);
+  background: var(--bg-hover); flex-shrink: 0;
+}
+.profile-avatar-placeholder {
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; color: var(--accent-text);
+  background: var(--gradient);
+}
+.profile-avatar-overlay {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; opacity: 0; transition: opacity 0.2s;
+}
+.profile-avatar-edit:hover .profile-avatar-overlay { opacity: 1; }
+
+@media (max-width: 768px) {
+  .profile-banner-edit {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    height: 140px !important; /* taller on full-screen mobile */
+  }
+  .profile-banner-edit .profile-banner-overlay { opacity: 1 !important; }
+  .profile-avatar-edit .profile-avatar-overlay { opacity: 1 !important; }
+  .profile-avatar-edit {
+    width: 100px !important;  /* keep desktop size — panel is full-screen */
+    height: 100px !important;
+    border-width: 2px !important;
+  }
+  .profile-avatar-placeholder {
+    font-size: 24px !important;
+  }
+  /* Notification panel: full-width on mobile */
+  .notif-panel {
+    width: 100vw !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-left: none !important;
+  }
+}
+
+/* ── ToS checkbox on signup ─────────────────────────────────────────────── */
+.tos-checkbox-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  cursor: pointer; padding: 2px 0; user-select: none;
+}
+.tos-checkbox-row input[type="checkbox"] {
+  width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0;
+  accent-color: var(--accent); cursor: pointer;
+}
+.tos-checkbox-label {
+  font-size: 12px; color: var(--text-muted); line-height: 1.5;
+}
+.tos-link {
+  color: var(--accent); text-decoration: none;
+}
+.tos-link:hover { text-decoration: underline; }
+
+/* ── Legal pages (Terms / Privacy) ─────────────────────────────────────── */
+.legal-page {
+  min-height: 100vh;
+  background: var(--bg-main);
+  display: flex; justify-content: center;
+  padding: 40px 16px 80px;
+}
+.legal-card {
+  width: 100%; max-width: 720px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 44px;
+}
+@media (max-width: 600px) {
+  .legal-card { padding: 24px 20px; }
+}
+.legal-back {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: none;
+  color: var(--text-muted); font-size: 13px; cursor: pointer;
+  padding: 0; margin-bottom: 28px;
+  transition: color 0.15s;
+}
+.legal-back:hover { color: var(--text-primary); }
+.legal-back svg { flex-shrink: 0; }
+.legal-title {
+  font-size: 26px; font-weight: 800; color: var(--text-primary);
+  margin: 0 0 6px;
+}
+.legal-updated {
+  font-size: 12px; color: var(--text-muted); margin: 0 0 32px;
+}
+.legal-body { color: var(--text-primary); }
+.legal-body h2 {
+  font-size: 15px; font-weight: 700; margin: 28px 0 8px; color: var(--text-primary);
+}
+.legal-body h2:first-child { margin-top: 0; }
+.legal-body p {
+  font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin: 0 0 10px;
+}
+.legal-body ul {
+  margin: 0 0 10px; padding-left: 20px;
+}
+.legal-body ul li {
+  font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 4px;
+}
