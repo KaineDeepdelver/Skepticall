@@ -41,7 +41,16 @@ public class PushNotificationService {
 
     private final PushTokenRepository pushTokenRepo;
     private final UserRepository userRepo;
-    private final ObjectMapper objectMapper;
+    // Instantiated directly rather than @Autowired/constructor-injected —
+    // this app has no auto-configured ObjectMapper bean available (something
+    // excludes Jackson's autoconfiguration), which meant this constructor
+    // parameter could never actually be satisfied. Nothing depended on this
+    // service before, so that was a dormant bug until something finally
+    // triggered Spring to instantiate it. A plain ObjectMapper is all this
+    // class needs (no custom (de)serializers), so there's no real
+    // configuration lost by not sharing whatever bean the rest of the app
+    // might use for request/response bodies.
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
