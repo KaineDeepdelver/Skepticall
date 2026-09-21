@@ -60,6 +60,7 @@ public class SecurityConfig {
 
                         // Public read endpoints
                         .requestMatchers(
+                                "/ping",
                                 "/users/*/presence",
                                 "/posts", "/posts/search", "/posts/user/**", "/posts/*", "/posts/slug/**",
                                 "/media", "/media/search", "/media/user/**", "/media/*",
