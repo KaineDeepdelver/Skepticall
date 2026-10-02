@@ -31,6 +31,31 @@ public class Message extends BaseEntity {
 
     private String fileUrl;
 
+    // == End-to-end encryption ==
+    // Random nonce (base64), required by crypto_box for every encrypted
+    // message — a message with a non-null nonce has ciphertext in
+    // `content`/`fileUrl`; the server cannot read either. Null for
+    // messages sent before E2E existed, or from an account without a
+    // public key — those remain plaintext.
+    private String nonce;
+    // Separate nonce for `replyPreview` (see MessageDTO — it's encrypted
+    // independently of `content`).
+    private String replyPreviewNonce;
+
+    // == Media (file) encryption — envelope encryption, see e2e.js ==
+    // `fileUrl` still points at the file in R2 same as before, except the
+    // bytes there are now the encrypted blob, not the real file — the
+    // server just stores/relays ciphertext, same as for `content`.
+    // mediaNonce: nonce used to symmetrically encrypt the file itself.
+    private String mediaNonce;
+    // mediaKeyCiphertext: the per-file symmetric key, itself encrypted
+    // (asymmetrically, crypto_box) for the recipient — only their private
+    // key can unwrap it back to the real key needed to decrypt the file.
+    private String mediaKeyCiphertext;
+    // mediaKeyNonce: nonce for THAT (key-wrapping) encryption operation —
+    // distinct from mediaNonce, which is for the file bytes themselves.
+    private String mediaKeyNonce;
+
     @Column(nullable = false)
     private Boolean edited = false;
 
@@ -52,7 +77,23 @@ public class Message extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String waveformPeaks;
 
+    // == Call log (type "CALL") ==
+    // Sent by the client as a real message over the same
+    // '/app/message.send' path text uses — see CallContext.js's
+    // logCallOutcome(). These fields existed on the outgoing WS payload
+    // from day one but had nowhere to land here, so they were silently
+    // dropped on every call; this finishes that.
+    private String callMode;   // "audio" | "video"
+    private String callStatus; // "completed" | "missed" | "declined" | "cancelled"
+    private Integer ringSeconds;
+    private Integer callDurationSeconds;
+
     // == /tempo self-destruct ==
-    // Set when the message is sent with /tempo prefix. Null for normal messages.
+    // Set when the message is sent as type "TEMPO". Used to be detected by
+    // the server reading a "/tempo " prefix off the plaintext content, but
+    // that stopped being possible once content can be E2E-encrypted (the
+    // server can't read it) — the client now decides this before encrypting
+    // and declares it via `type`, same as VOICE/IMAGE/etc. Null for normal
+    // messages.
     private LocalDateTime tempoExpiresAt;
 }

@@ -24,6 +24,16 @@ public class User extends BaseEntity {
     private String displayName;
     private String bio;
 
+    // == End-to-end encryption ==
+    // X25519 public key, base64-encoded, generated on-device at account
+    // creation and permanent for the life of the account (no rotation).
+    // This is the only half of the keypair the server ever sees — the
+    // private key never leaves the device except inside a user-encrypted
+    // .dat backup. Nullable because accounts created before E2E existed
+    // won't have one; those stay unencrypted until they explicitly set
+    // one up.
+    private String publicKey;
+
     // == Stats (default 0) ==
 
     @Builder.Default

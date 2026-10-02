@@ -25,6 +25,9 @@ public class UserPublicDTO {
     private Integer followerCount;
     private Integer followingCount;
 
+    /** X25519 public key (base64) — needed by any client encrypting a message to this user. Null if this account hasn't set up E2E encryption. */
+    private String publicKey;
+
     private Boolean online;
     private String createdAt;
 

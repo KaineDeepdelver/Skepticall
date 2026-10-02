@@ -84,7 +84,7 @@ public class MessageWsController {
 
     @MessageMapping("/message.edit")
     public void editMessage(MessageDTO message, Principal principal) {
-        MessageDTO updated = messageService.editMessage(message.getId(), message.getContent(), uid(principal));
+        MessageDTO updated = messageService.editMessage(message.getId(), message.getContent(), message.getNonce(), uid(principal));
         updated.setType("EDIT");
         broadcast(updated);
     }

@@ -40,6 +40,12 @@ public class MessageService {
                 .stream().map(messageMapper::toDTO).collect(Collectors.toList());
     }
 
+    /** Powers the Call Log tab — every call this user's been part of, most recent first, across every DM. */
+    public List<MessageDTO> getCallLog(Long userId) {
+        return messageRepo.findCallsForUser(userId)
+                .stream().map(messageMapper::toDTO).collect(Collectors.toList());
+    }
+
     // == Saves ================================================================
 
     @Transactional
@@ -47,16 +53,16 @@ public class MessageService {
         dto.setStatus("SENT");
 
         // == /tempo detection ==
-        // If content starts with /tempo (case-insensitive), mark as TEMPO type
-        // and strip the command prefix before saving.
-        if (dto.getContent() != null) {
-            String raw = dto.getContent().trim();
-            if (raw.toLowerCase().startsWith("/tempo")) {
-                String afterCommand = raw.substring(6).trim(); // strip "/tempo"
-                dto.setContent(afterCommand.isEmpty() ? null : afterCommand);
-                dto.setType("TEMPO");
-                dto.setTempoExpiresAt(LocalDateTime.now().plusSeconds(TEMPO_TTL_SECONDS));
-            }
+        // Used to detect a "/tempo " prefix by reading dto.getContent()
+        // directly — that only worked because content was always plaintext
+        // server-side. Now that content can be E2E-encrypted, the server
+        // can't read it at all, so this has to be the client's decision:
+        // the client strips the "/tempo " prefix itself before encrypting
+        // and declares intent by sending type "TEMPO" directly. The server
+        // still owns the actual TTL (not trusting a client-supplied expiry
+        // time), it just no longer inspects content to detect the command.
+        if ("TEMPO".equals(dto.getType())) {
+            dto.setTempoExpiresAt(LocalDateTime.now().plusSeconds(TEMPO_TTL_SECONDS));
         }
 
         Message saved = messageRepo.save(messageMapper.toEntity(dto));
@@ -66,7 +72,7 @@ public class MessageService {
     // == Edits / Deletes ======================================================
 
     @Transactional
-    public MessageDTO editMessage(Long id, String content, Long requesterId) {
+    public MessageDTO editMessage(Long id, String content, String nonce, Long requesterId) {
         Message m = messageRepo.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorType.NOT_FOUND, "Direct message not found [messageId=" + id + "]"));
 
@@ -75,6 +81,12 @@ public class MessageService {
         }
 
         m.setContent(content);
+        // A new ciphertext needs a fresh nonce every time (reusing a nonce
+        // with the same key pair breaks crypto_box's security guarantees),
+        // so this always has to be replaced together with content, never
+        // left stale from the original message — a mismatched nonce would
+        // just make the edited message permanently undecryptable.
+        m.setNonce(nonce);
         m.setEdited(true);
         return messageMapper.toDTO(messageRepo.save(m));
     }
@@ -92,6 +104,10 @@ public class MessageService {
         m.setType("DELETE");
         m.setContent(null);
         m.setFileUrl(null);
+        m.setNonce(null);
+        m.setMediaNonce(null);
+        m.setMediaKeyCiphertext(null);
+        m.setMediaKeyNonce(null);
         return messageMapper.toDTO(messageRepo.save(m));
     }
 
@@ -155,6 +171,7 @@ public class MessageService {
         for (Message m : expired) {
             m.setType("DELETE");
             m.setContent(null);
+            m.setNonce(null);
             m.setTempoExpiresAt(null);
             deleted.add(messageMapper.toDTO(messageRepo.save(m)));
         }

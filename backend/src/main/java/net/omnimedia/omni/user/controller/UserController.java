@@ -1,6 +1,7 @@
 package net.omnimedia.omni.user.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import net.omnimedia.omni.message.service.MessageService;
 import net.omnimedia.omni.user.dto.*;
@@ -34,7 +35,7 @@ public class UserController {
     // == Auth =================================================================
 
     @PostMapping("/register")
-    public ResponseEntity<LoginResponseDTO> register(@RequestBody RegisterDTO dto) {
+    public ResponseEntity<LoginResponseDTO> register(@Valid @RequestBody RegisterDTO dto) {
         return ResponseEntity.ok(userService.register(dto));
     }
 

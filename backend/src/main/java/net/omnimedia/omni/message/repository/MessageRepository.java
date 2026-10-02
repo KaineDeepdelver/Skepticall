@@ -36,6 +36,12 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     long countUnreadMessages(@Param("fromUserId") Long fromUserId,
                              @Param("toUserId")   Long toUserId);
 
+    /** Every call-log entry (type CALL) involving this user, across ALL their DM conversations — powers the Call Log tab. */
+    @Query("SELECT m FROM Message m WHERE m.type = 'CALL' AND " +
+           "(m.sender.id = :userId OR m.receiver.id = :userId) " +
+           "ORDER BY m.createdAt DESC")
+    List<Message> findCallsForUser(@Param("userId") Long userId);
+
     /** TEMPO messages whose TTL has expired — used for scheduled cleanup. */
     @Query("SELECT m FROM Message m WHERE m.type = 'TEMPO' AND m.tempoExpiresAt IS NOT NULL AND m.tempoExpiresAt <= :now")
     List<Message> findExpiredTempoMessages(@Param("now") LocalDateTime now);

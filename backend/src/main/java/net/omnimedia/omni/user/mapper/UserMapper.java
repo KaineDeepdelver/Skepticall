@@ -16,6 +16,7 @@ public class UserMapper {
                 .profilePicture(user.getProfilePicture())
                 .bannerPicture(user.getBannerPicture())
                 .displayName(user.getDisplayName())
+                .publicKey(user.getPublicKey())
                 .postCount(user.getPostCount())
                 .mediaCount(user.getMediaCount())
                 .followerCount(user.getFollowerCount())
@@ -50,6 +51,7 @@ public class UserMapper {
                 .mediaCount(user.getMediaCount())
                 .followerCount(user.getFollowerCount())
                 .followingCount(user.getFollowingCount())
+                .publicKey(user.getPublicKey())
                 .online(user.isOnline())
                 .createdAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null)
                 .build();

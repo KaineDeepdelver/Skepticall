@@ -16,6 +16,25 @@ public class MessageDTO {
     private String content;
     private String type;
     private String fileUrl;
+
+    // Random nonce (base64) for E2E-encrypted content — see Message.nonce.
+    private String nonce;
+    // Separate nonce for `replyPreview` — it's encrypted independently of
+    // `content` (crypto_box needs a fresh nonce per encryption, so it
+    // can't share content's), and without its own nonce a reply would
+    // leak the quoted message in plaintext even when content is encrypted.
+    private String replyPreviewNonce;
+
+    // Call log fields — see Message.java.
+    private String callMode;
+    private String callStatus;
+    private Integer ringSeconds;
+    private Integer callDurationSeconds;
+
+    // Media (file) encryption metadata — see Message.java for what each does.
+    private String mediaNonce;
+    private String mediaKeyCiphertext;
+    private String mediaKeyNonce;
     private LocalDateTime createdAt;
     private Boolean edited = false;
 

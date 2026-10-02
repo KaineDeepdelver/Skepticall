@@ -23,6 +23,10 @@ public class UserDTO {
     private String bannerPicture;
     private String displayName;
     private String bio;
+    // X25519 public key (base64). Always safe to expose — public keys are
+    // meant to be public; this is how another device encrypts a message
+    // *to* this user.
+    private String publicKey;
 
     // == Stats ==
 
