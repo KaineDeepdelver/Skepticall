@@ -30,7 +30,11 @@ public class MessageRestController {
     @Autowired private GroupService groupService;
     @Autowired private R2StorageService r2Storage;
     @Autowired private net.omnimedia.omni.media.util.VideoTrimService videoTrimService;
-    @Autowired private ObjectMapper objectMapper;
+    // == Jackson ==
+    // Instantiated directly — no ObjectMapper bean exists in this app's context,
+    // so @Autowired here fails and the whole server crashes on boot. Only used
+    // to parse recipientKeysJson; same approach as PushNotificationService.
+    private final ObjectMapper objectMapper = new ObjectMapper();
     @Autowired private net.omnimedia.omni.media.util.ImageMarkupService imageMarkupService;
     @Autowired private PushNotificationService pushService;
 
