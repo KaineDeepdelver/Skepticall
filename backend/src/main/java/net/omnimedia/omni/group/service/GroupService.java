@@ -5,11 +5,14 @@ import net.omnimedia.omni.exceptions.BusinessException;
 import net.omnimedia.omni.exceptions.ErrorType;
 import net.omnimedia.omni.group.dto.GroupDTO;
 import net.omnimedia.omni.group.dto.GroupMessageDTO;
+import net.omnimedia.omni.group.dto.GroupMessageKeyDTO;
 import net.omnimedia.omni.group.dto.MemberDTO;
 import net.omnimedia.omni.group.entity.GroupConversation;
 import net.omnimedia.omni.group.entity.GroupMessage;
+import net.omnimedia.omni.group.entity.GroupMessageKey;
 import net.omnimedia.omni.group.repository.GroupConversationRepository;
 import net.omnimedia.omni.group.repository.GroupMessageRepository;
+import net.omnimedia.omni.group.repository.GroupMessageKeyRepository;
 import net.omnimedia.omni.user.entity.User;
 import net.omnimedia.omni.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ import java.util.stream.Collectors;
 public class GroupService {
     private final GroupConversationRepository groupConversationRepository;
     private final GroupMessageRepository groupMessageRepository;
+    private final GroupMessageKeyRepository groupMessageKeyRepository;
     private final UserRepository userRepository;
 
     @Transactional
@@ -114,12 +118,28 @@ public class GroupService {
 
     @Transactional
     public GroupMessageDTO sendMessage(Long groupId, Long senderId, String content, String type, String fileUrl) {
-        return sendMessage(groupId, senderId, content, type, fileUrl, null, null, null);
+        return sendMessage(groupId, senderId, content, type, fileUrl, null, null, null, null, null, null, null);
     }
 
     @Transactional
     public GroupMessageDTO sendMessage(Long groupId, Long senderId, String content, String type, String fileUrl,
                                         Long replyToId, String replyPreview, String replyPreviewSender) {
+        return sendMessage(groupId, senderId, content, type, fileUrl, replyToId, replyPreview, replyPreviewSender,
+                null, null, null, null);
+    }
+
+    // Full version — E2E-aware. nonce/replyPreviewNonce/mediaNonce are
+    // null for a plaintext send (legacy path, or a markup/trim send that
+    // needs the server to read real media bytes — same necessary
+    // exception as 1:1). recipientKeys is the client-generated per-member
+    // key fan-out — see GroupMessageKey. The server never generates or
+    // sees any actual key material, only ever stores what the client
+    // (which alone holds the private keys involved) already encrypted.
+    @Transactional
+    public GroupMessageDTO sendMessage(Long groupId, Long senderId, String content, String type, String fileUrl,
+                                        Long replyToId, String replyPreview, String replyPreviewSender,
+                                        String nonce, String replyPreviewNonce, String mediaNonce,
+                                        List<GroupMessageKeyDTO> recipientKeys) {
         GroupConversation groupConversation = groupConversationRepository.findById(groupId)
                 .orElseThrow(() -> new BusinessException(ErrorType.NOT_FOUND, "Group conversation not found [groupId=" + groupId + "]"));
 
@@ -141,13 +161,44 @@ public class GroupService {
                 .replyToId(replyToId)
                 .replyPreview(replyPreview)
                 .replyPreviewSender(replyPreviewSender)
+                .nonce(nonce)
+                .replyPreviewNonce(replyPreviewNonce)
+                .mediaNonce(mediaNonce)
                 .build();
 
-        return toMsgDTO(groupMessageRepository.save(msg));
+        GroupMessage saved = groupMessageRepository.save(msg);
+        saveRecipientKeys(saved, recipientKeys);
+        return toMsgDTO(saved, recipientKeys);
+    }
+
+    // Saves the client-provided per-member wrapped keys against the
+    // now-persisted message id. A no-op (not an error) when recipientKeys
+    // is empty/null — that's just a plaintext send.
+    private void saveRecipientKeys(GroupMessage saved, List<GroupMessageKeyDTO> recipientKeys) {
+        if (recipientKeys == null || recipientKeys.isEmpty()) return;
+        List<GroupMessageKey> rows = recipientKeys.stream().map(k -> GroupMessageKey.builder()
+                .groupMessage(saved)
+                .recipient(userRepository.getReferenceById(k.getRecipientId()))
+                .keyType(k.getKeyType())
+                .wrappedKey(k.getWrappedKey())
+                .wrappedKeyNonce(k.getWrappedKeyNonce())
+                .build()).toList();
+        groupMessageKeyRepository.saveAll(rows);
     }
 
     @Transactional
     public GroupMessageDTO editMessage(Long messageId, Long requesterId, String content) {
+        return editMessage(messageId, requesterId, content, null, null);
+    }
+
+    // A new ciphertext needs a fresh nonce and a freshly re-wrapped key
+    // set every time — same reasoning as 1:1 edits (MessageService):
+    // reusing a nonce with new ciphertext breaks crypto_box/secretbox's
+    // security guarantees, so the old GroupMessageKey rows for this
+    // message are replaced wholesale, not patched.
+    @Transactional
+    public GroupMessageDTO editMessage(Long messageId, Long requesterId, String content, String nonce,
+                                        List<GroupMessageKeyDTO> recipientKeys) {
         GroupMessage msg = groupMessageRepository.findById(messageId)
                 .orElseThrow(() -> new BusinessException(ErrorType.NOT_FOUND, "Group message not found [messageId=" + messageId + "]"));
 
@@ -159,14 +210,29 @@ public class GroupService {
         }
 
         msg.setContent(content);
+        msg.setNonce(nonce);
         msg.setEdited(true);
-        return toMsgDTO(groupMessageRepository.save(msg));
+        GroupMessage saved = groupMessageRepository.save(msg);
+        if (nonce != null) {
+            groupMessageKeyRepository.deleteByGroupMessageId(messageId);
+            saveRecipientKeys(saved, recipientKeys);
+        }
+        return toMsgDTO(saved, recipientKeys);
     }
 
 
 
     public List<GroupMessageDTO> getMessages(Long groupId) {
-        return groupMessageRepository.findByGroupIdOrderByCreatedAtAsc(groupId).stream().map(this::toMsgDTO).toList();
+        List<GroupMessage> rows = groupMessageRepository.findByGroupIdOrderByCreatedAtAsc(groupId);
+        if (rows.isEmpty()) return List.of();
+        // One batched key fetch for the whole history instead of N+1,
+        // then grouped back onto their parent message by id.
+        List<Long> ids = rows.stream().map(GroupMessage::getId).toList();
+        Map<Long, List<GroupMessageKeyDTO>> keysByMessageId = new HashMap<>();
+        for (GroupMessageKey k : groupMessageKeyRepository.findByGroupMessageIdIn(ids)) {
+            keysByMessageId.computeIfAbsent(k.getGroupMessage().getId(), x -> new ArrayList<>()).add(toKeyDTO(k));
+        }
+        return rows.stream().map(m -> toMsgDTO(m, keysByMessageId.get(m.getId()))).toList();
     }
 
     private GroupDTO toDTO(GroupConversation g) {
@@ -176,6 +242,7 @@ public class GroupService {
                         .username(user.getUsername())
                         .displayName(user.getDisplayName())
                         .avatar(user.getProfilePicture())
+                        .publicKey(user.getPublicKey())
                         .build()
         ).collect(Collectors.toList());
 
@@ -204,11 +271,24 @@ public class GroupService {
         msg.setType("DELETE");
         msg.setContent(null);
         msg.setFileUrl(null);
-        return toMsgDTO(groupMessageRepository.save(msg));
+        msg.setNonce(null);
+        msg.setReplyPreviewNonce(null);
+        msg.setMediaNonce(null);
+        GroupMessage saved = groupMessageRepository.save(msg);
+        groupMessageKeyRepository.deleteByGroupMessageId(messageId);
+        return toMsgDTO(saved, null);
     }
 
-
     public GroupMessageDTO toMsgDTO(GroupMessage groupMessage) {
+        return toMsgDTO(groupMessage, groupMessageKeyRepository.findByGroupMessageId(groupMessage.getId())
+                .stream().map(GroupService::toKeyDTO).toList());
+    }
+
+    // recipientKeys is passed in rather than always queried fresh — the
+    // hot paths (send/edit) already have it in hand from the client's
+    // own request and would otherwise trigger a redundant extra query
+    // immediately after the save that just wrote those exact rows.
+    public GroupMessageDTO toMsgDTO(GroupMessage groupMessage, List<GroupMessageKeyDTO> recipientKeys) {
         User sender = groupMessage.getSender();
         return GroupMessageDTO.builder()
                 .id(groupMessage.getId())
@@ -228,6 +308,19 @@ public class GroupService {
                 .replyPreviewSender(groupMessage.getReplyPreviewSender())
                 .callId(groupMessage.getCallId())
                 .callStatus(groupMessage.getCallStatus())
+                .nonce(groupMessage.getNonce())
+                .replyPreviewNonce(groupMessage.getReplyPreviewNonce())
+                .mediaNonce(groupMessage.getMediaNonce())
+                .recipientKeys(recipientKeys)
+                .build();
+    }
+
+    private static GroupMessageKeyDTO toKeyDTO(GroupMessageKey k) {
+        return GroupMessageKeyDTO.builder()
+                .recipientId(k.getRecipient().getId())
+                .keyType(k.getKeyType())
+                .wrappedKey(k.getWrappedKey())
+                .wrappedKeyNonce(k.getWrappedKeyNonce())
                 .build();
     }
 

@@ -8,6 +8,8 @@ import net.omnimedia.omni.message.dto.ConversationDTO;
 import net.omnimedia.omni.message.dto.MessageDTO;
 import net.omnimedia.omni.message.service.MessageService;
 import net.omnimedia.omni.notification.service.PushNotificationService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.omnimedia.omni.group.dto.GroupMessageKeyDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -28,11 +30,18 @@ public class MessageRestController {
     @Autowired private GroupService groupService;
     @Autowired private R2StorageService r2Storage;
     @Autowired private net.omnimedia.omni.media.util.VideoTrimService videoTrimService;
+    @Autowired private ObjectMapper objectMapper;
     @Autowired private net.omnimedia.omni.media.util.ImageMarkupService imageMarkupService;
     @Autowired private PushNotificationService pushService;
 
     private Long callerId(HttpServletRequest req) {
         return (Long) req.getAttribute("authenticatedUserId");
+    }
+
+    /** Powers the Call Log tab — every call this user's part of, across every DM, most recent first. */
+    @GetMapping("/{userId}/calls")
+    public List<MessageDTO> getCallLog(@PathVariable Long userId) {
+        return messageService.getCallLog(userId);
     }
 
     @GetMapping("/{user1}/{user2}")
@@ -47,7 +56,7 @@ public class MessageRestController {
                                           HttpServletRequest req) {
         Long requesterId = callerId(req);
         if (requesterId == null) return ResponseEntity.status(401).build();
-            return ResponseEntity.ok(messageService.editMessage(id, body.get("content"), requesterId));
+            return ResponseEntity.ok(messageService.editMessage(id, body.get("content"), body.get("nonce"), requesterId));
     }
 
     /** Delete only your own message — was previously unauthenticated, now enforced via JWT */
@@ -78,8 +87,17 @@ public class MessageRestController {
             @RequestParam String type,
             @RequestParam MultipartFile file,
             @RequestParam(required = false) String content,
+            // Nonce for `content` itself — a media message's CAPTION is
+            // still text, encrypted the same way a plain text message is
+            // (crypto_box for DM, a wrapped CONTENT key for groups — see
+            // recipientKeysJson below). This was missing entirely until
+            // now: mediaNonce/mediaKeyCiphertext covered the FILE, but
+            // nothing covered the caption, so a caption on an otherwise
+            // fully-encrypted photo was still going out as plaintext.
+            @RequestParam(required = false) String nonce,
             @RequestParam(required = false) String replyToId,
             @RequestParam(required = false) String replyPreview,
+            @RequestParam(required = false) String replyPreviewNonce,
             @RequestParam(required = false) String replyPreviewSender,
             @RequestParam(required = false) Integer durationSeconds,
             @RequestParam(required = false) String waveformPeaks,
@@ -87,6 +105,21 @@ public class MessageRestController {
             @RequestParam(required = false) Double trimStart,
             @RequestParam(required = false) Double trimEnd,
             @RequestParam(required = false) String _tmpId,
+            // E2E media encryption metadata — present only when the client
+            // actually encrypted this file (encryptAttachmentFile() in
+            // attachments.js skips it for markup/trim sends, since those
+            // need the server to read the real bytes above — see the
+            // trim/markup branch just below, which is unaffected by any
+            // of this and still receives real file bytes either way).
+            @RequestParam(required = false) String mediaNonce,
+            @RequestParam(required = false) String mediaKeyCiphertext,
+            @RequestParam(required = false) String mediaKeyNonce,
+            // Group-only — see GroupMessageKey. Multipart form fields
+            // can't carry a nested array directly, so the client sends
+            // the per-member wrapped-key list as one JSON string and it's
+            // parsed back out here, same contract as the WS path's
+            // directly-bound List<GroupMessageKeyDTO>.
+            @RequestParam(required = false) String recipientKeysJson,
             HttpServletRequest req
     ) {
         Long senderId = callerId(req);
@@ -112,9 +145,21 @@ public class MessageRestController {
                 if (replyToId != null) {
                     try { parsedReplyToId = Long.parseLong(replyToId); } catch (NumberFormatException ignored) {}
                 }
+                List<GroupMessageKeyDTO> recipientKeys = null;
+                if (recipientKeysJson != null && !recipientKeysJson.isBlank()) {
+                    try {
+                        recipientKeys = objectMapper.readValue(recipientKeysJson, objectMapper.getTypeFactory()
+                                .constructCollectionType(List.class, GroupMessageKeyDTO.class));
+                    } catch (Exception e) {
+                        // Malformed JSON from a buggy/old client — fall back to a
+                        // plaintext send rather than fail the whole upload outright.
+                        recipientKeys = null;
+                    }
+                }
                 GroupMessageDTO saved = groupService.sendMessage(
                         groupId, senderId, content, type.toUpperCase(), fileUrl,
-                        parsedReplyToId, replyPreview, replyPreviewSender);
+                        parsedReplyToId, replyPreview, replyPreviewSender,
+                        nonce, replyPreviewNonce, mediaNonce, recipientKeys);
                 messagingTemplate.convertAndSend("/topic/group/" + groupId, saved);
                 var groupInfo = groupService.getGroup(groupId);
                 if (groupInfo != null) {
@@ -141,11 +186,16 @@ public class MessageRestController {
             dto.setDurationSeconds(durationSeconds);
             dto.setWaveformPeaks(waveformPeaks);
             if (content != null && !content.isBlank()) dto.setContent(content);
+            dto.setNonce(nonce);
             if (replyToId != null) {
                 try { dto.setReplyToId(Long.parseLong(replyToId)); } catch (NumberFormatException ignored) {}
             }
             if (replyPreview != null) dto.setReplyPreview(replyPreview);
+            dto.setReplyPreviewNonce(replyPreviewNonce);
             if (replyPreviewSender != null) dto.setReplyPreviewSender(replyPreviewSender);
+            dto.setMediaNonce(mediaNonce);
+            dto.setMediaKeyCiphertext(mediaKeyCiphertext);
+            dto.setMediaKeyNonce(mediaKeyNonce);
 
             MessageDTO saved = messageService.saveMessage(dto);
             // Echo the client's correlation token back, same as
