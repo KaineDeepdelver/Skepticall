@@ -40,6 +40,7 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private final CaptchaService captchaService;
     private final R2StorageService r2Storage;
+    private final net.omnimedia.omni.verification.service.EmailService emailService;
 
     // == Auth =================================================================
 
@@ -79,6 +80,11 @@ public class UserService {
     }
 
     public LoginResponseDTO login(LoginDTO dto) {
+        return login(dto, null);
+    }
+
+    /** ip may be null (unknown). Used for the "IP login alerts" setting. */
+    public LoginResponseDTO login(LoginDTO dto, String ip) {
         User user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorType.INVALID_OPERATION, "Invalid email or password"));
 
@@ -86,6 +92,23 @@ public class UserService {
             throw new BusinessException(ErrorType.INVALID_OPERATION, "Invalid email or password");
         }
 
+
+        // Remember where this sign-in came from; if it differs from the last one and the
+        // user turned on IP login alerts, email them. Never let this block a login.
+        try {
+            String previousIp = user.getLastLoginIp();
+            boolean newIp = ip != null && previousIp != null && !previousIp.equals(ip);
+            if (ip != null) user.setLastLoginIp(ip);
+            user.setLastLoginAt(java.time.Instant.now().toString());
+            userRepository.save(user);
+            if (newIp && user.isIpLoginAlerts()) {
+                emailService.sendCustomEmail(user.getEmail(), "New sign-in to your Skepticall account",
+                        "<p>Your account was just signed in to from a new IP address: <b>" + ip + "</b>.</p>"
+                        + "<p>If this was you, nothing to do. If not, change your password right away.</p>");
+            }
+        } catch (Exception ignored) {
+            // alert/tracking is best-effort
+        }
 
         UserDTO userDTO = toDTOWithAdmin(user);
         String token = jwtUtil.generate(userDTO.getId(), userDTO.getAdmin());
@@ -144,6 +167,7 @@ public class UserService {
         return userRepository
                 .findByDisplayNameContainingIgnoreCaseOrUsernameContainingIgnoreCase(query, query)
                 .stream()
+                .filter(u -> !u.isPrivacyMode()) // "Privacy mode": hidden from search results
                 .map(this::toPublicDTOWithAdmin)
                 .toList();
     }
@@ -235,6 +259,38 @@ public class UserService {
         return toDTOWithAdmin(userRepository.save(user));
     }
 
+    private static final java.util.Set<String> SETTING_KEYS = java.util.Set.of(
+            "privacyMode", "anonymousMode", "appearOffline",
+            "notifMessages", "notifMentions", "notifFollows", "notifReposts",
+            "profanityMode", "ipLoginAlerts", "allowFriendRequests", "groupInvitesAnyone");
+
+    /** Generic on/off settings. Only whitelisted keys are applied; values must be booleans. */
+    @CachePut(value = "users", key = "#id")
+    public UserDTO updateSettings(Long id, Map<String, Object> body) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorType.NOT_FOUND, "User profile not found [id=" + id + "]"));
+        for (Map.Entry<String, Object> e : body.entrySet()) {
+            String k = e.getKey();
+            if (!SETTING_KEYS.contains(k)) continue;
+            if (!(e.getValue() instanceof Boolean)) {
+                throw new BusinessException(ErrorType.INVALID_OPERATION, "Setting must be true or false [key=" + k + "]");
+            }
+            boolean v = (Boolean) e.getValue();
+            if (k.equals("privacyMode")) user.setPrivacyMode(v);
+            else if (k.equals("anonymousMode")) user.setAnonymousMode(v);
+            else if (k.equals("appearOffline")) user.setAppearOffline(v);
+            else if (k.equals("notifMessages")) user.setNotifMessages(v);
+            else if (k.equals("notifMentions")) user.setNotifMentions(v);
+            else if (k.equals("notifFollows")) user.setNotifFollows(v);
+            else if (k.equals("notifReposts")) user.setNotifReposts(v);
+            else if (k.equals("profanityMode")) user.setProfanityMode(v);
+            else if (k.equals("ipLoginAlerts")) user.setIpLoginAlerts(v);
+            else if (k.equals("allowFriendRequests")) user.setAllowFriendRequests(v);
+            else if (k.equals("groupInvitesAnyone")) user.setGroupInvitesAnyone(v);
+        }
+        return toDTOWithAdmin(userRepository.save(user));
+    }
+
     // == Account ==============================================================
 
     @CacheEvict(value = "users", key = "#id")
@@ -261,9 +317,13 @@ public class UserService {
         userRepository.findById(id).ifPresent(u -> { u.setOnline(online); userRepository.save(u); });
     }
 
+    public boolean isAppearOffline(Long id) {
+        return userRepository.findById(id).map(User::isAppearOffline).orElse(false);
+    }
+
     public Map<String, Object> getPresence(Long id) {
         return userRepository.findById(id)
-                .map(u -> Map.<String, Object>of("online", u.isOnline()))
+                .map(u -> Map.<String, Object>of("online", u.isOnline() && !u.isAppearOffline()))
                 .orElse(Map.of("online", false));
     }
 

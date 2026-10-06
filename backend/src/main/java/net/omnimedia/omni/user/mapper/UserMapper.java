@@ -23,6 +23,8 @@ public class UserMapper {
                 .followingCount(user.getFollowingCount())
                 .privacyMode(user.isPrivacyMode())
                 .anonymousMode(user.isAnonymousMode())
+                .allowFriendRequests(!Boolean.FALSE.equals(user.getAllowFriendRequests()))
+                .groupInvitesAnyone(!Boolean.FALSE.equals(user.getGroupInvitesAnyone()))
                 .appearOffline(user.isAppearOffline())
                 .notifMessages(user.isNotifMessages())
                 .notifMentions(user.isNotifMentions())
@@ -52,7 +54,8 @@ public class UserMapper {
                 .followerCount(user.getFollowerCount())
                 .followingCount(user.getFollowingCount())
                 .publicKey(user.getPublicKey())
-                .online(user.isOnline())
+                // "Appear offline": everyone else sees offline no matter what
+                .online(user.isOnline() && !user.isAppearOffline())
                 .createdAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null)
                 .build();
     }

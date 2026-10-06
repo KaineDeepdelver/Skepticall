@@ -61,6 +61,11 @@ public class User extends BaseEntity {
     @Builder.Default
     private boolean anonymousMode = false;
 
+    // Nullable Boolean on purpose: ddl-auto=update can't add a NOT NULL column to a
+    // table that already has rows. null means "never set" = the old behaviour (allowed).
+    private Boolean allowFriendRequests;
+    private Boolean groupInvitesAnyone;
+
     // == Presence ==
 
     @Builder.Default

@@ -27,7 +27,8 @@ public class PresenceWsController {
 
         Map<String, Object> broadcast = new HashMap<>();
         broadcast.put("userId", userId);
-        broadcast.put("online", online);
+        // "Appear offline": we still record the real state, but never announce it
+        broadcast.put("online", online && !userService.isAppearOffline(userId));
 
         messaging.convertAndSend((String) "/topic/presence", (Object) broadcast);
     }

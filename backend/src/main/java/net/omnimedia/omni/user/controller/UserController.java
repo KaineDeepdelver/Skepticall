@@ -28,6 +28,9 @@ public class UserController {
     @Autowired
     private MessageService messageService;
 
+    @Autowired
+    private org.springframework.messaging.simp.SimpMessagingTemplate messaging;
+
     private Long callerId(HttpServletRequest req) {
         return (Long) req.getAttribute("authenticatedUserId");
     }
@@ -40,8 +43,19 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginDTO dto) {
-         return ResponseEntity.ok(userService.login(dto));
+    public ResponseEntity<?> login(@RequestBody LoginDTO dto, HttpServletRequest req) {
+         return ResponseEntity.ok(userService.login(dto, clientIp(req)));
+    }
+
+    // Behind Cloudflare / Render the socket address is the proxy, so prefer the forwarded headers.
+    private String clientIp(HttpServletRequest req) {
+        String ip = req.getHeader("CF-Connecting-IP");
+        if (ip == null || ip.isBlank()) {
+            String xff = req.getHeader("X-Forwarded-For");
+            if (xff != null && !xff.isBlank()) ip = xff.split(",")[0].trim();
+        }
+        if (ip == null || ip.isBlank()) ip = req.getRemoteAddr();
+        return ip;
     }
 
     // == Checks ===============================================================
@@ -115,6 +129,22 @@ public class UserController {
             userService.requireSelf(callerId(req), id);
             boolean mode = Boolean.TRUE.equals(body.get("privacyMode"));
             return ResponseEntity.ok(userService.updatePrivacy(id, mode));
+    }
+
+    /** On/off settings (privacy, notifications, presence, security). Whitelisted keys only. */
+    @PutMapping("/{id}/settings")
+    public ResponseEntity<?> updateSettings(@PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest req) {
+            userService.requireSelf(callerId(req), id);
+            UserDTO dto = userService.updateSettings(id, body);
+            if (body.containsKey("appearOffline")) {
+                // Tell everyone right away instead of waiting for the next presence ping.
+                boolean visible = Boolean.TRUE.equals(dto.getOnline()) && !Boolean.TRUE.equals(dto.getAppearOffline());
+                Map<String, Object> broadcast = new java.util.HashMap<>();
+                broadcast.put("userId", id);
+                broadcast.put("online", visible);
+                messaging.convertAndSend("/topic/presence", (Object) broadcast);
+            }
+            return ResponseEntity.ok(dto);
     }
 
     /** Self-delete — requires the account's own password to confirm */
