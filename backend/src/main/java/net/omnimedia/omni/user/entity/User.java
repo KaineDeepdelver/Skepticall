@@ -58,6 +58,8 @@ public class User extends BaseEntity {
     @Builder.Default
     private boolean privacyMode = false;
 
+    // Anonymous mode was removed as a feature. Kept (unused) so the existing NOT NULL column
+    // still gets a value on insert; drop the column in the database, then delete this field.
     @Builder.Default
     private boolean anonymousMode = false;
 
