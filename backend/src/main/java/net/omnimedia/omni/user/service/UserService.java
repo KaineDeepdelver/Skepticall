@@ -20,14 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -83,7 +77,7 @@ public class UserService {
         return login(dto, null);
     }
 
-    /** ip may be null (unknown). Used for the "IP login alerts" setting. */
+    // ip may be null (unknown). Used for the "IP login alerts" setting.
     public LoginResponseDTO login(LoginDTO dto, String ip) {
         User user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorType.INVALID_OPERATION, "Invalid email or password"));
@@ -107,7 +101,7 @@ public class UserService {
                         + "<p>If this was you, nothing to do. If not, change your password right away.</p>");
             }
         } catch (Exception ignored) {
-            // alert/tracking is best-effort
+            
         }
 
         UserDTO userDTO = toDTOWithAdmin(user);
@@ -181,11 +175,7 @@ public class UserService {
     }
 
     // == Ownership guard ======================================================
-
-    /**
-     * Throws if the JWT caller is not the owner of the resource.
-     * Admins bypass this — they can act on any account.
-     */
+    
     public void requireSelf(Long callerId, Long targetId) {
         if (callerId == null)
             throw new SecurityException("Authentication required");
@@ -260,7 +250,7 @@ public class UserService {
     }
 
     private static final java.util.Set<String> SETTING_KEYS = java.util.Set.of(
-            "privacyMode", "anonymousMode", "appearOffline",
+            "privacyMode", "appearOffline",
             "notifMessages", "notifMentions", "notifFollows", "notifReposts",
             "profanityMode", "ipLoginAlerts", "allowFriendRequests", "groupInvitesAnyone");
 
@@ -277,7 +267,6 @@ public class UserService {
             }
             boolean v = (Boolean) e.getValue();
             if (k.equals("privacyMode")) user.setPrivacyMode(v);
-            else if (k.equals("anonymousMode")) user.setAnonymousMode(v);
             else if (k.equals("appearOffline")) user.setAppearOffline(v);
             else if (k.equals("notifMessages")) user.setNotifMessages(v);
             else if (k.equals("notifMentions")) user.setNotifMentions(v);
