@@ -22,7 +22,6 @@ public class UserMapper {
                 .followerCount(user.getFollowerCount())
                 .followingCount(user.getFollowingCount())
                 .privacyMode(user.isPrivacyMode())
-                .anonymousMode(user.isAnonymousMode())
                 .allowFriendRequests(!Boolean.FALSE.equals(user.getAllowFriendRequests()))
                 .groupInvitesAnyone(!Boolean.FALSE.equals(user.getGroupInvitesAnyone()))
                 .appearOffline(user.isAppearOffline())
@@ -73,7 +72,6 @@ public class UserMapper {
                 .followerCount(dto.getFollowerCount())
                 .followingCount(dto.getFollowingCount())
                 .privacyMode(dto.getPrivacyMode())
-                .anonymousMode(dto.getAnonymousMode())
                 .build();
     }
 }
