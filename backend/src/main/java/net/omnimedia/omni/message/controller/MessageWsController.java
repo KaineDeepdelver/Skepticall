@@ -97,6 +97,7 @@ public class MessageWsController {
     }
 
     @Autowired private net.omnimedia.omni.group.service.GroupService groupService;
+    private static final org.slf4j.Logger TYPING_LOG = org.slf4j.LoggerFactory.getLogger(MessageWsController.class);
 
     /**
      * "X is typing". Relayed on each recipient's own /topic/typing/{id} channel (not the shared
@@ -108,6 +109,7 @@ public class MessageWsController {
     public void typing(java.util.Map<String, Object> payload, Principal principal) {
         Long from = uid(principal);
         boolean typing = Boolean.TRUE.equals(payload.get("typing"));
+        TYPING_LOG.info("[typing] from={} payload={}", from, payload);
         try {
             Object groupObj = payload.get("groupId");
             Object toObj = payload.get("receiverId");
@@ -132,8 +134,9 @@ public class MessageWsController {
                 out.put("typing", typing);
                 messagingTemplate.convertAndSend("/topic/typing/" + to, (Object) out);
             }
-        } catch (Exception ignored) {
-            // typing hints are best-effort
+        } catch (Exception e) {
+            // typing hints are best-effort, but say why one was dropped
+            TYPING_LOG.warn("[typing] relay failed from={} payload={}: {}", from, payload, e.toString());
         }
     }
 
