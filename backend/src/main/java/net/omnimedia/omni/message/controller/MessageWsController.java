@@ -96,6 +96,47 @@ public class MessageWsController {
         broadcast(deleted);
     }
 
+    @Autowired private net.omnimedia.omni.group.service.GroupService groupService;
+
+    /**
+     * "X is typing". Relayed on each recipient's own /topic/typing/{id} channel (not the shared
+     * message topic) so web and older clients, which don't know about it, never see it.
+     * DM:    {receiverId, typing}
+     * Group: {groupId, typing}  — fanned out to every other member; sender must be a member.
+     */
+    @MessageMapping("/typing")
+    public void typing(java.util.Map<String, Object> payload, Principal principal) {
+        Long from = uid(principal);
+        boolean typing = Boolean.TRUE.equals(payload.get("typing"));
+        try {
+            Object groupObj = payload.get("groupId");
+            Object toObj = payload.get("receiverId");
+            if (groupObj != null) {
+                Long groupId = Long.valueOf(groupObj.toString());
+                net.omnimedia.omni.group.dto.GroupDTO g = groupService.getGroup(groupId);
+                boolean isMember = g.getMembers().stream().anyMatch(m -> from.equals(m.getId()));
+                if (!isMember) return;
+                for (net.omnimedia.omni.group.dto.MemberDTO m : g.getMembers()) {
+                    if (from.equals(m.getId())) continue;
+                    java.util.Map<String, Object> out = new java.util.HashMap<>();
+                    out.put("senderId", from);
+                    out.put("groupId", groupId);
+                    out.put("typing", typing);
+                    messagingTemplate.convertAndSend("/topic/typing/" + m.getId(), (Object) out);
+                }
+            } else if (toObj != null) {
+                Long to = Long.valueOf(toObj.toString());
+                if (to.equals(from)) return;
+                java.util.Map<String, Object> out = new java.util.HashMap<>();
+                out.put("senderId", from);
+                out.put("typing", typing);
+                messagingTemplate.convertAndSend("/topic/typing/" + to, (Object) out);
+            }
+        } catch (Exception ignored) {
+            // typing hints are best-effort
+        }
+    }
+
     @MessageMapping("/message.read")
     public void markRead(MessageDTO message, Principal principal) {
         // Read receipts: the authenticated user is always the "toUserId" (the

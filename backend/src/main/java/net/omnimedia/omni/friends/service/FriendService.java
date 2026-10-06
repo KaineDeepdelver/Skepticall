@@ -17,6 +17,15 @@ public class FriendService {
     private final FriendRequestRepository repo;
     private final UserRepository userRepo;
 
+    // Settings > Privacy > Allow friend requests
+    private void requireAcceptsRequests(Long receiverId) {
+        userRepo.findById(receiverId).ifPresent(u -> {
+            if (Boolean.FALSE.equals(u.getAllowFriendRequests())) {
+                throw new BusinessException(ErrorType.PERMISSION_DENIED, "This user isn't accepting friend requests");
+            }
+        });
+    }
+
     @Transactional
     public Map<String, Object> sendRequest(Long senderId, Long receiverId) {
         if (senderId.equals(receiverId)) {
@@ -31,6 +40,7 @@ public class FriendService {
             if ("PENDING".equals(r.getStatus()))
                 return Map.of("status", "PENDING", "requestId", r.getId());
 
+            requireAcceptsRequests(receiverId);
             // was rejected — reset
             r.setStatus("PENDING");
             r.setSender(userRepo.findById(senderId)
@@ -45,6 +55,7 @@ public class FriendService {
 
         User receiver = userRepo.findById(receiverId)
                 .orElseThrow(() -> new BusinessException(ErrorType.NOT_FOUND, "Receiver profile not found [receiverId=" + receiverId + "]"));
+        requireAcceptsRequests(receiverId);
 
         FriendRequest saved = repo.save(FriendRequest.builder().sender(sender).receiver(receiver).build());
         return Map.of("status", "PENDING", "requestId", saved.getId());

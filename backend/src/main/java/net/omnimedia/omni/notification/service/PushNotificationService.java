@@ -69,18 +69,21 @@ public class PushNotificationService {
 
     @Async("pushExecutor")
     public void notifyMessage(Long senderId, Long receiverId, String preview) {
+        if (!dmPushAllowed(receiverId)) return;
         sendToUser(receiverId, displayName(senderId), preview != null ? preview : "Sent you a message",
                 Map.of("type", "message", "senderId", senderId));
     }
 
     @Async("pushExecutor")
     public void notifyVoiceMessage(Long senderId, Long receiverId) {
+        if (!dmPushAllowed(receiverId)) return;
         sendToUser(receiverId, displayName(senderId), "🎤 Voice message",
                 Map.of("type", "message", "senderId", senderId));
     }
 
     @Async("pushExecutor")
     public void notifyAttachment(Long senderId, Long receiverId, String kind) {
+        if (!dmPushAllowed(receiverId)) return;
         sendToUser(receiverId, displayName(senderId), attachmentPreview(kind),
                 Map.of("type", "message", "senderId", senderId));
     }
@@ -116,6 +119,11 @@ public class PushNotificationService {
             sendToUser(id, groupName, name + (video ? " started a video call" : " started a voice call"),
                     Map.of("type", "groupCall", "groupId", groupId));
         }
+    }
+
+    // Settings > Notifications > Direct messages
+    private boolean dmPushAllowed(Long receiverId) {
+        return userRepo.findById(receiverId).map(User::isNotifMessages).orElse(true);
     }
 
     private List<Long> recipientsExcluding(List<Long> memberIds, Long exclude) {

@@ -103,6 +103,10 @@ public class NotificationService {
         User actor     = userRepo.findById(actorId).orElse(null);
         User recipient = userRepo.findById(recipientId).orElse(null);
         if (actor == null || recipient == null) return;
+        // Settings > Notifications: "Direct messages" and "New followers"
+        boolean isDm = type.equals("MESSAGE") || type.equals("VOICE_MESSAGE") || type.equals("REPLY") || type.equals("VOICE_REPLY");
+        if (isDm && !recipient.isNotifMessages()) return;
+        if (type.equals("FOLLOW") && !recipient.isNotifFollows()) return;
         notifRepo.save(Notification.builder()
             .recipient(recipient).actor(actor)
             .type(type).refId(refId).preview(preview)

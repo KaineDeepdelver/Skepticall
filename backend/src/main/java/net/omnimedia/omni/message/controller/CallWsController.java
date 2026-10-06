@@ -36,6 +36,8 @@ public class CallWsController {
     private void relay(String wsType, Map<String, Object> payload, Principal principal) {
         Object targetId = payload.get("targetId");
         if (targetId == null) return;
+        // Never relay a call frame back to its own sender (calling yourself).
+        if (targetId.toString().equals(String.valueOf(uid(principal)))) return;
         Map<String, Object> out = new HashMap<>(payload);
         out.put("senderId", uid(principal));
         out.put("_type", wsType);
@@ -51,6 +53,7 @@ public class CallWsController {
         String callType  = (String) payload.getOrDefault("type", "audio");
         if (targetId != null) {
             Long to = Long.valueOf(targetId.toString());
+            if (to.equals(from)) return; // no ringing, notification or push for a self-call
             boolean video = "video".equals(callType);
             if (video) notifService.notifyVideoCall(from, to);
             else       notifService.notifyCall(from, to);

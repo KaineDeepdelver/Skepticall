@@ -28,6 +28,17 @@ public class GroupService {
     private final GroupMessageRepository groupMessageRepository;
     private final GroupMessageKeyRepository groupMessageKeyRepository;
     private final UserRepository userRepository;
+    private final net.omnimedia.omni.friends.repository.FriendRequestRepository friendRepo;
+
+    // Settings > Privacy > Group invites from anyone (off = only friends can add them)
+    private void requireInvitable(Long inviterId, User u) {
+        if (!Boolean.FALSE.equals(u.getGroupInvitesAnyone())) return;
+        boolean friends = friendRepo.findBetween(inviterId, u.getId())
+                .map(r -> "ACCEPTED".equals(r.getStatus())).orElse(false);
+        if (!friends) {
+            throw new BusinessException(ErrorType.PERMISSION_DENIED, "@" + u.getUsername() + " only accepts group invites from friends");
+        }
+    }
 
     @Transactional
     public GroupDTO createGroup(Long creatorId, String name, List<Long> memberIds) {
@@ -38,7 +49,7 @@ public class GroupService {
                 .filter(id -> !id.equals(creatorId))
                 .map(id -> userRepository.findById(id).orElse(null))
                 .filter(Objects::nonNull)
-                .forEach(members::add);
+                .forEach(u -> { requireInvitable(creatorId, u); members.add(u); });
         GroupConversation g = GroupConversation.builder().name(name).creator(creator).members(members).build();
         return toDTO(groupConversationRepository.save(g));
     }
@@ -89,7 +100,7 @@ public class GroupService {
                 .filter(id -> !existing.contains(id))
                 .map(id -> userRepository.findById(id).orElse(null))
                 .filter(Objects::nonNull)
-                .forEach(u -> g.getMembers().add(u));
+                .forEach(u -> { requireInvitable(requesterId, u); g.getMembers().add(u); });
 
         return toDTO(groupConversationRepository.save(g));
     }

@@ -64,8 +64,10 @@ public class PostService {
 
     @Cacheable(value = "user-posts", key = "#authorId + ':' + #page")
     public List<PostDTO> getUserPosts(Long authorId, int page, int size, Long viewerId) {
+        // A person's own profile page is where they are, by definition, so no "anonymous"
+        // masking here (this result is also cached without regard to who is looking).
         return postRepo.findByAuthorIdOrderByCreatedAtDesc(authorId, PageRequest.of(page, size))
-                .map(p -> toDTO(p, viewerId)).toList();
+                .map(p -> toDTO(p, viewerId, false)).toList();
     }
 
     // == Fetch by slug (public URL) ===========================================================
@@ -168,11 +170,19 @@ public class PostService {
 
 
     public PostDTO toDTO(Post p, Long viewerId) {
+        return toDTO(p, viewerId, true);
+    }
+
+    public PostDTO toDTO(Post p, Long viewerId, boolean maskAnonymous) {
         String userVote = null;
         if (viewerId != null)
             userVote = voteRepo.findByPostIdAndUserId(p.getId(), viewerId)
                     .map(PostVote::getVoteType).orElse(null);
         User a = p.getAuthor();
+        // Settings > Privacy > Anonymous mode: the author shows as "Anonymous" everywhere
+        // except their own profile page. Always applied (even to the author in the feed) so
+        // cached feed pages never depend on who happened to load them first.
+        boolean anon = maskAnonymous && a.isAnonymousMode();
 
         List<PostMediaDTO> mediaDTOs = p.getMediaItems().stream()
                 .map(m -> PostMediaDTO.builder()
@@ -186,10 +196,10 @@ public class PostService {
         return PostDTO.builder()
                 .id(p.getId())
                 .slug(p.getSlug())
-                .authorId(a.getId())
-                .authorUsername(a.getUsername())
-                .authorDisplayName(a.getDisplayName())
-                .authorAvatar(a.getProfilePicture())
+                .authorId(anon ? null : a.getId())
+                .authorUsername(anon ? "anonymous" : a.getUsername())
+                .authorDisplayName(anon ? "Anonymous" : a.getDisplayName())
+                .authorAvatar(anon ? null : a.getProfilePicture())
                 .title(p.getTitle())
                 .content(p.getContent())
                 .mediaItems(mediaDTOs)

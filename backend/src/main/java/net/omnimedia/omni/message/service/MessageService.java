@@ -50,6 +50,10 @@ public class MessageService {
 
     @Transactional
     public MessageDTO saveMessage(MessageDTO dto) {
+        // Covers both the WebSocket and REST send paths: a DM to yourself makes no sense.
+        if (dto.getReceiverId() != null && dto.getReceiverId().equals(dto.getSenderId())) {
+            throw new BusinessException(ErrorType.INVALID_OPERATION, "You can't send a message to yourself");
+        }
         dto.setStatus("SENT");
 
         // == /tempo detection ==
