@@ -72,26 +72,22 @@ public class UserController {
 
     // == Queries ==============================================================
 
-    /** Public profile — no sensitive fields, no auth required */
     @GetMapping("/{id}")
     public ResponseEntity<UserPublicDTO> getUser(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getPublicUser(id));
     }
 
-    /** Resolve a username → public profile. Used by frontend username-based URLs. */
     @GetMapping("/by-username/{username}")
     public ResponseEntity<UserPublicDTO> getUserByUsername(@PathVariable String username) {
             return ResponseEntity.ok(userService.getPublicUserByUsername(username));
     }
 
-    /** Own profile — full data including settings. JWT must match {id}. */
     @GetMapping("/{id}/me")
     public ResponseEntity<?> getMe(@PathVariable Long id, HttpServletRequest req) {
             userService.requireSelf(callerId(req), id);
             return ResponseEntity.ok(userService.getUser(id));
     }
-
-    /** Search returns public profiles only */
+    
     @GetMapping("/search")
     public ResponseEntity<List<UserPublicDTO>> searchUsers(@RequestParam String query) {
         return ResponseEntity.ok(userService.searchUsersPublic(query));
@@ -102,8 +98,6 @@ public class UserController {
             userService.requireSelf(callerId(req), id);
             return ResponseEntity.ok(messageService.getUserConversations(id));
     }
-
-    // == Updates — JWT-authenticated caller must own {id} (or be an admin) ===
 
     @PutMapping("/{id}/profile")
     public ResponseEntity<?> updateProfile(
@@ -131,7 +125,6 @@ public class UserController {
             return ResponseEntity.ok(userService.updatePrivacy(id, mode));
     }
 
-    /** On/off settings (privacy, notifications, presence, security). Whitelisted keys only. */
     @PutMapping("/{id}/settings")
     public ResponseEntity<?> updateSettings(@PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest req) {
             userService.requireSelf(callerId(req), id);
@@ -147,7 +140,7 @@ public class UserController {
             return ResponseEntity.ok(dto);
     }
 
-    /** Self-delete — requires the account's own password to confirm */
+    // Self-delete — requires the account's own password to confirm
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAccount(@PathVariable Long id, @RequestBody Map<String, String> body, HttpServletRequest req) {
         try {
@@ -162,8 +155,6 @@ public class UserController {
     }
 
     // == Presence =============================================================
-    // Best-effort: tab-close beacons may race the token being attached, so we only
-    // hard-block when a token IS present and belongs to someone else.
 
     @PutMapping("/{id}/presence")
     public ResponseEntity<Void> setPresence(@PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest req) {
