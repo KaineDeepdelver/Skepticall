@@ -38,7 +38,6 @@ public class UserDTO {
     // == Privacy ==
 
     private Boolean privacyMode;
-    private Boolean anonymousMode;
     private Boolean allowFriendRequests;
     private Boolean groupInvitesAnyone;
 
