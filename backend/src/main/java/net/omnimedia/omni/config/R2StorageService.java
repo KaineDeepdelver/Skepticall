@@ -13,6 +13,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 import java.io.IOException;
 import java.net.URI;
@@ -80,6 +81,25 @@ public class R2StorageService {
             );
         }
     }
+
+
+    /** Deletes the object behind a public URL this service handed out earlier. Never throws. */
+    public void deleteByUrl(String url) {
+        if (url == null || url.isBlank() || publicBaseUrl == null || s3 == null) return;
+        String base = publicBaseUrl.endsWith("/") ? publicBaseUrl : publicBaseUrl + "/";
+        if (!url.startsWith(base)) return;
+        String key = url.substring(base.length());
+        int q = key.indexOf('?');
+        if (q >= 0) key = key.substring(0, q);
+        if (key.isBlank()) return;
+        try {
+            s3.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
+        } catch (Exception ignored) {
+            // best effort
+        }
+    }
+
+
 
     /**
      * Uploads a file to R2 under a unique generated name and returns the
