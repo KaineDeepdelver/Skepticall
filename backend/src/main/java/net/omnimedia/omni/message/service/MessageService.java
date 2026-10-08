@@ -29,6 +29,7 @@ public class MessageService {
     private final MessageRepository messageRepo;
     private final UserRepository userRepo;
     private final MessageMapper messageMapper;
+    private final MessageRetentionService retentionService;
 
     // == Tempo default TTL in seconds ==
     private static final int TEMPO_TTL_SECONDS = 30;
@@ -70,7 +71,9 @@ public class MessageService {
         }
 
         Message saved = messageRepo.save(messageMapper.toEntity(dto));
-        return messageMapper.toDTO(saved);
+        MessageDTO out = messageMapper.toDTO(saved);
+        retentionService.cacheNew(out);
+        return out;
     }
 
     // == Edits / Deletes ======================================================
@@ -92,7 +95,9 @@ public class MessageService {
         // just make the edited message permanently undecryptable.
         m.setNonce(nonce);
         m.setEdited(true);
-        return messageMapper.toDTO(messageRepo.save(m));
+        MessageDTO out = messageMapper.toDTO(messageRepo.save(m));
+        retentionService.refreshCached(out);
+        return out;
     }
 
 
@@ -112,7 +117,9 @@ public class MessageService {
         m.setMediaNonce(null);
         m.setMediaKeyCiphertext(null);
         m.setMediaKeyNonce(null);
-        return messageMapper.toDTO(messageRepo.save(m));
+        MessageDTO out = messageMapper.toDTO(messageRepo.save(m));
+        retentionService.refreshCached(out);
+        return out;
     }
 
 

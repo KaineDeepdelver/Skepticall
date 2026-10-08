@@ -12,37 +12,45 @@ import java.util.List;
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Query("SELECT m FROM Message m WHERE " +
-           "(m.sender.id = :u1 AND m.receiver.id = :u2) OR " +
-           "(m.sender.id = :u2 AND m.receiver.id = :u1) " +
-           "ORDER BY m.createdAt ASC")
+            "(m.sender.id = :u1 AND m.receiver.id = :u2) OR " +
+            "(m.sender.id = :u2 AND m.receiver.id = :u1) " +
+            "ORDER BY m.createdAt ASC")
     List<Message> findConversation(@Param("u1") Long u1, @Param("u2") Long u2);
 
     @Query("SELECT m FROM Message m WHERE " +
-           "m.sender.id = :userId OR m.receiver.id = :userId " +
-           "ORDER BY m.createdAt DESC")
+            "m.sender.id = :userId OR m.receiver.id = :userId " +
+            "ORDER BY m.createdAt DESC")
     List<Message> findRecentConversations(@Param("userId") Long userId);
 
-    /** Messages sent FROM fromUserId TO toUserId that are not yet READ */
+    /**
+     * Messages sent FROM fromUserId TO toUserId that are not yet READ
+     */
     @Query("SELECT m FROM Message m WHERE " +
-           "m.sender.id = :fromUserId AND m.receiver.id = :toUserId " +
-           "AND (m.status IS NULL OR m.status <> 'READ')")
+            "m.sender.id = :fromUserId AND m.receiver.id = :toUserId " +
+            "AND (m.status IS NULL OR m.status <> 'READ')")
     List<Message> findUnreadMessages(@Param("fromUserId") Long fromUserId,
-                                     @Param("toUserId")   Long toUserId);
+                                     @Param("toUserId") Long toUserId);
 
-    /** Count of unread messages sent FROM fromUserId TO toUserId */
+    /**
+     * Count of unread messages sent FROM fromUserId TO toUserId
+     */
     @Query("SELECT COUNT(m) FROM Message m WHERE " +
-           "m.sender.id = :fromUserId AND m.receiver.id = :toUserId " +
-           "AND (m.status IS NULL OR m.status <> 'READ')")
+            "m.sender.id = :fromUserId AND m.receiver.id = :toUserId " +
+            "AND (m.status IS NULL OR m.status <> 'READ')")
     long countUnreadMessages(@Param("fromUserId") Long fromUserId,
-                             @Param("toUserId")   Long toUserId);
+                             @Param("toUserId") Long toUserId);
 
-    /** Every call-log entry (type CALL) involving this user, across ALL their DM conversations — powers the Call Log tab. */
+    /**
+     * Every call-log entry (type CALL) involving this user, across ALL their DM conversations — powers the Call Log tab.
+     */
     @Query("SELECT m FROM Message m WHERE m.type = 'CALL' AND " +
-           "(m.sender.id = :userId OR m.receiver.id = :userId) " +
-           "ORDER BY m.createdAt DESC")
+            "(m.sender.id = :userId OR m.receiver.id = :userId) " +
+            "ORDER BY m.createdAt DESC")
     List<Message> findCallsForUser(@Param("userId") Long userId);
 
-    /** TEMPO messages whose TTL has expired — used for scheduled cleanup. */
+    /**
+     * TEMPO messages whose TTL has expired — used for scheduled cleanup.
+     */
     @Query("SELECT m FROM Message m WHERE m.type = 'TEMPO' AND m.tempoExpiresAt IS NOT NULL AND m.tempoExpiresAt <= :now")
     List<Message> findExpiredTempoMessages(@Param("now") LocalDateTime now);
 
@@ -50,4 +58,31 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Modifying
     @Query("DELETE FROM Message m WHERE m.sender.id = :userId OR m.receiver.id = :userId")
     void deleteAllForUser(@Param("userId") Long userId);
+
+    /**
+     * DMs waiting for this user's device to collect them.
+     */
+    @Query("SELECT m FROM Message m WHERE m.receiver.id = :userId AND m.deliveredAt IS NULL " +
+            "AND (m.type IS NULL OR m.type <> 'CALL') ORDER BY m.createdAt ASC")
+    List<Message> findUndeliveredFor(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.receiver.id = :userId AND m.deliveredAt IS NULL " +
+            "AND (m.type IS NULL OR m.type <> 'CALL')")
+    long countUndeliveredFor(@Param("userId") Long userId);
+
+    /**
+     * Delivered at or before cutoff, so the retention delay has passed.
+     */
+    @Query("SELECT m FROM Message m WHERE m.deliveredAt IS NOT NULL AND m.deliveredAt <= :cutoff " +
+            "AND (m.type IS NULL OR m.type <> 'CALL')")
+    List<Message> findPurgeable(@Param("cutoff") LocalDateTime cutoff);
+
+    /**
+     * Never collected and older than the max pending age.
+     */
+    @Query("SELECT m FROM Message m WHERE m.deliveredAt IS NULL AND m.createdAt <= :cutoff " +
+            "AND (m.type IS NULL OR m.type <> 'CALL')")
+    List<Message> findExpiredUndelivered(@Param("cutoff") LocalDateTime cutoff);
+
+
 }

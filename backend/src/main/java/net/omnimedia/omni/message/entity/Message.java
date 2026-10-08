@@ -56,6 +56,8 @@ public class Message extends BaseEntity {
     // distinct from mediaNonce, which is for the file bytes themselves.
     private String mediaKeyNonce;
 
+    private LocalDateTime deliveredAt;
+
     @Column(nullable = false)
     private Boolean edited = false;
 
