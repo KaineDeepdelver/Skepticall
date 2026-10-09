@@ -1042,8 +1042,7 @@ export default function Settings() {
         <>
           <SectionTitle>Moderation</SectionTitle>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.6 }}>
-            As an admin you can delete any user's posts, comments, and media directly from the
-            content itself. Deleting a user account requires a 15-second wait and typing CONFIRM.
+            Deleting a user account requires a 15-second wait and typing CONFIRM.
           </p>
 
           <div style={{ position: 'relative', marginBottom: 12 }}>
@@ -1320,7 +1319,7 @@ export default function Settings() {
         <Dialog title="Delete Account" onClose={() => setDialog(null)} onSave={confirmDeleteAccount}
           saveLabel="Delete Forever" saveVariant="danger" saving={saving}>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 14px' }}>
-            This action is <strong>permanent</strong> and cannot be undone. All your posts, messages, and media will be deleted immediately.
+            This action is <strong>permanent</strong> and cannot be undone. All your messages and media will be deleted immediately.
           </p>
           <label className="dialog-label">Enter your password to confirm</label>
           <PwInput value={deletePw} onChange={e => setDeletePw(e.target.value)} autoFocus />
@@ -1334,7 +1333,7 @@ export default function Settings() {
           targetLabel={deleteUserTarget.displayName || deleteUserTarget.username}
           targetSub={`@${deleteUserTarget.username}`}
           targetAvatar={<UserAvatar src={deleteUserTarget.profilePicture} name={deleteUserTarget.displayName || deleteUserTarget.username} size={32} />}
-          warning="This permanently deletes this user's account, posts, comments, and media. This cannot be undone."
+          warning="This permanently deletes this user's account, messages, and media. This cannot be undone."
           onClose={() => setDeleteUserTarget(null)}
           onConfirm={confirmDeleteUser}
           confirming={deletingUser}

@@ -3,7 +3,7 @@ package net.omnimedia.omni.config;
 import jakarta.annotation.PostConstruct;
 import net.omnimedia.omni.exceptions.BusinessException;
 import net.omnimedia.omni.exceptions.ErrorType;
-import net.omnimedia.omni.media.util.MediaMetadataScrubber;
+import net.omnimedia.omni.message.util.MediaMetadataScrubber;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;

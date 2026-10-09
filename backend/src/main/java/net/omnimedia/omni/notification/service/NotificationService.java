@@ -1,7 +1,6 @@
 package net.omnimedia.omni.notification.service;
 
 import lombok.RequiredArgsConstructor;
-import net.omnimedia.omni.follow.repository.FollowRepository;
 import net.omnimedia.omni.notification.dto.NotificationDTO;
 import net.omnimedia.omni.notification.entity.Notification;
 import net.omnimedia.omni.notification.repository.NotificationRepository;
@@ -17,24 +16,7 @@ import java.util.stream.Collectors;
 public class NotificationService {
 
     private final NotificationRepository notifRepo;
-    private final FollowRepository       followRepo;
     private final UserRepository         userRepo;
-
-    // ── followers (POST / MEDIA) ──────────────────────────────────────────────
-
-    @Transactional
-    public void notifyFollowers(Long actorId, String type, Long refId, String refSlug, String preview) {
-        User actor = userRepo.findById(actorId).orElse(null);
-        if (actor == null) return;
-        followRepo.findByFollowingId(actorId).forEach(follow -> {
-            User recipient = follow.getFollower();
-            if (recipient.getId().equals(actorId)) return;
-            notifRepo.save(Notification.builder()
-                .recipient(recipient).actor(actor)
-                .type(type).refId(refId).refSlug(refSlug).preview(preview)
-                .build());
-        });
-    }
 
     // ── direct messages ───────────────────────────────────────────────────────
 
@@ -144,8 +126,6 @@ public class NotificationService {
                     ? name + " has video called you " + cnt + " times"
                     : name + " has video called you";
             }
-            case "POST"    -> name + " has posted recently";
-            case "MEDIA"   -> name + " has uploaded recently";
             case "FOLLOW"  -> name + " started following you";
             default        -> name + " sent you a notification";
         };

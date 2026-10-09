@@ -75,7 +75,7 @@ function AvatarStack({ notifications, size = 32 }) {
  * Group notifications:
  * - MESSAGE type: grouped by actorId (same sender stacks as "x10")
  * - FOLLOW: grouped by actorId
- * - POST/MEDIA/COMMENT: grouped by type+refId (multiple actors on same content)
+ * - everything else: grouped by type+refId
  *
  * Result is limited to MAX_NOTIFS groups.
  */
@@ -122,9 +122,6 @@ function groupText(group) {
   const suffix = others === 1 ? '1 other' : `${others} others`;
 
   switch (type) {
-    case 'POST':    return `${firstName} and ${suffix} liked your post`;
-    case 'MEDIA':   return `${firstName} and ${suffix} liked your media`;
-    case 'COMMENT': return `${firstName} and ${suffix} commented`;
     case 'FOLLOW':  return `${firstName} and ${suffix} followed you`;
     default:        return `${firstName} and ${others} others sent notifications`;
   }
@@ -133,8 +130,6 @@ function groupText(group) {
 function notifTarget(group) {
   const n = group.items[0];
   switch (n.type) {
-    case 'POST':    return n.refSlug ? `/post/${n.refSlug}` : (n.refId ? `/post/${n.refId}` : '/');
-    case 'MEDIA':   return n.refId ? `/media?v=${n.refId}` : '/media';
     case 'MESSAGE': return '/messages';
     case 'FOLLOW':  return n.actorUsername ? `/profile/${n.actorUsername}` : (n.actorId ? `/profile/${n.actorId}` : '/');
     default:        return '/';
@@ -144,13 +139,6 @@ function notifTarget(group) {
 function typeIcon(type) {
   const s = { width: 14, height: 14 };
   switch (type) {
-    case 'POST':
-    case 'MEDIA':
-      return (
-        <svg {...s} viewBox="0 0 24 24" fill="#f43f5e">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      );
     case 'FOLLOW':
       return (
         <svg {...s} viewBox="0 0 24 24" fill="none" stroke="#4facfe" strokeWidth="2.5">
@@ -158,12 +146,6 @@ function typeIcon(type) {
           <circle cx="9" cy="7" r="4"/>
           <line x1="19" y1="8" x2="19" y2="14"/>
           <line x1="22" y1="11" x2="16" y2="11"/>
-        </svg>
-      );
-    case 'COMMENT':
-      return (
-        <svg {...s} viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
       );
     case 'MESSAGE':

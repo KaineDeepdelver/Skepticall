@@ -10,12 +10,8 @@ import CallScreen from '../CallScreen';
 import GuestBlockedListener from '../GuestBlockedListener';
 import { Toaster } from 'react-hot-toast';
 
-const HomeIcon  = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
 const MsgIcon   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
-const MediaIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
 const SetIcon   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>;
-const NetIcon   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
-const PlusIcon  = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
 
 export default function AppLayout() {
   const navigate     = useNavigate();
@@ -31,28 +27,15 @@ export default function AppLayout() {
     api.getConversations(user.id).then(setConversations).catch(() => {});
   }, [user?.id]);
 
-  const isMessages = pathname === '/messages';
-
   const nav = [
-    { to: '/',         label: 'Home',     Icon: HomeIcon  },
-    { to: '/media',    label: 'Media',    Icon: MediaIcon },
-    { to: '/messages', label: 'Messages', Icon: MsgIcon   },
-    { to: '/networks', label: 'Networks', Icon: NetIcon   },
-    { to: '/settings', label: 'Settings', Icon: SetIcon   },
+    { to: '/messages', label: 'Messages', Icon: MsgIcon },
+    { to: '/settings', label: 'Settings', Icon: SetIcon },
   ];
 
   const mobileNav = [
-    { to: '/',         label: 'Home',     Icon: HomeIcon  },
-    { to: '/media',    label: 'Media',    Icon: MediaIcon },
-    { to: '/messages', label: 'Messages', Icon: MsgIcon   },
-    { to: '/networks', label: 'Networks', Icon: NetIcon   },
-    { to: '/settings', label: 'Settings', Icon: SetIcon   },
+    { to: '/messages', label: 'Messages', Icon: MsgIcon },
+    { to: '/settings', label: 'Settings', Icon: SetIcon },
   ];
-
-  function handlePost() {
-    if (!requireAccount('create a post')) return;
-    navigate('/create');
-  }
 
   const FULL = width;
   const MINI = 72;
@@ -121,7 +104,6 @@ export default function AppLayout() {
                   className={`nav-link${pathname === to ? ' active' : ''}`}
                   onClick={() => {
                     if (to === '/messages' && !user) { requireAccount('open messages'); return; }
-                    if (to === '/networks' && !user) { requireAccount('open networks'); return; }
                     navigate(to, to === '/settings' ? { state: { tab: 'profile' } } : undefined);
                   }}
                   title={isMini ? label : ''}
@@ -151,7 +133,6 @@ export default function AppLayout() {
                   className={`mobile-nav-btn${active ? ' active' : ''}`}
                   onClick={() => {
                     if (to === '/messages' && !user) { requireAccount('open messages'); return; }
-                    if (to === '/networks' && !user) { requireAccount('open networks'); return; }
                     navigate(to, to === '/settings' ? { state: { tab: 'profile' } } : undefined);
                   }}
                   aria-label={label}
@@ -164,25 +145,6 @@ export default function AppLayout() {
             })}
           </nav>
 
-          {/* Mobile post FAB — only on Home and Media, floating above the bottom nav.
-              Reuses the existing .mobile-nav-post styling (size, color, shadow,
-              active-state scale) so it looks identical to before, just moved out
-              of the bottom nav row so it doesn't compete for space with the
-              other four tabs. */}
-          {(pathname === '/' || pathname === '/media') && (
-            <button
-              className="mobile-nav-post"
-              onClick={handlePost}
-              aria-label="Create post"
-              style={{
-                position: 'fixed', right: 16,
-                bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 12px)',
-                zIndex: 90,
-              }}
-            >
-              <PlusIcon />
-            </button>
-          )}
         </div>
 
         <LiveToast userId={user?.id} conversations={conversations} />

@@ -40,24 +40,6 @@ public class AdminController {
 
     // == Moderation deletes =====================================================
 
-    @DeleteMapping("/posts/{postId}")
-    public ResponseEntity<?> deletePost(@PathVariable Long postId, HttpServletRequest req) {
-        adminService.deletePost(callerId(req), postId);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/comments/{commentId}")
-    public ResponseEntity<?> deleteComment(@PathVariable Long commentId, HttpServletRequest req) {
-        adminService.deleteComment(callerId(req), commentId);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/media/{mediaId}")
-    public ResponseEntity<?> deleteMedia(@PathVariable Long mediaId, HttpServletRequest req) {
-        adminService.deleteMedia(callerId(req), mediaId);
-        return ResponseEntity.noContent().build();
-    }
-
     /** Heavy-confirm endpoint — frontend gates this behind the 15s wait + type-CONFIRM modal */
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<?> deleteUser(@PathVariable Long userId, HttpServletRequest req) {
