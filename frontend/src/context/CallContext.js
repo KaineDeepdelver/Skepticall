@@ -113,6 +113,8 @@ export function CallProvider({ children }) {
   const [reconnecting,  setReconnecting]  = useState(false);
   const [callStartedAt, setCallStartedAt] = useState(null);
   const callStartedAtRef = useRef(null);
+  // Outgoing-call bookkeeping, used to write the call-log entry when the call ends.
+  const callMetaRef = useRef(null);
 
   // ── KEY CHANGE: remoteStream is a ref, NOT state ──────────────
   // Exposing the MediaStream object as React state means every call to
@@ -219,7 +221,28 @@ export function CallProvider({ children }) {
     callInProgressRef.current = false;
   }
 
+  // Only the caller writes the log entry (one row per call, shown to both sides).
+  function logCallOutcome() {
+    const meta = callMetaRef.current;
+    callMetaRef.current = null;
+    if (!meta) return;
+    const now = Date.now();
+    const connectedAt = callStartedAtRef.current;
+    const callStatus = connectedAt ? 'completed' : meta.missed ? 'missed' : meta.declined ? 'declined' : 'cancelled';
+    const duration = connectedAt ? Math.round((now - connectedAt) / 1000) : null;
+    const ringSeconds = Math.round(((connectedAt || now) - meta.ringStartedAt) / 1000);
+    const label = meta.mode === 'video' ? 'Video call' : 'Voice call';
+    const detail = callStatus === 'completed'
+      ? `${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, '0')}`
+      : callStatus === 'missed' ? 'No answer' : callStatus === 'declined' ? 'Declined' : 'Cancelled';
+    wsRef.current?.publish?.('/app/message.send', {
+      receiverId: meta.targetId, type: 'CALL', content: `${label} · ${detail}`,
+      callMode: meta.mode, callStatus, ringSeconds, callDurationSeconds: duration,
+    });
+  }
+
   function resetState() {
+    logCallOutcome();
     cleanupPeer();
     setStatus('idle');
     setCallType('audio');
@@ -324,6 +347,7 @@ export function CallProvider({ children }) {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       wsRef.current?.publish?.('/app/call.offer', { targetId: targetUser.userId, senderId: userId, senderName: user?.displayName || user?.username || '', senderAvatar: user?.profilePicture || '', callId, callType: type, sdp: offer });
+      callMetaRef.current = { mode: type, targetId: targetUser.userId, ringStartedAt: Date.now(), declined: false, missed: false };
       setCallType(type);
       setRemoteUser(targetUser);
       setLocalStream(ls);
@@ -468,7 +492,7 @@ export function CallProvider({ children }) {
             setTimeout(() => {
               if (statusRef.current !== 'incoming') return;
               stopRingtone(); clearRingTimer();
-              wsRef.current?.publish?.('/app/call.decline', { targetId: remoteUserRef.current?.userId, senderId: self, callId: activeCallIdRef.current });
+              wsRef.current?.publish?.('/app/call.decline', { targetId: remoteUserRef.current?.userId, senderId: self, callId: activeCallIdRef.current, missed: true });
               resetState();
             }, 0);
           }
@@ -518,6 +542,9 @@ export function CallProvider({ children }) {
       if ((msgType === 'CALL_DECLINE' || msgType === 'CALL_DECLINED') && phase === 'active') { console.log('[Call] ignoring stale CALL_DECLINE'); return; }
       if (msg.callId && activeCallIdRef.current && msg.callId !== activeCallIdRef.current) { console.log('[Call] ignoring stale CALL_END for old callId:', msg.callId); return; }
       console.log('[Call] remote ended/declined (phase:', phase, ')');
+      if (callMetaRef.current && (msgType === 'CALL_DECLINE' || msgType === 'CALL_DECLINED')) {
+        if (msg.missed) callMetaRef.current.missed = true; else callMetaRef.current.declined = true;
+      }
       resetState();
     }
   }, [userId]);

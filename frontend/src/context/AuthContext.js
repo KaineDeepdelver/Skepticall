@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { restoreSession, endRememberedSession } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -37,19 +38,46 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(() => {
+    endRememberedSession();   // forget this browser too, or the cookie would just log you back in
     sessionStorage.clear();
     setUser(null);
     setIsGuest(false);
   }, []);
 
-  // If api.js detects a missing/invalid token (401, or 403 with no token
-  // present), sessionStorage has already been cleared there — sync React
-  // state so the UI stops pretending we're still logged in.
+  // Remember-me: a fresh tab (or a restart) has no sessionStorage, so ask the
+  // backend to restore the login from the HttpOnly cookie before deciding the
+  // user is logged out. Guests who chose to stay guests are left alone.
+  const [restoring, setRestoring] = useState(
+    () => !sessionStorage.getItem('omni_user') && sessionStorage.getItem('omni_guest') !== 'true'
+  );
+  const restoreRef = useRef(null);       // shared in-flight restore
+  const lastRestoreRef = useRef(0);
+
+  const tryRestore = useCallback(() => {
+    if (!restoreRef.current) {
+      lastRestoreRef.current = Date.now();
+      restoreRef.current = restoreSession().finally(() => { restoreRef.current = null; });
+    }
+    return restoreRef.current;
+  }, []);
+
   useEffect(() => {
-    const onAuthExpired = () => setUser(null);
+    if (!restoring) return;
+    tryRestore().then(login).catch(() => {}).finally(() => setRestoring(false));
+  }, [restoring, tryRestore, login]);
+
+  // If api.js detects a missing/invalid token (401, or 403 with no token
+  // present), sessionStorage has already been cleared there. Try the
+  // remember-me cookie once for a fresh token; only if that fails do we sync
+  // React state so the UI stops pretending we're still logged in.
+  useEffect(() => {
+    const onAuthExpired = () => {
+      if (!restoreRef.current && Date.now() - lastRestoreRef.current < 10000) { setUser(null); return; }
+      tryRestore().then(login).catch(() => setUser(null));
+    };
     window.addEventListener('omni:auth-expired', onAuthExpired);
     return () => window.removeEventListener('omni:auth-expired', onAuthExpired);
-  }, []);
+  }, [tryRestore, login]);
 
   const updateUser = useCallback((updates) => {
     setUser(prev => {
@@ -58,6 +86,10 @@ export function AuthProvider({ children }) {
       return updated;
     });
   }, []);
+
+  // Hold the first render until the cookie check finishes, otherwise a remembered
+  // user would be bounced to the login page for a moment.
+  if (restoring) return null;
 
   return (
     <AuthContext.Provider value={{ user, login, logout, updateUser, isGuest, continueAsGuest, exitGuest }}>

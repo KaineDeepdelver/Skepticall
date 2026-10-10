@@ -58,6 +58,7 @@ public class MessageWsController {
                         saved.getSenderId(), saved.getReceiverId(), saved.getId());
                     pushService.notifyVoiceMessage(saved.getSenderId(), saved.getReceiverId());
                 }
+                case "CALL" -> { /* call-log entry — the call itself already notified */ }
                 case "TEMPO" -> {
                     notifService.notifyMessage(
                         saved.getSenderId(), saved.getReceiverId(), saved.getId(), "💨 Self-destruct message");

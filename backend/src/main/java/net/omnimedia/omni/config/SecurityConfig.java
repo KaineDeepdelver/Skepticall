@@ -22,6 +22,10 @@ public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
 
+    // Origins allowed to make credentialed (cookie) requests to the remember-me endpoints.
+    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:3000}")
+    private String allowedOrigins;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -35,6 +39,18 @@ public class SecurityConfig {
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        // The remember-me endpoints hand out a token to whoever holds the cookie, so they must
+        // only answer our own frontend(s) — never "*". Registered before "/**" so they win.
+        CorsConfiguration cookieCors = new CorsConfiguration();
+        cookieCors.setAllowCredentials(true);
+        cookieCors.setAllowedOrigins(java.util.Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim).filter(o -> !o.isEmpty()).toList());
+        cookieCors.setAllowedHeaders(List.of("*"));
+        cookieCors.setAllowedMethods(List.of("POST", "OPTIONS"));
+        source.registerCorsConfiguration("/users/session", cookieCors);
+        source.registerCorsConfiguration("/users/logout", cookieCors);
+
         source.registerCorsConfiguration("/**", config);
         return source;
     }
@@ -55,7 +71,8 @@ public class SecurityConfig {
                                 "/users/register", "/users/login",
                                 "/users/check-email", "/users/check-username",
                                 "/users/send-registration-code", "/users/verify-registration-code",
-                                "/users/send-reset-code", "/users/reset-password"
+                                "/users/send-reset-code", "/users/reset-password",
+                                "/users/session", "/users/logout"
                         ).permitAll()
 
                         // Public read endpoints

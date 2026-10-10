@@ -50,6 +50,27 @@ const GUEST_EXEMPT_PREFIXES = [
   '/users/send-reset-code', '/users/reset-password',
 ];
 
+// These set/read the HttpOnly "remember me" cookie, so the browser has to be
+// told to accept and send cookies on them (the API is on another origin).
+const CREDENTIAL_PREFIXES = ['/users/login', '/users/register', '/users/session', '/users/logout'];
+
+/**
+ * Asks the backend to restore a login from the remember-me cookie.
+ * Resolves with { token, user } or rejects when there's no valid cookie.
+ * Deliberately not routed through req(): a 401 here is the normal "not
+ * remembered" answer and must not fire the auth-expired event.
+ */
+export async function restoreSession() {
+  const res = await fetch(`${API_BASE}/users/session`, { method: 'POST', credentials: 'include' });
+  if (!res.ok) throw new Error('No remembered session');
+  return res.json();
+}
+
+/** Clears the remember-me cookie (call on logout). Never throws. */
+export function endRememberedSession() {
+  return fetch(`${API_BASE}/users/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+}
+
 async function req(path, opts = {}) {
   const method = (opts.method || 'GET').toUpperCase();
   if (
@@ -64,6 +85,7 @@ async function req(path, opts = {}) {
   const token = sessionStorage.getItem('omni_token');
   const res = await fetch(`${API_BASE}${path}`, {
     ...opts,
+    ...(CREDENTIAL_PREFIXES.some(p => path.startsWith(p)) ? { credentials: 'include' } : {}),
     headers: {
       'Content-Type': 'application/json',
       ...NGROK_HEADER,
@@ -149,6 +171,7 @@ export const api = {
 
   // Messages
   getConversations: (userId)       => req(`/users/${userId}/conversations`),
+  getCallLog:       (userId)       => req(`/messages/${userId}/calls`),
   getHistory:       (u1, u2)       => req(`/messages/${u1}/${u2}`),
   uploadMessage:    (fd)           => upload('/messages/upload', fd),
 };

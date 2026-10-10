@@ -6,6 +6,7 @@ import { api, API_BASE, groupApi, resolveUrl } from '../services/api';
 import { useWebSocket } from '../hooks/useWebSocket';
 import MyProfileDrawer from '../components/MyProfileDrawer';
 import UserAvatar from '../components/UserAvatar';
+import CallLogList from '../components/CallLogList';
 import GroupInfoPanel from '../components/GroupInfoPanel';
 import LinkPreview, { extractFirstUrl } from '../components/LinkPreview';
 import { useFriends } from '../context/FriendContext';
@@ -1664,7 +1665,7 @@ export default function Messages() {
           {/* Filter tabs */}
           {!searchQuery && (
             <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-              {['all', 'friends', 'groups'].map(tab => (
+              {['all', 'friends', 'groups', 'calls'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setMsgFilter(tab)}
@@ -1703,7 +1704,11 @@ export default function Messages() {
             </div>
           ))}
 
-          {!searchQuery && sortedConvos.map(c => {
+          {!searchQuery && msgFilter === 'calls' && (
+            <CallLogList userId={userId} conversations={conversations} onCall={startCall} />
+          )}
+
+          {!searchQuery && msgFilter !== 'calls' && sortedConvos.map(c => {
             const isPinned = pinnedIds.includes(c.userId);
             return (
               <div key={c.userId}
@@ -1908,7 +1913,7 @@ export default function Messages() {
                   ) : (
                     <>
                       <textarea ref={textareaRef} className="msg-textarea" rows={1}
-                        placeholder={window.matchMedia('(max-width: 768px)').matches ? "Message…" : "Message… (Shift+Enter for new line)"}
+                        placeholder="Message…"
                         value={text}
                         onChange={e => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'; }}
                         onKeyDown={e => {

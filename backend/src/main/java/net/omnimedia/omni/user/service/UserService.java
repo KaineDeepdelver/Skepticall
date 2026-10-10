@@ -109,6 +109,30 @@ public class UserService {
         return new LoginResponseDTO(token, userDTO);
     }
 
+    // == Remember-me ==========================================================
+
+    public String issueRememberToken(Long userId, long ttlMs) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorType.NOT_FOUND, "User not found [id=" + userId + "]"));
+        return jwtUtil.generateRemember(userId, JwtUtil.passwordTag(user.getPassword()), ttlMs);
+    }
+
+    /** Exchanges a valid remember token for a fresh access token + user, like a login without the password. */
+    public LoginResponseDTO restoreSession(String rememberToken) {
+        io.jsonwebtoken.Claims claims = jwtUtil.parseRemember(rememberToken);
+        if (claims == null) {
+            throw new BusinessException(ErrorType.INVALID_TOKEN, "Invalid or expired session");
+        }
+        User user = userRepository.findById(Long.parseLong(claims.getSubject()))
+                .orElseThrow(() -> new BusinessException(ErrorType.INVALID_TOKEN, "Invalid or expired session"));
+        if (!JwtUtil.passwordTag(user.getPassword()).equals(claims.get("pw", String.class))) {
+            throw new BusinessException(ErrorType.INVALID_TOKEN, "Invalid or expired session");
+        }
+        UserDTO userDTO = toDTOWithAdmin(user);
+        String token = jwtUtil.generate(userDTO.getId(), userDTO.getAdmin());
+        return new LoginResponseDTO(token, userDTO);
+    }
+
     // == Password Reset ===========================================================
 
     public void resetPassword(String email, String code, String newPassword) {

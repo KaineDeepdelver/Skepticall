@@ -1,8 +1,11 @@
 package net.omnimedia.omni.user.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import net.omnimedia.omni.config.RememberCookie;
+import net.omnimedia.omni.exceptions.BusinessException;
 import net.omnimedia.omni.message.service.MessageService;
 import net.omnimedia.omni.user.dto.*;
 import net.omnimedia.omni.user.service.UserService;
@@ -24,6 +27,7 @@ public class UserController {
 
     private final UserService userService;
     private final VerificationService verificationService;
+    private final RememberCookie rememberCookie;
 
     @Autowired
     private MessageService messageService;
@@ -38,13 +42,43 @@ public class UserController {
     // == Auth =================================================================
 
     @PostMapping("/register")
-    public ResponseEntity<LoginResponseDTO> register(@Valid @RequestBody RegisterDTO dto) {
-        return ResponseEntity.ok(userService.register(dto));
+    public ResponseEntity<LoginResponseDTO> register(@Valid @RequestBody RegisterDTO dto, HttpServletResponse res) {
+        LoginResponseDTO out = userService.register(dto);
+        remember(res, out);
+        return ResponseEntity.ok(out);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginDTO dto, HttpServletRequest req) {
-         return ResponseEntity.ok(userService.login(dto, clientIp(req)));
+    public ResponseEntity<?> login(@RequestBody LoginDTO dto, HttpServletRequest req, HttpServletResponse res) {
+        LoginResponseDTO out = userService.login(dto, clientIp(req));
+        remember(res, out);
+        return ResponseEntity.ok(out);
+    }
+
+    /** Restores a login from the remember-me cookie (sliding: the cookie is re-issued). */
+    @PostMapping("/session")
+    public ResponseEntity<?> session(
+            @CookieValue(name = RememberCookie.NAME, required = false) String rememberToken,
+            HttpServletResponse res) {
+        if (rememberToken == null || rememberToken.isBlank()) return ResponseEntity.status(401).build();
+        try {
+            LoginResponseDTO out = userService.restoreSession(rememberToken);
+            remember(res, out);
+            return ResponseEntity.ok(out);
+        } catch (BusinessException e) {
+            rememberCookie.clear(res);
+            return ResponseEntity.status(401).build();
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletResponse res) {
+        rememberCookie.clear(res);
+        return ResponseEntity.noContent().build();
+    }
+
+    private void remember(HttpServletResponse res, LoginResponseDTO out) {
+        rememberCookie.set(res, userService.issueRememberToken(out.getUser().getId(), rememberCookie.ttlMs()));
     }
 
     // Behind Cloudflare / Render the socket address is the proxy, so prefer the forwarded headers.

@@ -44,8 +44,11 @@ public class MessageRestController {
 
     /** Powers the Call Log tab — every call this user's part of, across every DM, most recent first. */
     @GetMapping("/{userId}/calls")
-    public List<MessageDTO> getCallLog(@PathVariable Long userId) {
-        return messageService.getCallLog(userId);
+    public ResponseEntity<?> getCallLog(@PathVariable Long userId, HttpServletRequest req) {
+        Long requesterId = callerId(req);
+        if (requesterId == null) return ResponseEntity.status(401).build();
+        if (!requesterId.equals(userId)) return ResponseEntity.status(403).build();
+        return ResponseEntity.ok(messageService.getCallLog(userId));
     }
 
     @GetMapping("/{user1}/{user2}")
