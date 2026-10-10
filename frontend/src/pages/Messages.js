@@ -6,7 +6,6 @@ import { api, API_BASE, groupApi, resolveUrl } from '../services/api';
 import { useWebSocket } from '../hooks/useWebSocket';
 import MyProfileDrawer from '../components/MyProfileDrawer';
 import UserAvatar from '../components/UserAvatar';
-import CallLogList from '../components/CallLogList';
 import GroupInfoPanel from '../components/GroupInfoPanel';
 import LinkPreview, { extractFirstUrl } from '../components/LinkPreview';
 import { useFriends } from '../context/FriendContext';
@@ -1665,7 +1664,7 @@ export default function Messages() {
           {/* Filter tabs */}
           {!searchQuery && (
             <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-              {['all', 'friends', 'groups', 'calls'].map(tab => (
+              {['all', 'friends', 'groups'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setMsgFilter(tab)}
@@ -1704,11 +1703,7 @@ export default function Messages() {
             </div>
           ))}
 
-          {!searchQuery && msgFilter === 'calls' && (
-            <CallLogList userId={userId} conversations={conversations} onCall={startCall} />
-          )}
-
-          {!searchQuery && msgFilter !== 'calls' && sortedConvos.map(c => {
+          {!searchQuery && sortedConvos.map(c => {
             const isPinned = pinnedIds.includes(c.userId);
             return (
               <div key={c.userId}

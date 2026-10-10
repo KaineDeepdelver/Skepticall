@@ -17,6 +17,7 @@ import ForgotPasswordEmail    from './pages/auth/ForgotPasswordEmail';
 import ForgotPasswordVerify   from './pages/auth/ForgotPasswordVerify';
 import ForgotPasswordReset    from './pages/auth/ForgotPasswordReset';
 import Messages       from './pages/Messages';
+import Calls          from './pages/Calls';
 import Settings       from './pages/Settings';
 import ProfilePage    from './pages/ProfilePage';
 import SearchPage     from './pages/SearchPage';
@@ -73,6 +74,7 @@ export default function App() {
             <Route path="/" element={<ViewRoute><AppLayout /></ViewRoute>}>
               <Route index                    element={<HomeRedirect />} />
               <Route path="messages"          element={<AccountRoute><Messages /></AccountRoute>} />
+              <Route path="calls"             element={<AccountRoute><Calls /></AccountRoute>} />
               <Route path="settings"          element={<Settings />} />
               <Route path="profile/:username"  element={<ProfilePage />} />
               <Route path="search"            element={<SearchPage />} />
