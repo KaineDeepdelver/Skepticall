@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import OmniLogo from '../OmniLogo';
+import SkepticallLogo from '../SkepticallLogo';
 import { useAuth } from '../../context/AuthContext';
 import { useSidebar } from '../../context/SidebarContext';
 import { API_BASE, notifApi } from '../../services/api';
@@ -151,7 +151,7 @@ export default function TopBar() {
               <MenuIcon />
             </button>
           </div>
-          <OmniLogo size={20} onClick={() => navigate('/')} />
+          <SkepticallLogo size={20} onClick={() => navigate('/')} />
         </div>
 
         {/* Center: search */}

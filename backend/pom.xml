@@ -8,11 +8,11 @@
         <version>4.0.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>net.omnimedia</groupId>
-    <artifactId>omni</artifactId>
+    <groupId>com.skepticall</groupId>
+    <artifactId>skepticall-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name/>
-    <description/>
+    <name>skepticall-backend</name>
+    <description>Skepticall backend: Spring Boot API, WebSocket messaging and call signaling</description>
     <url/>
     <licenses>
         <license/>

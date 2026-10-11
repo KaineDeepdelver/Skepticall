@@ -1,50 +1,72 @@
 # Skepticall 🔒
 
-### Private communication. Real-time connection. Your conversations stay yours.
+**Private messaging, voice and video calls, and file sharing, where the server is a delivery pipe, not your chat history.**
 
-Skepticall is a secure messaging application designed to help you stay connected with your friends through text messages, voice calls, video calls, and file sharing — all in one place.
+🌐 Live: [skepticall.com](https://www.skepticall.com)
 
-Built with a modern frontend and a Java Spring Boot backend, Skepticall focuses on providing a convenient communication experience while prioritizing user privacy and security.
+<!-- FILL IN: 2-3 screenshots or a short GIF (a chat, a call) -->
 
-Unlike traditional messaging systems that store chat histories in a database, Skepticall is designed around the principle that **your private conversations shouldn't need to be stored on a server to connect you with the people who matter.**
+## What it does
 
-The platform combines real-time messaging and communication technologies to support conversations, calls, and file sharing while exploring privacy-conscious approaches to handling user data.
+- 💬 **Direct and group messaging** in real time (WebSockets / STOMP): replies, edits, deletes, voice messages, images, video and files
+- ⏳ **Self-destructing messages** (`/tempo`)
+- 📞 **Voice and video calls**, one-to-one and group (WebRTC, signaling over the same WebSocket)
+- 👥 Friends, presence, notifications and push notifications
+- 🔐 **End-to-end encrypted** content and media (see below)
 
-## ✨ What Skepticall Offers
+## How a message travels
 
-- **💬 Text Messaging** — Chat with friends through real-time messaging.
-- **📞 Voice Calls** — Talk with your friends directly through voice communication.
-- **📹 Video Calls** — Connect face-to-face with video communication.
-- **📁 File Sharing** — Share files with friends through your conversations.
-- **🔒 Privacy-Focused Design** — Built with the goal of minimizing the storage of private conversation data.
-- **⚡ Real-Time Communication** — Uses technologies designed to enable responsive communication between connected clients.
-- **🛡️ Secure Authentication** — Uses authentication and password-hashing mechanisms to protect user accounts.
+1. The sender's client encrypts the message **on the device** and sends the ciphertext over a WebSocket.
+2. The server stores it in PostgreSQL (the durable copy) and keeps a fast copy in Redis. Redis is best-effort only: if it restarts or evicts, the inbox is rebuilt from the database, so a pending message is never lost.
+3. The recipient's device collects it and sends back a **delivery ack** after it has stored the message locally.
+4. About **5 minutes after the ack**, the server deletes the message and its media from storage. A message nobody collects is deleted after **30 days**.
+5. Long-term history lives on the users' devices, not on the server.
 
-## 🧠 Project Philosophy
+The delay and the maximum age are configurable (`messages.purge.delivered-after-minutes`, `messages.purge.max-pending-days`). Purging is off by default and enabled with `MESSAGES_PURGE_ENABLED=true`.
 
-Communication should be simple, private, and accessible.
+> The server holds messages for a short time (while waiting for delivery, and for a few minutes after). It does not keep them beyond that.
 
-Skepticall is built around the idea that people should be able to communicate without unnecessary retention of their private conversations. Rather than treating personal messages as permanent server-side records, the project aims to minimize the persistence of conversation content.
+## Encryption
 
-The goal is to create a messaging experience where privacy is a core design consideration, not an afterthought.
+- Each account has an **X25519 key pair generated on the device**. The server only ever stores the public key.
+- **Direct messages:** `crypto_box` (public-key authenticated encryption) with a fresh random nonce per message. Reply previews are encrypted separately so a reply doesn't leak the quoted text.
+- **Media:** each file is encrypted with its own random symmetric key (`crypto_secretbox`); that key is then wrapped for the recipient with `crypto_box`. The file in object storage is ciphertext.
+- **Groups:** each message is encrypted once with a random key, and that key is wrapped separately for every member, so only a member's own private key can unwrap it.
+- **Not hidden from the server:** metadata such as who talked to whom, when, message type, and call logs. Call-log entries are not purged. Accounts without a public key (older accounts) still send plaintext.
 
-## 🛠️ Technology Stack
+<!-- FILL IN: where the client-side crypto lives (e.g. the mobile app / a shared module), which library it uses, and whether the web client encrypts. Keep this honest. -->
 
-- **Frontend:** React, React Native
-- **Backend:** Java, Spring Boot
-- **Database:** PostgreSQL
-- **Real-Time Messaging:** WebSockets
-- **Voice and Video:** WebRTC
-- **Authentication:** JSON Web Tokens (JWT)
-- **Password Security:** BCrypt
-- **Push Notifications:** Firebase Cloud Messaging
-- **Containerization:** Docker
-- **Version Control:** Git and GitHub
+## Trade-offs (by design)
 
-## 🚧 Development Status
+- **No server-side history.** If you lose your device or reinstall, history can't be restored from the server.
+- **Metadata is visible** to the server even though content isn't.
 
-Skepticall is an independently developed project that continues to evolve. Features, security mechanisms, and infrastructure are being refined throughout development.
+## Status
 
-The long-term goal is to deliver a dependable communication platform that balances usability, real-time functionality, and privacy-conscious engineering.
+| | |
+|---|---|
+| ✅ Done | Messaging, groups, calls, media, encryption, delivery acks, automatic deletion after delivery |
+| 🚧 In progress | Saving full message history on the device |
+| 📋 Planned | Local backup of history, restorable only by the account that created it |
 
-**Skepticall — Talk freely. Stay connected.**
+## Tech stack
+
+- **Backend:** Java 21, Spring Boot, PostgreSQL, Redis, WebSockets (STOMP)
+- **Real-time media:** WebRTC
+- **Auth:** JWT, remember-me cookie, BCrypt, reCAPTCHA, email verification (Brevo)
+- **Storage:** Cloudflare R2
+- **Push notifications:** Expo
+- **Web client:** React, deployed on Cloudflare
+- **Mobile client:** React Native
+- **Infra:** Docker (ffmpeg for media metadata scrubbing), hosted on Render
+
+## Running locally
+
+<!-- FILL IN with the real commands. Backend: cd backend && ./mvnw spring-boot:run (needs the env vars below). Frontend: cd frontend && npm install && npm start. -->
+
+Required environment variables (names only):
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `REDIS_HOST`, `REDIS_PORT`, `BREVO_API_KEY`, `RECAPTCHA_SECRET_KEY`, `ADMIN_BOOTSTRAP_EMAIL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`, `FRONTEND_ORIGINS`, `MESSAGES_PURGE_ENABLED`; optional: `JWT_EXPIRATION_MS`, `MESSAGES_PURGE_DELIVERED_AFTER_MINUTES`, `MESSAGES_PURGE_MAX_PENDING_DAYS`
+
+## Project status
+
+Independently developed and still evolving.

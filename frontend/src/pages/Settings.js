@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import OmniLogo from '../components/OmniLogo';
+import SkepticallLogo from '../components/SkepticallLogo';
 import UserAvatar from '../components/UserAvatar';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
