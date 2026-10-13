@@ -21,6 +21,7 @@ import Calls          from './pages/Calls';
 import Settings       from './pages/Settings';
 import ProfilePage    from './pages/ProfilePage';
 import SearchPage     from './pages/SearchPage';
+import HomeEntry        from './pages/HomeEntry';
 import TermsPage         from './pages/TermsPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
@@ -34,12 +35,6 @@ function AccountRoute({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/accounts/login" replace />;
   return children;
-}
-
-// "/" is just an entry point: messages when logged in, login otherwise.
-function HomeRedirect() {
-  const { user } = useAuth();
-  return <Navigate to={user ? '/messages' : '/accounts/login'} replace />;
 }
 
 export default function App() {
@@ -71,8 +66,10 @@ export default function App() {
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             {/* Standalone watch page — deliberately OUTSIDE AppLayout so it
                 gets its own dedicated WatchTopBar instead of the global one */}
+            {/* "/" — messages when logged in, the introduction page otherwise.
+                Must stay ABOVE the AppLayout route so the page renders without the app shell. */}
+            <Route path="/" element={<HomeEntry />} />
             <Route path="/" element={<ViewRoute><AppLayout /></ViewRoute>}>
-              <Route index                    element={<HomeRedirect />} />
               <Route path="messages"          element={<AccountRoute><Messages /></AccountRoute>} />
               <Route path="calls"             element={<AccountRoute><Calls /></AccountRoute>} />
               <Route path="settings"          element={<Settings />} />
