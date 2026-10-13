@@ -14,9 +14,9 @@ public class RegisterDTO {
 
     /**
      * X25519 public key, base64-encoded, generated on-device before this
-     * request is sent. Required — this account's key is meant to be
-     * permanent from the moment the account exists, so there's no
-     * "unencrypted account" window to design around later.
+     * request is sent. Required, so every account starts with a key and
+     * there is no "unencrypted account" window. It can be rerolled later
+     * (the old key stays valid for 30 days).
      */
     @NotBlank
     private String publicKey;

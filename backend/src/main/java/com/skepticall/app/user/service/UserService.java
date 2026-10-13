@@ -35,6 +35,7 @@ public class UserService {
     private final CaptchaService captchaService;
     private final R2StorageService r2Storage;
     private final com.skepticall.app.verification.service.EmailService emailService;
+    private final PublicKeyService publicKeyService;
 
     // == Auth =================================================================
 
@@ -61,14 +62,20 @@ public class UserService {
         }
 
 
+        // Reject a malformed key before anything is saved.
+        String publicKey = PublicKeyService.canonicalize(dto.getPublicKey());
+
         User user = User.builder()
                 .username(dto.getUsername())
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .displayName(dto.getDisplayName())
+                .publicKey(publicKey)
                 .build();
 
-        UserDTO userDTO = toDTOWithAdmin(userRepository.save(user));
+        User saved = userRepository.save(user);
+        publicKeyService.recordInitialKey(saved.getId(), publicKey);
+        UserDTO userDTO = toDTOWithAdmin(saved);
         String token = jwtUtil.generate(userDTO.getId(), userDTO.getAdmin());
         return new LoginResponseDTO(token, userDTO);
     }

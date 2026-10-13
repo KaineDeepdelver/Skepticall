@@ -25,13 +25,13 @@ public class User extends BaseEntity {
     private String bio;
 
     // == End-to-end encryption ==
-    // X25519 public key, base64-encoded, generated on-device at account
-    // creation and permanent for the life of the account (no rotation).
-    // This is the only half of the keypair the server ever sees — the
-    // private key never leaves the device except inside a user-encrypted
-    // .dat backup. Nullable because accounts created before E2E existed
-    // won't have one; those stay unencrypted until they explicitly set
-    // one up.
+    // X25519 public key (base64) that incoming messages are encrypted to. Generated
+    // on-device at account creation; the owner can reroll it (see PublicKeyService).
+    // This always mirrors the account's current row in user_public_keys, which also keeps
+    // retired keys valid for 30 days. This is the only half of the keypair the server ever
+    // sees; the private key stays on the device (and inside the user's encrypted .dat
+    // backup). Nullable because accounts created before E2E existed won't have one;
+    // those stay unencrypted until they set one with the rotate endpoint.
     private String publicKey;
 
     // == Stats (default 0) ==
