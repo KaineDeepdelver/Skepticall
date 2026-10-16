@@ -1,4 +1,46 @@
-# Backup file (`.dat`)
+# Backups (`.dat`)
+
+There are two kinds of backup file, for two different jobs. Both are plain JavaScript (web, React
+Native and Node) and neither is tied to a device.
+
+| | Message backup (`messageBackup.js`) | Key backup (`backupFile.js`) |
+|---|---|---|
+| Holds | your messages | your private key(s) (and optionally data) |
+| Protected by | your account's key pair, no passphrase | a passphrase you choose |
+| Contains a private key? | No | Yes, that's the point |
+| Opens on | any device that has your account key | any device, for the same account |
+| Typical use | regular backups of local history | moving your key to a new browser or phone |
+
+A new device first restores the **key backup** (passphrase), then can open any **message backup**.
+
+## Message backup: sealed to your account key
+
+```
+messages (JSON) ──gzip──▶ secretbox(dataKey) ──▶ [141-byte header | ciphertext]
+dataKey = HKDF(K, info = header);  K is stored in the header as box(K, accountPublic, accountSecret)
+```
+
+- **Making one needs your private key**, and so does opening one. Everyone can fetch your public
+  key, so nobody else can forge a backup you'd accept, and nobody can read one.
+- **No passphrase and no private key in the file**, so it can be copied or shared freely: without
+  your key it is unreadable.
+- **Same account only:** restore checks the user id and that the key it was sealed to is one the
+  server still lists as valid for the logged-in account (a rerolled key stays valid 30 days).
+- Errors: `WRONG_ACCOUNT`, `KEYS_NO_LONGER_VALID`, `KEY_NOT_ON_DEVICE` (restore the key backup
+  first), `WRONG_PASSPHRASE_OR_CORRUPT` (damaged or forged), `BAD_FORMAT`, `UNSUPPORTED_VERSION`.
+
+```js
+import { createMessageBackup, restoreMessageBackup } from './messageBackup';
+
+const bytes = createMessageBackup({ userId, keyPair: ring[0], data: { conversations } });
+const { data } = restoreMessageBackup(bytes, {
+  expectedUserId: me.id,
+  ring,                                                        // this device's key ring
+  validPublicKeys: serverKeys.map((k) => decodeBase64(k.publicKey)),  // GET /users/me/public-keys
+});
+```
+
+## Key backup: passphrase protected
 
 `backupFile.js` creates and opens Skepticall backups. It is plain JavaScript with no DOM
 dependency, so the same file works in the web app, React Native and Node.

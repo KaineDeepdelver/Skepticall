@@ -28,6 +28,7 @@ public class GroupService {
     private final GroupMessageRepository groupMessageRepository;
     private final GroupMessageKeyRepository groupMessageKeyRepository;
     private final UserRepository userRepository;
+    private final com.skepticall.app.common.EncryptionPolicy encryptionPolicy;
     private final com.skepticall.app.friends.repository.FriendRequestRepository friendRepo;
 
     // Settings > Privacy > Group invites from anyone (off = only friends can add them)
@@ -162,6 +163,11 @@ public class GroupService {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new BusinessException(ErrorType.NOT_FOUND, "Sender user profile not found [senderId=" + senderId + "]"));
 
+        // Always encrypted: the content key must be wrapped for every current member.
+        encryptionPolicy.checkGroupSend(type != null ? type : "TEXT", content, nonce, replyPreview, replyPreviewNonce,
+                fileUrl, mediaNonce, recipientKeys,
+                groupConversation.getMembers().stream().map(User::getId).toList());
+
         GroupMessage msg = GroupMessage.builder()
                 .group(groupConversation)
                 .sender(sender)
@@ -219,6 +225,8 @@ public class GroupService {
         if ("DELETE".equals(msg.getType())) {
             throw new BusinessException(ErrorType.PERMISSION_DENIED, "Can't edit a deleted message");
         }
+        encryptionPolicy.checkGroupEdit(content, nonce, recipientKeys,
+                msg.getGroup().getMembers().stream().map(User::getId).toList());
 
         msg.setContent(content);
         msg.setNonce(nonce);

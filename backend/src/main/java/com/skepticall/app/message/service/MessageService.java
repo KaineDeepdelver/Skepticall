@@ -30,6 +30,7 @@ public class MessageService {
     private final UserRepository userRepo;
     private final MessageMapper messageMapper;
     private final MessageRetentionService retentionService;
+    private final com.skepticall.app.common.EncryptionPolicy encryptionPolicy;
 
     // == Tempo default TTL in seconds ==
     private static final int TEMPO_TTL_SECONDS = 30;
@@ -54,6 +55,22 @@ public class MessageService {
         // Covers both the WebSocket and REST send paths: a DM to yourself makes no sense.
         if (dto.getReceiverId() != null && dto.getReceiverId().equals(dto.getSenderId())) {
             throw new BusinessException(ErrorType.INVALID_OPERATION, "You can't send a message to yourself");
+        }
+
+        // == Always encrypted ==
+        // Every user-sent message must be end-to-end encrypted (call logs excepted). The server can't
+        // read ciphertext, so this checks the shape: nonce, tag-sized ciphertext, wrapped file key.
+        if (encryptionPolicy.isRequired() && !com.skepticall.app.common.EncryptionPolicy.isExempt(dto.getType())) {
+            if (dto.getReceiverId() != null) {
+                User receiver = userRepo.findById(dto.getReceiverId()).orElse(null);
+                if (receiver != null && receiver.getPublicKey() == null) {
+                    throw new BusinessException(ErrorType.INVALID_OPERATION,
+                            "That person hasn't turned on encryption yet, so you can't message them until they do.");
+                }
+            }
+            encryptionPolicy.checkDirectSend(dto.getType(), dto.getContent(), dto.getNonce(),
+                    dto.getReplyPreview(), dto.getReplyPreviewNonce(),
+                    dto.getFileUrl(), dto.getMediaNonce(), dto.getMediaKeyCiphertext(), dto.getMediaKeyNonce());
         }
         dto.setStatus("SENT");
 
@@ -85,6 +102,9 @@ public class MessageService {
 
         if (!m.getSender().getId().equals(requesterId)) {
             throw new BusinessException(ErrorType.PERMISSION_DENIED, "Not your message to edit");
+        }
+        if (!com.skepticall.app.common.EncryptionPolicy.isExempt(m.getType())) {
+            encryptionPolicy.checkDirectEdit(content, nonce);
         }
 
         m.setContent(content);
@@ -147,6 +167,8 @@ public class MessageService {
             String preview;
             if ("DELETE".equals(m.getType()))       preview = "Message deleted";
             else if ("TEMPO".equals(m.getType()))   preview = "💨 Self-destruct message";
+            // Encrypted messages carry ciphertext the server can't read: never show base64 as a preview.
+            else if (m.getNonce() != null && m.getContent() != null) preview = "🔒 Encrypted message";
             else if (m.getContent() != null)        preview = m.getContent();
             else if ("VOICE".equals(m.getType()))   preview = "🎤 Voice message";
             else if ("IMAGE".equals(m.getType()))   preview = "🖼 Image";

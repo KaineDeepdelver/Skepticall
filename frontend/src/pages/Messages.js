@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, API_BASE, groupApi, resolveUrl } from '../services/api';
+import { useE2EE } from '../e2e/E2EEContext';
+import { useMessageFiles } from '../e2e/useMessageFiles';
 import { useWebSocket } from '../hooks/useWebSocket';
 import MyProfileDrawer from '../components/MyProfileDrawer';
 import UserAvatar from '../components/UserAvatar';
@@ -442,7 +444,9 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
   const isDeleted = msg.type === 'DELETE';
   const msgType = (msg.type || 'TEXT').toUpperCase();
   const timeStr = fmtTime(msg.sentAt ?? msg.createdAt);
-  const fileSrc = msg.fileUrl ? resolveUrl(msg.fileUrl.startsWith('http') ? msg.fileUrl : `${API_BASE}${msg.fileUrl}`) : null;
+  const [fileInfo] = useMessageFiles([msg]); // encrypted files are downloaded and decrypted here
+  const fileSrc = fileInfo.src;
+  const mediaPending = !!msg.fileUrl && fileInfo.state !== 'ready';
   const isImageKind = msgType === 'IMAGE' || msgType === 'GIF';
   const isVideoKind = msgType === 'VIDEO';
   const mediaBox = useMediaSize(isImageKind || isVideoKind ? fileSrc : null, isVideoKind ? 'VIDEO' : 'IMAGE');
@@ -473,7 +477,9 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
   const lightboxItems = isMedia && fileSrc ? [{ src: fileSrc, type: msgType }] : [];
 
   let inner;
-  if (isDeleted) { inner = <><span className="bubble-deleted">⊘ This message was deleted</span><span className="bubble-gap short" /><span className="bubble-footer"><span className="bubble-time">{timeStr}</span></span></>; }
+  if (mediaPending && !isDeleted) {
+    inner = <><span className="bubble-inner">{fileInfo.state === 'loading' ? '🔒 Decrypting…' : '🔒 Unable to decrypt this file'}</span>{footer}</>;
+  } else if (isDeleted) { inner = <><span className="bubble-deleted">⊘ This message was deleted</span><span className="bubble-gap short" /><span className="bubble-footer"><span className="bubble-time">{timeStr}</span></span></>; }
   else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt="img" loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
   else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="video-play-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5,3 19,12 5,21" /></svg></span><span className="video-meta-bar">{msg.durationSeconds != null && <span className="video-duration-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z" /></svg>{formatDuration(msg.durationSeconds)}</span>}<span className="video-time-badge">{hasEdited && <span className="bubble-edited">Edited</span>}{timeStr}{isSent && <Tick status={msg.status || 'SENT'} />}</span></span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
   else if (msgType === 'VOICE') { inner = <div className="bubble-voice-wrap">{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<VoiceBubble src={fileSrc} durationHint={msg.durationSeconds ? Number(msg.durationSeconds) : 0} waveformPeaks={msg.waveformPeaks} /><div className="bubble-voice-footer">{msg.edited && <span className="bubble-edited">edited ·</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</div></div>; }
@@ -608,8 +614,9 @@ function BundleTile({ src, type, extraCount, showBadge, width, height, onClick }
 function BubbleBundle({ msgs, isSent, onContextMenu, groupCreatorId }) {
   const [lightbox, setLightbox] = useState(null);
 
-  const mediaItems = msgs.map(msg => ({
-    src: msg.fileUrl ? resolveUrl(msg.fileUrl.startsWith('http') ? msg.fileUrl : `${API_BASE}${msg.fileUrl}`) : null,
+  const files = useMessageFiles(msgs);
+  const mediaItems = msgs.map((msg, i) => ({
+    src: files[i].src,
     type: (msg.type || 'TEXT').toUpperCase(),
     msg,
   }));
@@ -1030,6 +1037,9 @@ export default function Messages() {
   const ampTimerRef = useRef(null);
   const searchTimerRef = useRef(null);
 
+  /* ── End-to-end encryption ── */
+  const { service: e2e, version: e2eVersion } = useE2EE();
+
   /* ── Call context ── */
   const {
     startCall, endCall, declineCall, acceptCall,
@@ -1044,7 +1054,7 @@ export default function Messages() {
   }, [autoJoinRoom]);
 
   /* ── WS handler ── */
-  const handleWsMessage = (msg) => {
+  const handleWsMessagePlain = (msg) => {
     // Normalize — server sends PRESENCE with _type, call signals with type
     const msgType = msg._type || msg.type;
 
@@ -1163,6 +1173,18 @@ export default function Messages() {
     bumpConvo(otherId, msg.content || '[attachment]');
   };
 
+  // Frames arrive in order; decrypt them one after another so a slow decrypt can't reorder the chat.
+  // Plain frames (presence, call signaling, unencrypted messages) pass straight through.
+  const wsQueueRef = useRef(Promise.resolve());
+  const handleWsMessageRef = useRef(handleWsMessagePlain);
+  handleWsMessageRef.current = handleWsMessagePlain;
+  const handleWsMessage = (raw) => {
+    wsQueueRef.current = wsQueueRef.current
+      .then(() => e2e.decryptMessage(raw))
+      .then((msg) => handleWsMessageRef.current(msg))
+      .catch((err) => console.error('[Messages] ws handler:', err));
+  };
+
   const { publish, subscribeToGroup } = useWebSocket(userId, handleWsMessage);
   const publishRef = useRef(publish);
   const subscribeToGroupRef = useRef(subscribeToGroup);
@@ -1223,12 +1245,12 @@ export default function Messages() {
   useEffect(() => {
     if (!activeConvo || !userId) return;
     if (activeConvo.isGroup && activeConvo.groupId) {
-      groupApi.getMessages(activeConvo.groupId).then(msgs => setMessages(msgs)).catch(() => { });
+      groupApi.getMessages(activeConvo.groupId).then(msgs => e2e.decryptMessages(msgs)).then(msgs => setMessages(msgs)).catch(() => { });
     } else {
-      api.getHistory(userId, activeConvo.userId).then(msgs => { setMessages(msgs); sendReadReceipt(activeConvo.userId); }).catch(() => { });
+      api.getHistory(userId, activeConvo.userId).then(msgs => e2e.decryptMessages(msgs)).then(msgs => { setMessages(msgs); sendReadReceipt(activeConvo.userId); }).catch(() => { });
     }
     setActiveStatus('Offline');
-  }, [activeConvo?.userId, userId]);
+  }, [activeConvo?.userId, userId, e2eVersion]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
@@ -1316,8 +1338,17 @@ export default function Messages() {
       // Send each attachment; caption goes only on the first one
       for (let i = 0; i < attachments.length; i++) {
         const att = attachments[i];
+        let enc;
+        try {
+          enc = await e2e.prepareUpload({
+            conv: activeConvo, file: att.file,
+            content: i === 0 ? content : '',
+            replyPreview: replyingTo ? replyingTo.content?.slice(0, 200) : undefined,
+          });
+        } catch (err) { console.error(err); window.alert(err.message); continue; }
         const fd = new FormData();
-        fd.append('file', att.file);
+        fd.append('file', enc.file);
+        Object.entries(enc.fields).forEach(([k, v]) => fd.append(k, v));
         if (activeConvo.isGroup && activeConvo.groupId) {
           fd.append('groupId', activeConvo.groupId);
         } else {
@@ -1325,8 +1356,7 @@ export default function Messages() {
         }
         fd.append('type', att.kind);
         if (att.durationSeconds != null) fd.append('durationSeconds', String(att.durationSeconds));
-        if (i === 0 && content) fd.append('content', content);
-        if (replyingTo) { fd.append('replyToId', replyingTo.id); fd.append('replyPreview', replyingTo.content?.slice(0, 200)); fd.append('replyPreviewSender', replyingTo.senderName || ''); }
+        if (replyingTo) { fd.append('replyToId', replyingTo.id); fd.append('replyPreviewSender', replyingTo.senderName || ''); }
         try { await api.uploadMessage(fd); } catch (e) { console.error(e); }
       }
       setAttachments([]); setText(''); setReplyingTo(null);
@@ -1355,8 +1385,14 @@ export default function Messages() {
         payload.replyPreview = optimistic.replyPreview;
         payload.replyPreviewSender = replyingTo.senderName;
       }
+      // Always encrypted: if it can't be, nothing is shown or sent and the text stays in the box.
+      let enc;
+      try { enc = await e2e.prepareText({ conv: activeConvo, content, replyPreview: payload.replyPreview }); }
+      catch (err) { window.alert(err.message); return; }
       scheduleClearJustArrived(_tmpId);
       setMessages(prev => [...prev, optimistic]);
+      // The optimistic bubble keeps the plain text; the payload carries the encrypted fields.
+      Object.assign(payload, enc.fields);
       send('/app/group.message', payload);
     } else {
       // Optimistic insert for DMs so message shows immediately without waiting for WS echo
@@ -1373,29 +1409,37 @@ export default function Messages() {
         _justArrived: true,
       };
       if (replyingTo) { optimistic.replyToId = replyingTo.id; optimistic.replyPreview = replyingTo.content?.slice(0, 200); optimistic.replyPreviewSender = replyingTo.senderName; }
+      // Always encrypted: if it can't be, nothing is shown or sent and the text stays in the box.
+      let enc;
+      try { enc = await e2e.prepareText({ conv: activeConvo, content, replyPreview: replyingTo ? replyingTo.content?.slice(0, 200) : undefined }); }
+      catch (err) { window.alert(err.message); return; }
       scheduleClearJustArrived(_tmpId);
       setMessages(prev => [...prev, optimistic]);
       const payload = { receiverId: activeConvo.userId, content, type: 'TEXT', _tmpId };
       if (replyingTo) { payload.replyToId = replyingTo.id; payload.replyPreview = replyingTo.content?.slice(0, 200); payload.replyPreviewSender = replyingTo.senderName; }
+      Object.assign(payload, enc.fields);
       send('/app/message.send', payload);
     }
     setText(''); setReplyingTo(null);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
   }
 
-  function submitEdit(msgId) {
+  async function submitEdit(msgId) {
     if (!editText.trim()) return;
+    let fields;
+    try { ({ fields } = await e2e.prepareText({ conv: activeConvo, content: editText })); }
+    catch (err) { window.alert(err.message); return; }
     if (activeConvo?.isGroup) {
-      send('/app/group.message.edit', { messageId: msgId, groupId: activeConvo.groupId, content: editText });
+      send('/app/group.message.edit', { id: msgId, messageId: msgId, groupId: activeConvo.groupId, ...fields });
     } else {
-      send('/app/message.edit', { id: msgId, receiverId: activeConvo.userId, content: editText });
+      send('/app/message.edit', { id: msgId, receiverId: activeConvo.userId, ...fields });
     }
     setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: editText, edited: true } : m));
     setEditingId(null); setEditText('');
   }
   function deleteMessage(msgId) {
     if (activeConvo?.isGroup) {
-      send('/app/group.message.delete', { messageId: msgId, groupId: activeConvo.groupId });
+      send('/app/group.message.delete', { id: msgId, messageId: msgId, groupId: activeConvo.groupId });
     } else {
       send('/app/message.delete', { id: msgId, receiverId: activeConvo.userId });
     }
@@ -1509,8 +1553,16 @@ export default function Messages() {
         if (!mr._cancelled && chunks.length) {
           const blob = new Blob(chunks, { type: mime });
           if (blob.size > 1000) {
+            let enc;
+            try {
+              enc = await e2e.prepareUpload({
+                conv: activeConvo, file: new File([blob], `voice_${Date.now()}.webm`, { type: mime }),
+                replyPreview: replyingTo ? replyingTo.content?.slice(0, 200) : undefined,
+              });
+            } catch (err) { console.error(err); window.alert(err.message); return; }
             const fd = new FormData();
-            fd.append('file', new File([blob], `voice_${Date.now()}.webm`, { type: mime }));
+            fd.append('file', enc.file);
+            Object.entries(enc.fields).forEach(([k, v]) => fd.append(k, v));
             if (activeConvo?.isGroup && activeConvo.groupId) {
               fd.append('groupId', activeConvo.groupId);
             } else {
@@ -1518,7 +1570,7 @@ export default function Messages() {
             }
             fd.append('type', 'VOICE'); fd.append('durationSeconds', String(capturedDuration || 0));
             if (waveformPeaks) fd.append('waveformPeaks', JSON.stringify(waveformPeaks));
-            if (replyingTo) { fd.append('replyToId', replyingTo.id); fd.append('replyPreview', replyingTo.content?.slice(0, 200)); fd.append('replyPreviewSender', replyingTo.senderName || ''); }
+            if (replyingTo) { fd.append('replyToId', replyingTo.id); fd.append('replyPreviewSender', replyingTo.senderName || ''); }
             try { await api.uploadMessage(fd); setReplyingTo(null); } catch { }
           }
         }
