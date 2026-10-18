@@ -27,7 +27,7 @@ const NGROK_HEADER = {};
  *     get rewritten to the current API_BASE so they still resolve after
  *     moving between dev machines / tunnel URLs / ports.
  *
- * Usage: <img src={resolveUrl(user.profilePicture)} />
+ * Usage: <img src={resolveUrl(user.profilePicture)} alt="" />
  */
 export function resolveUrl(url) {
   if (!url) return url;
@@ -66,12 +66,40 @@ export async function restoreSession() {
   return res.json();
 }
 
+// Access tokens are short-lived (1 hour). When one expires we quietly get a new one from the
+// remember-me cookie instead of logging the person out. Everyone who hits a 401 at the same
+// moment shares one refresh.
+let refreshing = null;
+export function refreshAccessToken() {
+  if (!refreshing) {
+    refreshing = restoreSession()
+      .then(({ token }) => {
+        sessionStorage.setItem('omni_token', token);
+        window.dispatchEvent(new Event('omni:token-refreshed'));
+        return true;
+      })
+      .catch(() => false)
+      .finally(() => { refreshing = null; });
+  }
+  return refreshing;
+}
+
+/** When the access token expires, in ms since the epoch (null if it can't be read). */
+export function tokenExpiryMs(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return payload.exp ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Clears the remember-me cookie (call on logout). Never throws. */
 export function endRememberedSession() {
   return fetch(`${API_BASE}/users/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
 }
 
-async function req(path, opts = {}) {
+async function req(path, opts = {}, retried = false) {
   const method = (opts.method || 'GET').toUpperCase();
   if (
     method !== 'GET' &&
@@ -94,6 +122,9 @@ async function req(path, opts = {}) {
     },
     body: opts.body instanceof FormData ? opts.body : opts.body ? JSON.stringify(opts.body) : undefined,
   });
+  if (res.status === 401 && token && !retried && await refreshAccessToken()) {
+    return req(path, opts, true); // the token had expired: same request again with the new one
+  }
   if (res.status === 401 || (res.status === 403 && token === null)) {
     // No token, or backend says it's invalid/expired — stop pretending we're
     // logged in. Clear stale auth state and tell the app so it can redirect
@@ -113,7 +144,7 @@ async function req(path, opts = {}) {
 // callers that hit a @PutMapping endpoint (updateProfile) MUST pass 'PUT'
 // explicitly, or the request 404s/405s against a route that doesn't
 // actually have a POST handler.
-function upload(path, formData, method = 'POST') {
+function upload(path, formData, method = 'POST', retried = false) {
   const token = sessionStorage.getItem('omni_token');
   return fetch(`${API_BASE}${path}`, {
     method,
@@ -122,7 +153,10 @@ function upload(path, formData, method = 'POST') {
       ...NGROK_HEADER,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-  }).then(r => {
+  }).then(async r => {
+    if (r.status === 401 && token && !retried && await refreshAccessToken()) {
+      return upload(path, formData, method, true);
+    }
     if (r.status === 401 || (r.status === 403 && token === null)) {
       // Same expired/invalid-token recovery as req() below — uploads (posts,
       // media, profile pics, message attachments) were previously silently
@@ -146,6 +180,14 @@ export const api = {
 
   // Users
   getUser:           (id)       => req(`/users/${id}`),
+  // Public privacy endpoints (the emailed token is the proof, no login needed)
+  requestDeletion:   (email)    => req('/privacy/deletion-request', { method: 'POST', body: { email } }),
+  confirmDeletion:   (token)    => req('/privacy/deletion-confirm', { method: 'POST', body: { token } }),
+  unsubscribeAlerts: (token)    => req('/privacy/alerts-unsubscribe', { method: 'POST', body: { token } }),
+  // End-to-end encryption keys (see PublicKeyService on the backend)
+  getUserKeys:       (id)       => req(`/users/${id}/public-keys`),
+  getMyKeys:         ()         => req('/users/me/public-keys'),
+  rotateKey:         (publicKey, password) => req('/users/me/public-key/rotate', { method: 'POST', body: { publicKey, password } }),
   getUserByUsername: (username) => req(`/users/by-username/${encodeURIComponent(username)}`),
   searchUsers:    (query)           => req(`/users/search?query=${encodeURIComponent(query)}`),
   updateProfile:  (id, fd)          => upload(`/users/${id}/profile`, fd, 'PUT'),

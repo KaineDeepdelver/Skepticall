@@ -33,9 +33,10 @@ The delay and the maximum age are configurable (`messages.purge.delivered-after-
 - **Media:** each file is encrypted with its own random symmetric key (`crypto_secretbox`); that key is then wrapped for the recipient with `crypto_box`. The file in object storage is ciphertext.
 - **Groups:** each message is encrypted once with a random key, and that key is wrapped separately for every member, so only a member's own private key can unwrap it.
 - **Rerolling your key:** you can generate a new key pair at any time (`POST /users/me/public-key/rotate`, needs your password; at most once an hour). The new key takes over immediately, and the **old key stays valid for 30 days**, so messages encrypted to it by contacts with a stale key, or queued while you were offline, still open. Your devices keep the old private keys for those 30 days and then wipe them. Clients learn which keys are valid from `GET /users/me/public-keys` (yours) and `GET /users/{id}/public-keys` (a contact's, to open their older messages).
-- **Not hidden from the server:** metadata such as who talked to whom, when, message type, and call logs. Call-log entries are not purged. Accounts without a public key (older accounts) still send plaintext.
+- **Always encrypted:** the server refuses any message that isn't end-to-end encrypted (call logs excepted). It can't read ciphertext, so it checks the shape: a 24-byte nonce, tag-sized ciphertext, a wrapped file key, and for groups a content key wrapped for every member. The clients also refuse to send when they can't encrypt (for example, the recipient hasn't set up a key). Switch the server check off with `MESSAGES_REQUIRE_ENCRYPTION=false`.
+- **Not hidden from the server:** metadata such as who talked to whom, when, message type, and call logs. Call-log entries are not purged. Older accounts without a public key can't send or receive new messages until they set one up.
 
-<!-- FILL IN: where the client-side crypto lives (e.g. the mobile app / a shared module), which library it uses, and whether the web client encrypts. Keep this honest. -->
+Encryption happens in the clients, never on the server: the web client in [`frontend/src/e2e`](frontend/src/e2e/README.md) (tweetnacl) and the mobile app (`e2e.js`, not in this repo). Both follow the backend's wire format.
 
 ## Trade-offs (by design)
 
@@ -44,9 +45,10 @@ The delay and the maximum age are configurable (`messages.purge.delivered-after-
 
 ## Backups
 
-A backup is a single `.dat` file: your data is compressed (gzip) and then encrypted (XSalsa20-Poly1305, key from your passphrase via Argon2id). The file can be copied, stored or shared anywhere; without the passphrase it is random bytes.
+A backup is a `.dat` file: data compressed with gzip, then encrypted. There are two kinds, neither tied to a device:
 
-It can only be restored into **the account that created it**: the backup carries that account's private keys (the current one plus any recently rerolled ones), and restore is refused unless one of them matches a public key the server currently lists as valid for the logged-in account. A backup from account A can't be loaded into account B, even by someone who knows the passphrase.
+- **Message backup:** sealed to your account's own key pair. It needs no passphrase and contains no private key, so it can be copied or shared freely. Opening it needs your account key, and restore is refused unless the backup belongs to the logged-in account.
+- **Key backup:** your private key(s), protected by a passphrase. It is how you move your key to a new browser or phone, after which message backups open there too.
 
 Details, threat model and the integration contract: [`frontend/src/backup/README.md`](frontend/src/backup/README.md).
 
@@ -56,6 +58,10 @@ Details, threat model and the integration contract: [`frontend/src/backup/README
 |---|---|
 | ✅ Done | Messaging, groups, calls, media, encryption, delivery acks, automatic deletion after delivery, backup file format (encrypt, compress, account-bound; unit-tested) |
 | 🚧 In progress | Saving message history on the device; wiring backup export/restore into the apps |
+
+## Privacy & compliance
+
+Legal pages (Terms, Privacy, Cookie, Refund, data deletion), a cookie-consent banner, consent records, a real account-erasure flow and an accessibility pass are built in. See [`docs/COMPLIANCE.md`](docs/COMPLIANCE.md) for the checklist, what you still need to fill in (operator details), and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for licences.
 
 ## Tech stack
 
@@ -73,7 +79,7 @@ Details, threat model and the integration contract: [`frontend/src/backup/README
 <!-- FILL IN with the real commands. Backend: cd backend && ./mvnw spring-boot:run (needs the env vars below). Frontend: cd frontend && npm install && npm start. -->
 
 Required environment variables (names only):
-`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `REDIS_HOST`, `REDIS_PORT`, `BREVO_API_KEY`, `RECAPTCHA_SECRET_KEY`, `ADMIN_BOOTSTRAP_EMAIL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`, `FRONTEND_ORIGINS`, `MESSAGES_PURGE_ENABLED`; optional: `KEYS_RETIRED_GRACE_DAYS` (default 30), `KEYS_ROTATION_MIN_INTERVAL_MINUTES` (default 60), `JWT_EXPIRATION_MS`, `MESSAGES_PURGE_DELIVERED_AFTER_MINUTES`, `MESSAGES_PURGE_MAX_PENDING_DAYS`
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `REDIS_HOST`, `REDIS_PORT`, `BREVO_API_KEY`, `RECAPTCHA_SECRET_KEY`, `ADMIN_BOOTSTRAP_EMAIL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`, `FRONTEND_ORIGINS`, `MESSAGES_PURGE_ENABLED`; optional: `MESSAGES_REQUIRE_ENCRYPTION` (default true), `REQUIRE_SIGNUP_CONSENT`, `MIN_AGE`, `TERMS_VERSION`, `FRONTEND_URL`, `LEGAL_BUSINESS_NAME`, `LEGAL_CONTACT_EMAIL`, `LEGAL_BUSINESS_ADDRESS`, `MESSAGES_PURGE_CALL_LOG_DAYS`, `KEYS_RETIRED_GRACE_DAYS` (default 30), `KEYS_ROTATION_MIN_INTERVAL_MINUTES` (default 60), `JWT_EXPIRATION_MS`, `MESSAGES_PURGE_DELIVERED_AFTER_MINUTES`, `MESSAGES_PURGE_MAX_PENDING_DAYS`
 
 ## Project status
 

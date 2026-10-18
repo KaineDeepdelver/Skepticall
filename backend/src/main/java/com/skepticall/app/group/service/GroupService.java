@@ -241,6 +241,16 @@ public class GroupService {
 
 
 
+    /** Throws unless {@code userId} is a member of the group. */
+    public void requireMember(Long groupId, Long userId) {
+        boolean member = groupConversationRepository.findById(groupId)
+                .map(g -> g.getMembers().stream().anyMatch(u -> u.getId().equals(userId)))
+                .orElse(false);
+        if (!member) {
+            throw new BusinessException(ErrorType.PERMISSION_DENIED, "You are not a member of this group");
+        }
+    }
+
     public List<GroupMessageDTO> getMessages(Long groupId) {
         List<GroupMessage> rows = groupMessageRepository.findByGroupIdOrderByCreatedAtAsc(groupId);
         if (rows.isEmpty()) return List.of();

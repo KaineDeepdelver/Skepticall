@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../../services/api';
+import { encodeBase64 } from 'tweetnacl-util';
+import { generateKeyPair } from '../../crypto/keyring';
+import { keyStore } from '../../e2e/E2EEContext';
 import { useAuth } from '../../context/AuthContext';
+import { useConsent } from '../../consent/ConsentContext';
+import { MIN_AGE } from '../../config/business';
 import { useTheme } from '../../context/ThemeContext';
 
 const EMAIL_PATTERN    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -10,9 +15,10 @@ const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,20}$/;
 
 const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
 
-function useRecaptchaScript() {
+function useRecaptchaScript(allowed) {
   const [ready, setReady] = useState(!!(window.grecaptcha && window.grecaptcha.render));
   useEffect(() => {
+    if (!allowed) return;
     if (window.grecaptcha && window.grecaptcha.render) { setReady(true); return; }
     if (!window.__omniRecaptchaCallbacks) window.__omniRecaptchaCallbacks = [];
     window.__omniRecaptchaCallbacks.push(() => setReady(true));
@@ -29,7 +35,7 @@ function useRecaptchaScript() {
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);
-  }, []);
+  }, [allowed]);
   return ready;
 }
 
@@ -70,13 +76,15 @@ export default function SignUp() {
   const [username, setUsername]               = useState('');
   const [displayName, setDisplayName]         = useState('');
   const [tosAccepted, setTosAccepted]         = useState(false);
+  const [ageConfirmed, setAgeConfirmed]       = useState(false);
   const [error, setError]                     = useState('');
   const [loading, setLoading]                 = useState(false);
   const [captchaToken, setCaptchaToken]       = useState('');
 
   const captchaRef  = useRef(null);
   const widgetIdRef = useRef(null);
-  const scriptReady = useRecaptchaScript();
+  const { google: googleAllowed, setGoogle } = useConsent();
+  const scriptReady = useRecaptchaScript(googleAllowed);
 
   useEffect(() => {
     if (step !== 'profile') return;
@@ -141,13 +149,27 @@ export default function SignUp() {
       setError('Username must be 3-20 characters (letters, numbers, _)');
       return;
     }
-    if (!tosAccepted) { setError('You must accept the Terms of Service to create an account.'); return; }
+    if (!tosAccepted) { setError('You must accept the Terms of Service and Privacy Policy to create an account.'); return; }
+    if (!ageConfirmed) { setError(`You must confirm that you are at least ${MIN_AGE} years old.`); return; }
     if (!captchaToken) { setError('Please complete the captcha.'); return; }
     setLoading(true);
     try {
       const usernameTaken = await api.checkUsername(username);
       if (usernameTaken) { setError('Username already taken'); setLoading(false); resetCaptcha(); return; }
-      await api.register({ username, email, password, displayName: displayName || null, captchaToken });
+      // The encryption key pair is made here, on this device: the server only ever gets the public half.
+      // The private half is parked under the username until the first login adopts it.
+      const keyPair = generateKeyPair();
+      await keyStore.savePending(username, [keyPair]);
+      try {
+        await api.register({
+          username, email, password, displayName: displayName || null, captchaToken,
+          tosAccepted, ageConfirmed,
+          publicKey: encodeBase64(keyPair.publicKey),
+        });
+      } catch (registerError) {
+        await keyStore.dropPending(username).catch(() => {});
+        throw registerError;
+      }
       const response = await api.login(email, password);
       login(response);
       navigate('/');
@@ -263,7 +285,23 @@ export default function SignUp() {
               </a>
             </span>
           </label>
-          {RECAPTCHA_SITE_KEY ? (
+          <label className="tos-checkbox-row">
+            <input
+              type="checkbox"
+              checked={ageConfirmed}
+              onChange={e => setAgeConfirmed(e.target.checked)}
+            />
+            <span className="tos-checkbox-label">I am at least {MIN_AGE} years old</span>
+          </label>
+          {RECAPTCHA_SITE_KEY && !googleAllowed ? (
+            <div className="auth-error" role="status" style={{ fontSize: 13, lineHeight: 1.45 }}>
+              We use Google reCAPTCHA to block spam sign-ups. It sets Google cookies and shares your IP address with Google, so
+              it only loads if you allow it.{' '}
+              <button type="button" className="auth-btn" style={{ marginTop: 8 }} onClick={() => setGoogle(true)}>
+                Allow Google reCAPTCHA
+              </button>
+            </div>
+          ) : RECAPTCHA_SITE_KEY ? (
             <div ref={captchaRef} style={{ margin: '4px 0' }} />
           ) : (
             <div className="auth-error" style={{ fontSize: 12 }}>
@@ -271,7 +309,7 @@ export default function SignUp() {
             </div>
           )}
           <div className="auth-error">{error}</div>
-          <button className="auth-btn" type="submit" disabled={loading || !tosAccepted || (!!RECAPTCHA_SITE_KEY && !captchaToken)}>
+          <button className="auth-btn" type="submit" disabled={loading || !tosAccepted || !ageConfirmed || (!!RECAPTCHA_SITE_KEY && !captchaToken)}>
             {loading ? 'Creating account…' : 'Create account'}
           </button>
           <div className="auth-link" style={{ cursor: 'pointer' }} onClick={goBack}>← Back</div>

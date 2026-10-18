@@ -28,6 +28,7 @@ public class UserController {
     private final UserService userService;
     private final VerificationService verificationService;
     private final RememberCookie rememberCookie;
+    private final com.skepticall.app.common.OriginGuard originGuard;
 
     @Autowired
     private MessageService messageService;
@@ -59,7 +60,9 @@ public class UserController {
     @PostMapping("/session")
     public ResponseEntity<?> session(
             @CookieValue(name = RememberCookie.NAME, required = false) String rememberToken,
+            HttpServletRequest req,
             HttpServletResponse res) {
+        originGuard.requireTrusted(req); // the cookie is SameSite=None, so only our own sites may use it
         if (rememberToken == null || rememberToken.isBlank()) return ResponseEntity.status(401).build();
         try {
             LoginResponseDTO out = userService.restoreSession(rememberToken);
@@ -72,7 +75,8 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletResponse res) {
+    public ResponseEntity<Void> logout(HttpServletRequest req, HttpServletResponse res) {
+        originGuard.requireTrusted(req);
         rememberCookie.clear(res);
         return ResponseEntity.noContent().build();
     }

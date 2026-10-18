@@ -9,8 +9,8 @@ export default function ForgotPasswordReset() {
   const [error, setError]         = useState('');
   const [loading, setLoading]     = useState(false);
   const navigate = useNavigate();
-  const email = localStorage.getItem('reset_email') || '';
-  const code  = localStorage.getItem('reset_code')  || '';
+  const email = sessionStorage.getItem('reset_email') || '';
+  const code  = sessionStorage.getItem('reset_code')  || '';
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -19,8 +19,8 @@ export default function ForgotPasswordReset() {
     setLoading(true); setError('');
     try {
       await api.resetPassword(email, code, password);
-      localStorage.removeItem('reset_email');
-      localStorage.removeItem('reset_code');
+      sessionStorage.removeItem('reset_email');
+      sessionStorage.removeItem('reset_code');
       navigate('/accounts/login');
     } catch (err) {
       setError(err.message || 'Failed to reset password. Try again.');

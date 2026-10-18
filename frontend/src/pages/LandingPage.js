@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SkepticallLogo from '../components/SkepticallLogo';
+import { CookieSettingsButton } from '../legal/LegalLayout';
+import { business, operatorName } from '../config/business';
 import '../styles/landing.css';
 
 /* ============================================================================
@@ -16,9 +18,9 @@ const HERO = {
   titleAccent: 'We just deliver it.',
   sub:
     'Skepticall is a place for chat, voice calls and video calls with the people you care about. ' +
-    'Messages are encrypted, handed over, and removed from our servers soon after they arrive. ' +
-    'Your history stays on your device.',
-  trust: 'No message archive on our servers.',
+    'Messages and files are end-to-end encrypted, so we can’t read them. Our servers only hold them while they’re ' +
+    'being delivered, and never keep them longer than 30 days.',
+  trust: 'We can’t read your messages, and we don’t sell your data.',
 };
 
 const RIBBON = ['chat', 'voice calls', 'video calls', 'group chats', 'photos & files', 'voice notes', 'replies'];
@@ -30,12 +32,13 @@ const SECTIONS = [
     eyebrow: 'Privacy',
     title: 'Built so we can’t hold on to your chats',
     body:
-      'Messages are encrypted before they are sent. If your friend is offline, the server keeps the message ' +
-      'only until it is delivered, then deletes it a few minutes later. The long-term history lives on your phone, not in our database.',
+      'Messages and files are encrypted on your device before they are sent, and only the people in the conversation can open them. ' +
+      'If your friend is offline, the server holds the encrypted message only until it is delivered, then deletes it. ' +
+      'Nothing is ever kept longer than 30 days.',
     points: [
-      'Encrypted messages and media',
-      'Deleted from our servers shortly after delivery',
-      'Your history is saved on your own device',
+      'Encrypted messages and files',
+      'Deleted from our servers once delivered',
+      'Never kept longer than 30 days',
     ],
   },
   {
@@ -92,6 +95,10 @@ const FOOTER_COLUMNS = [
     links: [
       { label: 'Terms of Service', to: '/terms' },
       { label: 'Privacy Policy', to: '/privacy-policy' },
+      { label: 'Cookie Policy', to: '/cookie-policy' },
+      { label: 'Refund Policy', to: '/refund-policy' },
+      { label: 'Delete my data', to: '/data-deletion' },
+      { label: 'Cookie settings', cookies: true },
     ],
   },
 ];
@@ -396,7 +403,9 @@ export default function LandingPage() {
               <ul>
                 {col.links.map((l) => (
                   <li key={l.label}>
-                    {l.to ? <Link to={l.to}>{l.label}</Link> : <a href={l.href}>{l.label}</a>}
+                    {l.cookies
+                      ? <CookieSettingsButton className="lp-linkbtn" />
+                      : l.to ? <Link to={l.to}>{l.label}</Link> : <a href={l.href}>{l.label}</a>}
                   </li>
                 ))}
               </ul>
@@ -404,7 +413,11 @@ export default function LandingPage() {
           ))}
         </div>
         <div className="lp-wrap lp-footer-bottom">
-          <small>© {new Date().getFullYear()} Skepticall</small>
+          <small>
+            © {new Date().getFullYear()} {operatorName}
+            {business.address && <> · {business.address}</>}
+            {business.email && <> · <a href={`mailto:${business.email}`}>{business.email}</a></>}
+          </small>
         </div>
       </footer>
     </div>

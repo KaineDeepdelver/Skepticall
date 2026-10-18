@@ -104,14 +104,11 @@ export default function LinkPreview({ url, isSent }) {
           gap: 5,
         }}>
           {/* Favicon */}
-          <img
-            src={`https://www.google.com/s2/favicons?sz=16&domain=${domain}`}
-            alt=""
-            width={12}
-            height={12}
-            style={{ borderRadius: 2, flexShrink: 0 }}
-            onError={e => { e.target.style.display = 'none'; }}
-          />
+          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
           {data.siteName || domain}
         </div>
 

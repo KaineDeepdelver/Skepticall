@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { api, API_BASE, groupApi } from '../services/api';
+import { useMessageFiles } from '../e2e/useMessageFiles';
 import UserAvatar from './UserAvatar';
 import toast from 'react-hot-toast';
 
@@ -128,6 +129,9 @@ function EmptyState({ icon, title, desc }) {
 
 /* ── Media / Docs / Links sub-view ── */
 function MediaView({ mediaItems, docItems, linkItems, activeTab, setActiveTab }) {
+  // encrypted files are downloaded and decrypted on demand
+  const mediaFiles = useMessageFiles(mediaItems);
+  const docFiles = useMessageFiles(docItems);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <TabBar tabs={[{ id: 'media', label: `Media (${mediaItems.length})` }, { id: 'docs', label: `Docs (${docItems.length})` }, { id: 'links', label: `Links (${linkItems.length})` }]} active={activeTab} onChange={setActiveTab} />
@@ -139,8 +143,8 @@ function MediaView({ mediaItems, docItems, linkItems, activeTab, setActiveTab })
             {mediaItems.map((m, i) => (
               <div key={i} style={{ aspectRatio: '1', overflow: 'hidden', background: 'var(--bg-hover)', position: 'relative', cursor: 'pointer' }}>
                 {(m.type || '').toUpperCase() === 'VIDEO'
-                  ? <video src={avatarSrc(m.fileUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <img src={avatarSrc(m.fileUrl)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />}
+                  ? <video src={mediaFiles[i].src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <img src={mediaFiles[i].src} alt="Shared image" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />}
               </div>
             ))}
           </div>
@@ -150,7 +154,7 @@ function MediaView({ mediaItems, docItems, linkItems, activeTab, setActiveTab })
           ? <EmptyState icon={Icons.File} title="No documents" desc="Files shared in this group will appear here." />
           : <div>
             {docItems.map((m, i) => (
-              <a key={i} href={avatarSrc(m.fileUrl)} target="_blank" rel="noreferrer" download
+              <a key={i} href={docFiles[i].src} target="_blank" rel="noreferrer" download
                 style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 20px', borderBottom: '1px solid var(--border)', textDecoration: 'none', color: 'var(--text-primary)' }}>
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg-hover)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--text-muted)' }}>{Icons.File}</div>
                 <span style={{ fontSize: 13.5, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.fileUrl.split('/').pop()}</span>
@@ -164,7 +168,7 @@ function MediaView({ mediaItems, docItems, linkItems, activeTab, setActiveTab })
           : <div>
             {linkItems.map((m, i) => (
               <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
-                <a href={m.content} target="_blank" rel="noreferrer" style={{ fontSize: 13.5, color: 'var(--accent)', wordBreak: 'break-all', textDecoration: 'none' }}>{m.content}</a>
+                <a href={m.content} target="_blank" rel="noreferrer" style={{ fontSize: 13.5, color: 'var(--accent-link, var(--accent))', wordBreak: 'break-all', textDecoration: 'none' }}>{m.content}</a>
               </div>
             ))}
           </div>
@@ -477,7 +481,7 @@ export default function GroupInfoPanel({ group, currentUserId, conversations, me
                     ? <EmptyState icon={Icons.Search} title="No results" desc={`No messages containing "${searchQ}"`} />
                     : results.map(m => (
                       <div key={m.id} style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
-                        <div style={{ fontSize: 11.5, color: 'var(--accent)', fontWeight: 600, marginBottom: 3 }}>{m.senderDisplayName || m.senderUsername || 'You'}</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--accent-link, var(--accent))', fontWeight: 600, marginBottom: 3 }}>{m.senderDisplayName || m.senderUsername || 'You'}</div>
                         <div style={{ fontSize: 13.5, color: 'var(--text-primary)', lineHeight: 1.45 }}>
                           {m.content.split(new RegExp(`(${searchQ})`, 'gi')).map((part, i) =>
                             part.toLowerCase() === searchQ.toLowerCase()
@@ -496,7 +500,7 @@ export default function GroupInfoPanel({ group, currentUserId, conversations, me
                 ? <EmptyState icon={Icons.Star} title="No starred messages" desc="Star messages in the chat to save them here." />
                 : starredItems.map(m => (
                   <div key={m.id} style={{ padding: '13px 20px', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: 11.5, color: 'var(--accent)', fontWeight: 600, marginBottom: 3 }}>{m.senderDisplayName || m.senderUsername || 'You'}</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--accent-link, var(--accent))', fontWeight: 600, marginBottom: 3 }}>{m.senderDisplayName || m.senderUsername || 'You'}</div>
                     <div style={{ fontSize: 13.5, color: 'var(--text-primary)', lineHeight: 1.45 }}>{m.content}</div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{new Date(m.createdAt || m.sentAt).toLocaleString()}</div>
                   </div>
@@ -564,7 +568,7 @@ export default function GroupInfoPanel({ group, currentUserId, conversations, me
                   ) : desc ? (
                     <div onClick={() => isAdmin && setEditingDesc(true)} style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.55, cursor: isAdmin ? 'pointer' : 'default', whiteSpace: 'pre-wrap' }}>{desc}</div>
                   ) : isAdmin ? (
-                    <span onClick={() => setEditingDesc(true)} style={{ fontSize: 13.5, color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }}>+ Add group description</span>
+                    <span onClick={() => setEditingDesc(true)} style={{ fontSize: 13.5, color: 'var(--accent-link, var(--accent))', fontWeight: 600, cursor: 'pointer' }}>+ Add group description</span>
                   ) : (
                     <span style={{ fontSize: 13.5, color: 'var(--text-muted)', fontStyle: 'italic' }}>No description</span>
                   )}
@@ -605,7 +609,7 @@ export default function GroupInfoPanel({ group, currentUserId, conversations, me
                       <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="20" height="20"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
                       </div>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>Add members</span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent-link, var(--accent))' }}>Add members</span>
                     </div>
                   )}
 
@@ -627,7 +631,7 @@ export default function GroupInfoPanel({ group, currentUserId, conversations, me
                       {toAdd.length > 0 && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
                           {toAdd.map(u => (
-                            <span key={u.id} style={{ background: 'rgba(130,90,255,0.12)', border: '1px solid var(--accent)', borderRadius: 20, padding: '3px 10px', fontSize: 12, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <span key={u.id} style={{ background: 'rgba(130,90,255,0.12)', border: '1px solid var(--accent)', borderRadius: 20, padding: '3px 10px', fontSize: 12, color: 'var(--accent-link, var(--accent))', display: 'flex', alignItems: 'center', gap: 5 }}>
                               {u.displayName || u.username}
                               <span onClick={() => setToAdd(p => p.filter(x => x.id !== u.id))} style={{ cursor: 'pointer', opacity: 0.7, display: 'flex' }}>{Icons.X}</span>
                             </span>
@@ -644,7 +648,7 @@ export default function GroupInfoPanel({ group, currentUserId, conversations, me
                               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{u.displayName || u.username}</div>
                               <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>@{u.username}</div>
                             </div>
-                            {sel && <span style={{ color: 'var(--accent)', display: 'flex' }}>{Icons.Check}</span>}
+                            {sel && <span style={{ color: 'var(--accent-link, var(--accent))', display: 'flex' }}>{Icons.Check}</span>}
                           </div>
                         );
                       })}

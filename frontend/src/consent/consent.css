@@ -1,0 +1,18 @@
+.cb {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 9000;
+  width: min(760px, calc(100% - 24px)); padding: 18px 20px; border-radius: 16px;
+  background: var(--bg-card, #161a1e); color: var(--text-primary, #e7e9ea); border: 1px solid var(--border, rgba(255,255,255,.14));
+  box-shadow: 0 20px 60px -10px rgba(0,0,0,.65);
+}
+.cb h2 { font-size: 1.05rem; margin-bottom: 6px; }
+.cb p { font-size: .9rem; line-height: 1.5; color: var(--text-secondary, #c3c7cb); margin: 0 0 12px; }
+.cb a { color: var(--accent, #a78bfa); }
+.cb-options { display: grid; gap: 10px; margin-bottom: 12px; }
+.cb-row { display: flex; gap: 10px; align-items: flex-start; font-size: .9rem; }
+.cb-row input { margin-top: 4px; }
+.cb-row small { display: block; color: var(--text-muted, #9aa0a6); }
+.cb-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+/* Accept and Reject look identical on purpose */
+.cb-btn { flex: 1 1 150px; padding: 11px 16px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; color: var(--text-primary, #fff); background: var(--bg-input, #1c2026); border: 1px solid var(--border-input, rgba(255,255,255,.25)); }
+.cb-btn:hover { background: var(--bg-hover, rgba(255,255,255,.1)); }
+.cb-btn--quiet { flex: 0 1 auto; background: transparent; border-color: transparent; text-decoration: underline; }

@@ -62,12 +62,48 @@ public class EmailService {
      * Generic email sender — used for IP login alerts and other transactional emails.
      */
     public void sendCustomEmail(String toEmail, String subject, String htmlBody) {
+        sendCustomEmail(toEmail, subject, htmlBody, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Value("${legal.business-name:}")
+    private String legalName;
+
+    @org.springframework.beans.factory.annotation.Value("${legal.contact-email:}")
+    private String legalContact;
+
+    @org.springframework.beans.factory.annotation.Value("${legal.business-address:}")
+    private String legalAddress;
+
+    /**
+     * Standard footer: why you got this, who sent it and how to reach them, and (for optional
+     * emails only) a link to stop them. Account-security emails (verification codes, password
+     * resets) can't be switched off, and the footer says so.
+     */
+    String footer(String unsubscribeUrl) {
+        StringBuilder sb = new StringBuilder("<hr style=\"border:none;border-top:1px solid #ddd;margin:24px 0\"/>");
+        sb.append("<p style=\"font-size:12px;color:#777\">");
+        if (unsubscribeUrl != null) {
+            sb.append("You're getting this email because you turned on this alert in your Skepticall settings. ")
+              .append("<a href=\"").append(unsubscribeUrl).append("\">Turn off these emails</a>.");
+        } else {
+            sb.append("You're getting this email because of activity on a Skepticall account that uses this address ")
+              .append("(for example signing up or resetting a password). It's a security message, so it can't be switched off. ")
+              .append("If this wasn't you, you can ignore it.");
+        }
+        sb.append("<br/>").append(legalName == null || legalName.isBlank() ? "Skepticall" : legalName);
+        if (legalAddress != null && !legalAddress.isBlank()) sb.append(", ").append(legalAddress);
+        if (legalContact != null && !legalContact.isBlank()) sb.append(" · ").append(legalContact);
+        return sb.append("</p>").toString();
+    }
+
+    /** As above, with a one-click "turn off these emails" link in the footer (for optional emails). */
+    public void sendCustomEmail(String toEmail, String subject, String htmlBody, String unsubscribeUrl) {
         try {
             SendSmtpEmail email = new SendSmtpEmail();
             email.setSender(new SendSmtpEmailSender().email(senderEmail).name(senderName));
             email.setTo(List.of(new SendSmtpEmailTo().email(toEmail)));
             email.setSubject(subject);
-            email.setHtmlContent(htmlBody);
+            email.setHtmlContent(htmlBody + footer(unsubscribeUrl));
             getApi().sendTransacEmail(email);
         } catch (Exception e) {
             throw new BusinessException(

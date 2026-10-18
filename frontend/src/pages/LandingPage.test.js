@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom';
 import { StaticRouter } from 'react-router-dom/server';
 import LandingPage from './LandingPage';
+import { ConsentProvider } from '../consent/ConsentContext';
 import HomeEntry from './HomeEntry';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,9 +14,11 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('landing page content', () => {
   const html = renderToStaticMarkup(
-    <StaticRouter location="/">
-      <LandingPage />
-    </StaticRouter>
+    <ConsentProvider>
+      <StaticRouter location="/">
+        <LandingPage />
+      </StaticRouter>
+    </ConsentProvider>
   );
 
   test('has the headline and a single h1', () => {
@@ -33,6 +36,16 @@ describe('landing page content', () => {
     expect(html).toContain('href="/terms"');
     expect(html).toContain('href="/privacy-policy"');
     expect(html).toContain('href="/forgot-password"');
+    expect(html).toContain('href="/cookie-policy"');
+    expect(html).toContain('href="/refund-policy"');
+    expect(html).toContain('href="/data-deletion"');
+    expect(html).toContain('Cookie settings');
+  });
+
+  test('makes no promises the app does not keep', () => {
+    expect(html).not.toMatch(/history (is|stays) .{0,20}(on your|saved on your)/i);
+    expect(html).not.toMatch(/no message archive/i);
+    expect(html).not.toMatch(/\b(best|#1|number one|trusted by|millions|as seen on)\b/i);
   });
 
   test('every in-page link has a matching section', () => {
@@ -72,14 +85,16 @@ describe('"/" entry point', () => {
   function renderAt(path) {
     act(() => {
       root.render(
-        <MemoryRouter initialEntries={[path]}>
-          <Routes>
-            <Route path="/" element={<HomeEntry />} />
-            <Route path="/" element={<Shell />}>
-              <Route path="messages" element={<p>messages page</p>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
+        <ConsentProvider>
+          <MemoryRouter initialEntries={[path]}>
+            <Routes>
+              <Route path="/" element={<HomeEntry />} />
+              <Route path="/" element={<Shell />}>
+                <Route path="messages" element={<p>messages page</p>} />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </ConsentProvider>
       );
     });
   }

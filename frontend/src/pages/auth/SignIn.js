@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { safeNext } from '../../utils/safeRedirect';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -9,7 +10,7 @@ export default function SignIn() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const next = params.get('next') || '/';
+  const next = safeNext(params.get('next')); // only paths inside this app (no open redirect)
   const reason = params.get('reason');
 
   function handleGuest() {

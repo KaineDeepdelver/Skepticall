@@ -16,7 +16,6 @@ import { useGroupCall } from '../context/GroupCallContext';
 import toast from 'react-hot-toast';
 
 /* ── UTILS ── */
-function esc(s) { return (s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]); }
 function fmtTime(iso) {
   if (!iso) return '';
   const d = new Date(iso), now = new Date();
@@ -142,11 +141,14 @@ function avatarSrc(pic) {
   resolveUrl(pic.startsWith('http') ? pic : `${API_BASE}${pic}`);
 }
 
-function highlight(text, query) {
+// Highlights the search term as React elements (never as raw HTML, so names can't inject markup).
+function highlightNodes(text, query) {
   if (!query) return text;
-  return text.replace(new RegExp(
-    `(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
-    '<mark style="background:transparent;color:var(--accent)">$1</mark>');
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  return parts.map((p, i) => (p.toLowerCase() === query.toLowerCase()
+    ? <mark key={i} style={{ background: 'transparent', color: 'var(--accent-link, var(--accent))' }}>{p}</mark>
+    : p));
 }
 
 // Ported from ChannelView.js's voice-note implementation, which captures
@@ -480,7 +482,7 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
   if (mediaPending && !isDeleted) {
     inner = <><span className="bubble-inner">{fileInfo.state === 'loading' ? '🔒 Decrypting…' : '🔒 Unable to decrypt this file'}</span>{footer}</>;
   } else if (isDeleted) { inner = <><span className="bubble-deleted">⊘ This message was deleted</span><span className="bubble-gap short" /><span className="bubble-footer"><span className="bubble-time">{timeStr}</span></span></>; }
-  else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt="img" loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
+  else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt={msg.content ? `Image: ${String(msg.content).slice(0, 80)}` : "Image sent in this chat"} loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
   else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="video-play-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5,3 19,12 5,21" /></svg></span><span className="video-meta-bar">{msg.durationSeconds != null && <span className="video-duration-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z" /></svg>{formatDuration(msg.durationSeconds)}</span>}<span className="video-time-badge">{hasEdited && <span className="bubble-edited">Edited</span>}{timeStr}{isSent && <Tick status={msg.status || 'SENT'} />}</span></span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
   else if (msgType === 'VOICE') { inner = <div className="bubble-voice-wrap">{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<VoiceBubble src={fileSrc} durationHint={msg.durationSeconds ? Number(msg.durationSeconds) : 0} waveformPeaks={msg.waveformPeaks} /><div className="bubble-voice-footer">{msg.edited && <span className="bubble-edited">edited ·</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</div></div>; }
   else if (msgType === 'FILE') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<a className="bubble-file" href={fileSrc} target="_blank" rel="noreferrer" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg><span>{fileSrc?.split('/').pop()}</span></a><span className="bubble-inner" style={{ display: 'block', minHeight: 4 }} />{footer}</>; }
@@ -536,7 +538,7 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
       {showAvatar ? (
         <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 'calc(70% - 36px)', alignItems: 'flex-start' }}
           onClick={selectMode ? e => { e.stopPropagation(); onSelect?.(msg.id); } : undefined}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', marginBottom: 2, paddingLeft: 2, opacity: 0.9, display: 'flex', alignItems: 'center', gap: 3 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-link, var(--accent))', marginBottom: 2, paddingLeft: 2, opacity: 0.9, display: 'flex', alignItems: 'center', gap: 3 }}>
             {groupCreatorId && msg.senderId && String(msg.senderId) === String(groupCreatorId) && (
               <span title="Group creator" style={{ fontSize: 11, lineHeight: 1 }}>👑</span>
             )}
@@ -585,7 +587,7 @@ function Lightbox({ items, startIndex, onClose }) {
       <div onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {item && item.type === 'VIDEO'
           ? <video src={item.src} controls autoPlay style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 8 }} />
-          : item && <img src={item.src} alt="" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8, display: 'block' }} />
+          : item && <img src={item.src} alt="Full-size image from the chat" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8, display: 'block' }} />
         }
       </div>
       {items.length > 1 && (
@@ -601,7 +603,7 @@ function BundleTile({ src, type, extraCount, showBadge, width, height, onClick }
     <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 4, cursor: 'pointer', width, height, flexShrink: 0 }} onClick={onClick}>
       {type === 'VIDEO'
         ? <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
-        : <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" />
+        : <img src={src} alt="Image from the chat" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" />
       }
       {showBadge && extraCount > 0 && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: '#fff' }}>+{extraCount}</div>
@@ -805,7 +807,7 @@ function DmSearchModal({ messages, userId, convoName, query, onQueryChange, onCl
     const parts = text.split(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
     return parts.map((p, i) =>
       p.toLowerCase() === term.toLowerCase()
-        ? <mark key={i} style={{ background: 'rgba(79,172,254,0.28)', color: 'var(--accent)', borderRadius: 3, padding: '0 2px', fontWeight: 600 }}>{p}</mark>
+        ? <mark key={i} style={{ background: 'rgba(79,172,254,0.28)', color: 'var(--accent-link, var(--accent))', borderRadius: 3, padding: '0 2px', fontWeight: 600 }}>{p}</mark>
         : p
     );
   }
@@ -848,7 +850,7 @@ function DmSearchModal({ messages, userId, convoName, query, onQueryChange, onCl
           gap: 10,
         }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"
-            style={{ color: 'var(--accent)', flexShrink: 0 }}>
+            style={{ color: 'var(--accent-link, var(--accent))', flexShrink: 0 }}>
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
@@ -1749,7 +1751,7 @@ export default function Messages() {
                 <span className={`online-dot${onlineUsers[u.id] ? ' online' : ''}`} style={{ position: 'absolute', bottom: 1, right: 1 }} />
               </div>
               <div>
-                <div className="people-name" dangerouslySetInnerHTML={{ __html: highlight(esc(u.displayName || u.username), searchQuery) }} />
+                <div className="people-name">{highlightNodes(u.displayName || u.username || '', searchQuery)}</div>
                 <div className="people-username">@{u.username}</div>
               </div>
             </div>
@@ -1903,7 +1905,7 @@ export default function Messages() {
                         ? <div className="att-file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg></div>
                         : att.kind === 'VIDEO'
                           ? <video src={att.dataUrl} className="att-thumb" muted />
-                          : <img src={att.dataUrl} className="att-thumb" alt="preview" />
+                          : <img src={att.dataUrl} className="att-thumb" alt="Attachment preview" />
                       }
                       <span className="att-name">{att.file.name}</span>
                       <button className="att-remove" onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}>
@@ -1970,7 +1972,7 @@ export default function Messages() {
                         }}
                       />
                       <button className="icon-btn" onClick={startRecording} title="Voice message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg></button>
-                      <button className="send-btn" onClick={sendMessage}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg></button>
+                      <button className="send-btn" onClick={sendMessage} aria-label="Send message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg></button>
                     </>
                   );
                 })()}

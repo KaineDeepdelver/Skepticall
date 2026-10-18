@@ -76,6 +76,10 @@ public class MessageRetentionService {
     @Value("${messages.purge.max-pending-days:30}")
     private int maxPendingDays;
 
+    /** Call-log entries are kept this many days, then deleted (0 = keep forever). */
+    @Value("${messages.purge.call-log-days:30}")
+    private int callLogDays;
+
     public record PurgeResult(List<String> mediaUrls, int dms, int groups) {}
 
     // == Redis fast copy (best effort) =========================================
@@ -192,6 +196,13 @@ public class MessageRetentionService {
     }
 
     // == Purge ==================================================================
+
+    /** Deletes old call-log entries. Returns how many were removed. */
+    @Transactional
+    public int purgeCallLogs() {
+        if (callLogDays <= 0) return 0;
+        return messageRepo.deleteCallLogsOlderThan(LocalDateTime.now().minusDays(callLogDays));
+    }
 
     /** Deletes everything that is due. Returns the media URLs so the caller can remove them from the bucket. */
     @Transactional

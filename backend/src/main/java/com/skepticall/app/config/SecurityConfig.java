@@ -72,7 +72,8 @@ public class SecurityConfig {
                                 "/users/check-email", "/users/check-username",
                                 "/users/send-registration-code", "/users/verify-registration-code",
                                 "/users/send-reset-code", "/users/reset-password",
-                                "/users/session", "/users/logout"
+                                "/users/session", "/users/logout",
+                                "/privacy/**"
                         ).permitAll()
 
                         // Public read endpoints
@@ -82,7 +83,6 @@ public class SecurityConfig {
                                 "/posts", "/posts/search", "/posts/user/**", "/posts/*", "/posts/slug/**",
                                 "/media", "/media/search", "/media/user/**", "/media/*",
                                 "/comments/**",
-                                "/messages/*/*",
                                 "/users/search",
                                 "/follow/*/status",
                                 "/v3/api-docs/**",

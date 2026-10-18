@@ -143,7 +143,40 @@ function darkenHex(hex, amount = 0.35) {
   return `#${dr.toString(16).padStart(2,'0')}${dg.toString(16).padStart(2,'0')}${db.toString(16).padStart(2,'0')}`;
 }
 
+// -- Accent used as TEXT (links, labels) must stay readable on the surface behind it, whatever accent
+// the person picked: move it toward white (dark theme) or black (light theme) until it reaches 4.5:1.
+function relLum(hex) {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+function contrastRatio(a, b) {
+  const [hi, lo] = [relLum(a), relLum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+function readableAccent(accent, surface, towardWhite) {
+  if (!/^#[0-9a-fA-F]{6}$/.test(accent) || !/^#[0-9a-fA-F]{6}$/.test(surface)) return accent;
+  for (let t = 0; t <= 1.0001; t += 0.05) {
+    const mix = (v) => Math.round(towardWhite ? v + (255 - v) * t : v * (1 - t));
+    const hex = '#' + [1, 3, 5].map((i) => mix(parseInt(accent.slice(i, i + 2), 16)).toString(16).padStart(2, '0')).join('');
+    if (contrastRatio(hex, surface) >= 4.5) return hex;
+  }
+  return towardWhite ? '#ffffff' : '#000000';
+}
+let lastAccent = null;
+function applyAccentLink() {
+  if (!lastAccent) return;
+  const root = document.documentElement;
+  const light = root.getAttribute('data-theme') === 'light';
+  const surface = getComputedStyle(root).getPropertyValue('--bg-card').trim();
+  root.style.setProperty('--accent-link', readableAccent(lastAccent, /^#[0-9a-fA-F]{6}$/.test(surface) ? surface : (light ? '#ffffff' : '#1c2026'), !light));
+}
+if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+  new MutationObserver(applyAccentLink).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+}
+
 function applyAccent(from, to, accent) {
+  lastAccent = accent;
   const root = document.documentElement;
   root.style.setProperty('--accent',        accent);
   root.style.setProperty('--accent-hover',  lightenHex(accent, 0.2));
@@ -161,6 +194,7 @@ function applyAccent(from, to, accent) {
   const accentText    = contrastText(accent);
   const gradientText  = contrastTextForGradient(from, to);
   root.style.setProperty('--accent-text',        accentText);
+  applyAccentLink();
   root.style.setProperty('--bubble-out-text',     gradientText);
   // Sub-tones for timestamps and ticks on outgoing bubbles
   const isLight = gradientText === '#000000';

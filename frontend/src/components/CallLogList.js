@@ -88,7 +88,7 @@ export default function CallLogList({ userId, conversations, onCall }) {
         <button
           onClick={() => onCall(video ? 'video' : 'audio', { userId: otherId, name, avatar: p.avatar || null, username: p.username })}
           aria-label={`Call ${name} back`}
-          style={{ marginLeft: 10, width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'var(--bg-hover)', color: 'var(--accent)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          style={{ marginLeft: 10, width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'var(--bg-hover)', color: 'var(--accent-link, var(--accent))', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {video ? <VideoIcon /> : <PhoneIcon />}
         </button>
       </div>

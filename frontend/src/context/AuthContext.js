@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { restoreSession, endRememberedSession } from '../services/api';
+import { restoreSession, endRememberedSession, refreshAccessToken, tokenExpiryMs } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -36,6 +36,24 @@ export function AuthProvider({ children }) {
 
     setUser(userData);
   }, []);
+
+  // Renew the access token shortly before it expires, so a session never hits an expired token.
+  useEffect(() => {
+    if (!user) return undefined;
+    let timer;
+    let cancelled = false;
+    const schedule = () => {
+      const expiry = tokenExpiryMs(sessionStorage.getItem('omni_token'));
+      if (!expiry) return;
+      const wait = Math.max(30_000, expiry - Date.now() - 2 * 60_000);
+      timer = setTimeout(async () => {
+        if (cancelled) return;
+        if (await refreshAccessToken()) schedule(); // if it fails, the next request's 401 handles it
+      }, wait);
+    };
+    schedule();
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [user?.id]); // eslint-disable-line
 
   const logout = useCallback(() => {
     endRememberedSession();   // forget this browser too, or the cookie would just log you back in

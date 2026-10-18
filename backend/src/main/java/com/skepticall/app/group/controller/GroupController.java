@@ -31,7 +31,11 @@ public class GroupController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<GroupDTO>> getForUser(@PathVariable Long userId) {
+    public ResponseEntity<List<GroupDTO>> getForUser(@PathVariable Long userId, HttpServletRequest req) {
+        if (!userId.equals(callerId(req))) { // your own group list only
+            throw new com.skepticall.app.exceptions.BusinessException(
+                    com.skepticall.app.exceptions.ErrorType.PERMISSION_DENIED, "Not your group list");
+        }
         return ResponseEntity.ok(groupService.getGroupsForUser(userId));
     }
 
@@ -41,7 +45,8 @@ public class GroupController {
     }
 
     @GetMapping("/{id}/messages")
-    public ResponseEntity<List<GroupMessageDTO>> getMessages(@PathVariable Long id) {
+    public ResponseEntity<List<GroupMessageDTO>> getMessages(@PathVariable Long id, HttpServletRequest req) {
+        groupService.requireMember(id, callerId(req)); // members only
         return ResponseEntity.ok(groupService.getMessages(id));
     }
 

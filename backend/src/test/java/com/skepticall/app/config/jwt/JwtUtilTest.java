@@ -77,4 +77,40 @@ class JwtUtilTest {
         assertEquals(JwtUtil.passwordTag("hash-a"), JwtUtil.passwordTag("hash-a"));
         assertNotEquals(JwtUtil.passwordTag("hash-a"), JwtUtil.passwordTag("hash-b"));
     }
+
+    @Test
+    void purposeTokensRoundTripForTheirOwnPurposeOnly() {
+        JwtUtil jwt = jwt();
+        String token = jwt.generatePurpose(9L, JwtUtil.PURPOSE_DELETE_ACCOUNT, "tag", ONE_MINUTE);
+
+        assertEquals("9", jwt.parsePurpose(token, JwtUtil.PURPOSE_DELETE_ACCOUNT).getSubject());
+        assertNull(jwt.parsePurpose(token, JwtUtil.PURPOSE_ALERTS_OFF));
+    }
+
+    @Test
+    void purposeTokensAreNeverAccessTokens() {
+        JwtUtil jwt = jwt();
+        String token = jwt.generatePurpose(9L, JwtUtil.PURPOSE_ALERTS_OFF, "tag", ONE_MINUTE);
+
+        assertFalse(jwt.isValid(token));
+        assertNull(jwt.extractUserId(token));
+        assertNull(jwt.parseRemember(token));
+    }
+
+    @Test
+    void accessAndRememberTokensAreNotPurposeTokens() {
+        JwtUtil jwt = jwt();
+
+        assertNull(jwt.parsePurpose(jwt.generate(9L, false), JwtUtil.PURPOSE_DELETE_ACCOUNT));
+        assertNull(jwt.parsePurpose(jwt.generateRemember(9L, "tag", ONE_MINUTE), JwtUtil.PURPOSE_DELETE_ACCOUNT));
+    }
+
+    @Test
+    void expiredAndForgedPurposeTokensAreRejected() {
+        String expired = new JwtUtil(SECRET, ONE_MINUTE).generatePurpose(9L, JwtUtil.PURPOSE_DELETE_ACCOUNT, "tag", -1000L);
+        String forged = new JwtUtil(OTHER_SECRET, ONE_MINUTE).generatePurpose(9L, JwtUtil.PURPOSE_DELETE_ACCOUNT, "tag", ONE_MINUTE);
+
+        assertNull(jwt().parsePurpose(expired, JwtUtil.PURPOSE_DELETE_ACCOUNT));
+        assertNull(jwt().parsePurpose(forged, JwtUtil.PURPOSE_DELETE_ACCOUNT));
+    }
 }

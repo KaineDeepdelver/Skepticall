@@ -52,7 +52,13 @@ public class MessageRestController {
     }
 
     @GetMapping("/{user1}/{user2}")
-    public List<MessageDTO> getConversation(@PathVariable Long user1, @PathVariable Long user2) {
+    public List<MessageDTO> getConversation(@PathVariable Long user1, @PathVariable Long user2, HttpServletRequest req) {
+        // Only the two people in a conversation may read it (this route used to be public).
+        Long caller = callerId(req);
+        if (caller == null || !(caller.equals(user1) || caller.equals(user2))) {
+            throw new com.skepticall.app.exceptions.BusinessException(
+                    com.skepticall.app.exceptions.ErrorType.PERMISSION_DENIED, "Not your conversation");
+        }
         return messageService.getConversation(user1, user2);
     }
 

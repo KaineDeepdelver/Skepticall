@@ -114,4 +114,9 @@ public class User extends BaseEntity {
 
     @Builder.Default
     private boolean tosAccepted = false;
+    // Consent record: when the terms were accepted, which version, and when the age was confirmed.
+    private java.time.Instant tosAcceptedAt;
+    private String tosVersion;
+    private java.time.Instant ageConfirmedAt;
+
 }

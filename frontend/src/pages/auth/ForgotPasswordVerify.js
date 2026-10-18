@@ -9,7 +9,7 @@ export default function ForgotPasswordVerify() {
   const [loading, setLoading]   = useState(false);
   const [cooldown, setCooldown] = useState(60);
   const navigate = useNavigate();
-  const email = localStorage.getItem('reset_email') || '';
+  const email = sessionStorage.getItem('reset_email') || '';
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -28,7 +28,7 @@ export default function ForgotPasswordVerify() {
     setLoading(true); setError('');
     try {
       // store code for the next step
-      localStorage.setItem('reset_code', code);
+      sessionStorage.setItem('reset_code', code);
       navigate('/forgot-password/reset');
     } catch (err) {
       setError(err.message || 'Invalid or expired code.');

@@ -21,6 +21,12 @@ public class RegisterDTO {
     @NotBlank
     private String publicKey;
 
+    /** The person ticked "I accept the Terms of Service and Privacy Policy". */
+    private Boolean tosAccepted;
+
+    /** The person confirmed they are at least the minimum age (see compliance.min-age). */
+    private Boolean ageConfirmed;
+
     @NotBlank
     private String username;
 

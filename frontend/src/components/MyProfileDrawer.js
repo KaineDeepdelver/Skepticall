@@ -263,7 +263,7 @@ export default function MyProfileDrawer({ onClose }) {
           <div style={{ padding: '0 20px', marginTop: -36, marginBottom: 8, display: 'flex', alignItems: 'flex-end', gap: 12 }}>
             <div style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }} onClick={() => fileInputRef.current?.click()}>
               {avatarPreview
-                ? <img src={avatarPreview} alt="avatar" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--bg-card)' }} />
+                ? <img src={avatarPreview} alt="Your new profile picture (preview)" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--bg-card)' }} />
                 : <DefaultAvatar size={80} name={user?.displayName || user?.username} />
               }
               <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: '0.2s' }}

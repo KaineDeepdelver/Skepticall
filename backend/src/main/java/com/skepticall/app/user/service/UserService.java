@@ -36,6 +36,8 @@ public class UserService {
     private final R2StorageService r2Storage;
     private final com.skepticall.app.verification.service.EmailService emailService;
     private final PublicKeyService publicKeyService;
+    private final com.skepticall.app.common.ComplianceProperties compliance;
+    private final com.skepticall.app.privacy.AccountErasureService erasureService;
 
     // == Auth =================================================================
 
@@ -62,6 +64,21 @@ public class UserService {
         }
 
 
+        // Consent: the Terms/Privacy box and the age confirmation must both be ticked.
+        boolean tos = Boolean.TRUE.equals(dto.getTosAccepted());
+        boolean age = Boolean.TRUE.equals(dto.getAgeConfirmed());
+        if (compliance.isRequireConsent()) {
+            if (!tos) {
+                throw new BusinessException(ErrorType.INVALID_OPERATION,
+                        "You need to accept the Terms of Service and Privacy Policy to create an account");
+            }
+            if (!age) {
+                throw new BusinessException(ErrorType.INVALID_OPERATION,
+                        "You need to confirm that you are at least " + compliance.getMinAge() + " years old");
+            }
+        }
+        java.time.Instant consentTime = java.time.Instant.now();
+
         // Reject a malformed key before anything is saved.
         String publicKey = PublicKeyService.canonicalize(dto.getPublicKey());
 
@@ -71,6 +88,10 @@ public class UserService {
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .displayName(dto.getDisplayName())
                 .publicKey(publicKey)
+                .tosAccepted(tos)
+                .tosAcceptedAt(tos ? consentTime : null)
+                .tosVersion(tos ? compliance.getTermsVersion() : null)
+                .ageConfirmedAt(age ? consentTime : null)
                 .build();
 
         User saved = userRepository.save(user);
@@ -85,7 +106,8 @@ public class UserService {
     }
 
     // ip may be null (unknown). Used for the "IP login alerts" setting.
-    public LoginResponseDTO login(LoginDTO dto, String ip) {
+    public LoginResponseDTO login(LoginDTO dto, String rawIp) {
+        String ip = com.skepticall.app.common.IpPrivacy.mask(rawIp); // only the network is kept, never the exact address
         User user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorType.INVALID_OPERATION, "Invalid email or password"));
 
@@ -103,9 +125,12 @@ public class UserService {
             user.setLastLoginAt(java.time.Instant.now().toString());
             userRepository.save(user);
             if (newIp && user.isIpLoginAlerts()) {
+                String stop = compliance.frontendBaseUrl() + "/email-preferences?token="
+                        + jwtUtil.generatePurpose(user.getId(), com.skepticall.app.config.jwt.JwtUtil.PURPOSE_ALERTS_OFF,
+                        com.skepticall.app.config.jwt.JwtUtil.passwordTag(user.getPassword()), 90L * 24 * 60 * 60 * 1000);
                 emailService.sendCustomEmail(user.getEmail(), "New sign-in to your Skepticall account",
-                        "<p>Your account was just signed in to from a new IP address: <b>" + ip + "</b>.</p>"
-                        + "<p>If this was you, nothing to do. If not, change your password right away.</p>");
+                        "<p>Your account was just signed in to from a new network (<b>" + ip + "</b>, last digits hidden).</p>"
+                        + "<p>If this was you, nothing to do. If not, change your password right away.</p>", stop);
             }
         } catch (Exception ignored) {
             
@@ -321,14 +346,20 @@ public class UserService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BusinessException(ErrorType.INVALID_OPERATION, "Incorrect password provided for deletion confirmation");
         }
-        userRepository.delete(user);
+        eraseEverything(id);
     }
 
     @CacheEvict(value = "users", key = "#id")
     public void adminDeleteAccount(Long id) {
-        User user = userRepository.findById(id)
+        userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorType.NOT_FOUND, "User profile not found [id=" + id + "]"));
-        userRepository.delete(user);
+        eraseEverything(id);
+    }
+
+    /** Deletes the account and all data tied to it (database rows, then files in object storage). */
+    private void eraseEverything(Long id) {
+        java.util.List<String> files = erasureService.erase(id);
+        erasureService.deleteFiles(files);
     }
 
     // == Presence =============================================================

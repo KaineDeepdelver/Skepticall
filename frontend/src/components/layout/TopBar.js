@@ -92,7 +92,7 @@ export default function TopBar() {
           border-bottom: 1px solid var(--border);
         }
         .topbar-icon-btn { position: relative; background: none; border: 1px solid var(--border-input); border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); flex-shrink: 0; transition: border-color 0.15s, color 0.15s, background 0.15s; }
-        .topbar-icon-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+        .topbar-icon-btn:hover { border-color: var(--accent); color: var(--accent-link, var(--accent)); background: var(--accent-glow); }
         .topbar-search-wrap { display: flex; width: 480px; max-width: 480px; }
         .topbar-search-box {
           display: flex; align-items: center;
@@ -206,7 +206,7 @@ export default function TopBar() {
               title="My profile"
             >
               {picSrc
-                ? <img src={picSrc} alt="me" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                ? <img src={picSrc} alt="Your profile picture" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 : <DefaultAvatar size={34} name={user?.displayName || user?.username} />
               }
             </button>

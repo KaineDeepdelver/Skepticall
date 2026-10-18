@@ -17,7 +17,7 @@ export default function ForgotPasswordEmail() {
       const exists = await api.checkEmail(email);
       if (!exists) { setError("We couldn't find an account with that email."); return; }
       await api.sendResetCode(email);
-      localStorage.setItem('reset_email', email);
+      sessionStorage.setItem('reset_email', email);
       navigate('/forgot-password/verify');
     } catch (err) {
       setError(err.message || 'Server error. Try again.');

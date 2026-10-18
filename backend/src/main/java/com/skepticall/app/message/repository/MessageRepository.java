@@ -85,4 +85,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findExpiredUndelivered(@Param("cutoff") LocalDateTime cutoff);
 
 
+
+    /** Call-log entries older than the cutoff (call history is metadata: who called whom, when, for how long). */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("delete from Message m where m.type like 'CALL%' and m.createdAt < :cutoff")
+    int deleteCallLogsOlderThan(@org.springframework.data.repository.query.Param("cutoff") java.time.LocalDateTime cutoff);
 }

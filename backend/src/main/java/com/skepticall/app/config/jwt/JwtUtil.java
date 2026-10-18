@@ -48,7 +48,7 @@ public class JwtUtil {
     /** Access tokens only — a remember token is rejected here, so it can never be used as a Bearer/WebSocket token. */
     public Claims parse(String token) {
         Claims claims = parseAny(token);
-        if (REMEMBER.equals(claims.get("typ", String.class))) {
+        if (claims.get("typ", String.class) != null) { // remember / purpose tokens are never access tokens
             throw new JwtException("Remember token is not an access token");
         }
         return claims;
@@ -71,6 +71,34 @@ public class JwtUtil {
         try {
             Claims claims = parseAny(token);
             return REMEMBER.equals(claims.get("typ", String.class)) ? claims : null;
+        } catch (JwtException | IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public static final String PURPOSE_DELETE_ACCOUNT = "delete-account";
+    public static final String PURPOSE_ALERTS_OFF = "alerts-off";
+
+    /**
+     * Single-purpose token for a link in an email (delete my account, stop these emails).
+     * {@code pwTag} ties it to the current password, so it stops working after a password change.
+     */
+    public String generatePurpose(Long userId, String purpose, String pwTag, long ttlMs) {
+        return Jwts.builder()
+                .setSubject(String.valueOf(userId))
+                .claim("typ", purpose)
+                .claim("pw", pwTag)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + ttlMs))
+                .signWith(signingKey, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /** Claims of a valid token made for exactly this purpose, or null. */
+    public Claims parsePurpose(String token, String purpose) {
+        try {
+            Claims claims = parseAny(token);
+            return purpose.equals(claims.get("typ", String.class)) ? claims : null;
         } catch (JwtException | IllegalArgumentException e) {
             return null;
         }

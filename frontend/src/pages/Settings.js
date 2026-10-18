@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { api, adminApi, resolveUrl } from '../services/api';
+import { KeyBackupButton } from '../e2e/EncryptionGate';
 
 // == Icons ==
 const IcAccount    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
@@ -243,7 +244,7 @@ function MobilePanel({ open, title, onBack, children }) {
       }}>
         <button onClick={onBack} style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          color: 'var(--accent)', display: 'flex', alignItems: 'center',
+          color: 'var(--accent-link, var(--accent))', display: 'flex', alignItems: 'center',
           padding: '4px 4px 4px 0', marginRight: 4,
         }}>
           <IcChevronLeft />
@@ -1005,6 +1006,10 @@ export default function Settings() {
         <SettingRow label="Two-Factor Authentication" desc="Require a verification code on sign-in. (Coming soon)" noBorder>
           <ToggleSwitch checked={false} disabled onChange={() => {}} />
         </SettingRow>
+        <SectionTitle mt={20}>Encryption</SectionTitle>
+        <SettingRow label="Encryption key backup" desc="Download your encryption key, protected by a passphrase. You need it to read your messages on a new browser or device. Keep it somewhere safe." noBorder>
+          <KeyBackupButton />
+        </SettingRow>
         <SectionTitle mt={20}>Sessions</SectionTitle>
         <div className="acc-row" onClick={signOut}>
           <span className="acc-row-label">Sign out of all devices</span>
@@ -1021,7 +1026,7 @@ export default function Settings() {
             )}
             {user.lastLoginIp && (
               <div style={{ fontSize: 13, color: 'var(--text-muted)', padding: '10px 20px' }}>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Last IP: </span>{user.lastLoginIp}
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Last network: </span>{user.lastLoginIp} <span style={{ opacity: 0.7 }}>(last digits are not kept)</span>
               </div>
             )}
           </>
@@ -1078,7 +1083,7 @@ export default function Settings() {
                       </span>
                       {u.admin && (
                         <span style={{
-                          fontSize: 10, fontWeight: 700, color: 'var(--accent)',
+                          fontSize: 10, fontWeight: 700, color: 'var(--accent-link, var(--accent))',
                           background: 'var(--accent-glow)', borderRadius: 6, padding: '1px 6px',
                           display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0,
                         }}>
@@ -1146,7 +1151,7 @@ export default function Settings() {
         .settings-mobile-item:active { background: var(--bg-hover); }
         .settings-mobile-item-icon {
           width: 36px; height: 36px; border-radius: 10px; background: var(--bg-hover);
-          display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--accent);
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--accent-link, var(--accent));
         }
         .settings-mobile-item-label { flex: 1; font-size: 15px; font-weight: 500; }
         .settings-mobile-item-chevron { color: var(--text-muted); }
@@ -1197,7 +1202,7 @@ export default function Settings() {
               </>
             ) : (
               <button className="settings-mobile-item" onClick={() => navigate('/accounts/login')}>
-                <div className="settings-mobile-item-icon" style={{ color: 'var(--accent)' }}><IcSignOut /></div>
+                <div className="settings-mobile-item-icon" style={{ color: 'var(--accent-link, var(--accent))' }}><IcSignOut /></div>
                 <span className="settings-mobile-item-label">Log in / Sign up</span>
               </button>
             )}
@@ -1224,7 +1229,7 @@ export default function Settings() {
           }}>
             <button onClick={() => setMobilePanel(null)} style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--accent)', display: 'flex', alignItems: 'center',
+              color: 'var(--accent-link, var(--accent))', display: 'flex', alignItems: 'center',
               padding: '4px 4px 4px 0', marginRight: 4,
             }}>
               <IcChevronLeft />

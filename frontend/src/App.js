@@ -8,6 +8,8 @@ import { SidebarProvider } from './context/SidebarContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { CallProvider } from './context/CallContext';
 import { GroupCallProvider } from './context/GroupCallContext';
+import { E2EEProvider } from './e2e/E2EEContext';
+import { EncryptionGate } from './e2e/EncryptionGate';
 import GroupCallOverlay from './components/GroupCallOverlay';
 import AppLayout      from './components/layout/AppLayout';
 import GuestPromptModal from './components/GuestPromptModal';
@@ -24,6 +26,12 @@ import SearchPage     from './pages/SearchPage';
 import HomeEntry        from './pages/HomeEntry';
 import TermsPage         from './pages/TermsPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import CookiePolicyPage  from './pages/CookiePolicyPage';
+import RefundPolicyPage  from './pages/RefundPolicyPage';
+import DataDeletionPage  from './pages/DataDeletionPage';
+import EmailPreferencesPage from './pages/EmailPreferencesPage';
+import { ConsentProvider } from './consent/ConsentContext';
+import CookieBanner from './consent/CookieBanner';
 
 // Settings, profiles and search are viewable without extra gating.
 function ViewRoute({ children }) {
@@ -41,13 +49,17 @@ export default function App() {
   return (
     <ThemeProvider>
       <SidebarProvider>
+      <ConsentProvider>
       <AuthProvider>
+        <E2EEProvider>
         <GuestPromptProvider>
         <FriendProvider>
         <WebSocketProvider>
         <CallProvider>
         <GroupCallProvider>
         <BrowserRouter>
+          <EncryptionGate />
+          <CookieBanner />
           <Routes>
             <Route path="/accounts/login"    element={<SignIn />} />
             <Route path="/accounts/register" element={<SignUp />} />
@@ -64,6 +76,11 @@ export default function App() {
             {/* Legal pages — accessible without login */}
             <Route path="/terms"          element={<TermsPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/cookie-policy"  element={<CookiePolicyPage />} />
+            <Route path="/refund-policy"  element={<RefundPolicyPage />} />
+            <Route path="/data-deletion"  element={<DataDeletionPage />} />
+            <Route path="/data-deletion/confirm" element={<DataDeletionPage confirm />} />
+            <Route path="/email-preferences" element={<EmailPreferencesPage />} />
             {/* Standalone watch page — deliberately OUTSIDE AppLayout so it
                 gets its own dedicated WatchTopBar instead of the global one */}
             {/* "/" — messages when logged in, the introduction page otherwise.
@@ -86,7 +103,9 @@ export default function App() {
         </WebSocketProvider>
         </FriendProvider>
         </GuestPromptProvider>
+        </E2EEProvider>
       </AuthProvider>
+      </ConsentProvider>
       </SidebarProvider>
     </ThemeProvider>
   );

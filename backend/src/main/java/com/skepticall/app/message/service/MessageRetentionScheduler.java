@@ -28,6 +28,8 @@ public class MessageRetentionScheduler {
             MessageRetentionService.PurgeResult r = retention.purgeNow();
             // Database rows are already gone and committed; now remove the files from the bucket.
             for (String url : r.mediaUrls()) r2.deleteByUrl(url);
+            int callLogs = retention.purgeCallLogs();
+            if (callLogs > 0) LOG.info("[retention] purged {} old call-log entries", callLogs);
             if (r.dms() + r.groups() > 0) {
                 LOG.info("[retention] purged {} direct and {} group messages, {} media files",
                         r.dms(), r.groups(), r.mediaUrls().size());
