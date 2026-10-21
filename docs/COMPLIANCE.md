@@ -11,7 +11,7 @@ actually does and are a solid draft, but have them reviewed for your country bef
    (optional `REACT_APP_BUSINESS_REGISTRATION`, `REACT_APP_BUSINESS_COUNTRY`); backend env →
    `LEGAL_BUSINESS_NAME`, `LEGAL_CONTACT_EMAIL`, `LEGAL_BUSINESS_ADDRESS`, `FRONTEND_URL`.
 2. **Get the Terms and Privacy Policy reviewed** for where you operate (EU/UK GDPR, US state laws, etc.).
-3. **Check the processor list** in the Privacy Policy (Render, Neon, Cloudflare, Brevo, Metered, Google, Expo)
+3. **Check the processor list** in the Privacy Policy (Render, Neon, Cloudflare, your email provider, Metered, Google, Expo)
    and the retention of your hosts' logs and backups. I could only see what the code uses.
 4. **Confirm the licence of `ringtone.mp3` and `teddy_no_results.png`** (see `THIRD_PARTY_NOTICES.md`).
 5. **Decide the minimum age** (`MIN_AGE` backend, `REACT_APP_MIN_AGE` web; default 16). 13 is common outside the EU.
@@ -62,7 +62,7 @@ actually does and are a solid draft, but have them reviewed for your country bef
 |---|---|---|
 | Google reCAPTCHA | IP, browser details, sets cookies (sign-up page only) | Loads only after consent |
 | Metered (call relay/TURN) | IP addresses, encrypted call traffic | Listed in the Privacy Policy. **Its username/password are hard-coded in the web bundle**, so anyone can use your relay. Replace with short-lived credentials from your backend |
-| Brevo | Email addresses and email content | Listed |
+| Your email provider (SMTP or Brevo) | Email addresses and email content | Listed; set `REACT_APP_EMAIL_PROVIDER` to its name |
 | Render, Neon, Cloudflare (Pages, R2) | Hosting, database, files | Listed |
 | Expo | Push notification delivery (mobile) | Listed |
 

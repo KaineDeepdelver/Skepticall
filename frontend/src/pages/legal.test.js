@@ -51,7 +51,7 @@ describe('legal pages', () => {
   test('the Privacy Policy covers the basics it must', () => {
     const html = render(<PrivacyPolicyPage />);
 
-    for (const needle of ['Who is responsible', 'Legal basis', 'Your rights', 'Children', 'How long we keep data', 'Brevo', 'Cloudflare', 'Neon', 'Render', 'Metered', 'Google', '30 days']) {
+    for (const needle of ['Who is responsible', 'Legal basis', 'Your rights', 'Children', 'How long we keep data', 'Email delivery', 'Cloudflare', 'Neon', 'Render', 'Metered', 'Google', '30 days']) {
       expect(html).toContain(needle);
     }
   });

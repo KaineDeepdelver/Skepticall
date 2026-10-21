@@ -2,7 +2,14 @@ package com.skepticall.app.verification.service;
 
 import com.skepticall.app.exceptions.BusinessException;
 import com.skepticall.app.exceptions.ErrorType;
+import jakarta.annotation.PostConstruct;
+import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import sendinblue.ApiClient;
 import sendinblue.Configuration;
@@ -17,14 +24,39 @@ import java.util.List;
 @Service
 public class EmailService {
 
-    @Value("${brevo.api.key}")
+    private static final Logger LOG = LoggerFactory.getLogger(EmailService.class);
+
+    /** "smtp" (any provider that speaks SMTP) or "brevo" (Brevo's HTTP API). Env MAIL_PROVIDER. */
+    @Value("${mail.provider:brevo}")
+    private String provider;
+
+    @Value("${brevo.api.key:}")
     private String apiKey;
 
-    @Value("${brevo.sender.email}")
+    /** The From address. Use an address on YOUR domain, and authenticate that domain with the provider. */
+    @Value("${mail.from.email:${brevo.sender.email:}}")
     private String senderEmail;
 
-    @Value("${brevo.sender.name}")
+    @Value("${mail.from.name:${brevo.sender.name:Skepticall}}")
     private String senderName;
+
+    /** Present only when an SMTP server is configured (SPRING_MAIL_HOST and friends). */
+    @Autowired(required = false)
+    private JavaMailSender mailSender;
+
+    @PostConstruct
+    void checkConfiguration() {
+        if (usesSmtp()) {
+            if (mailSender == null) LOG.warn("[email] MAIL_PROVIDER=smtp but no SMTP server is configured (set SPRING_MAIL_HOST); emails will fail");
+        } else if (apiKey == null || apiKey.isBlank()) {
+            LOG.warn("[email] MAIL_PROVIDER=brevo but BREVO_API_KEY is empty; emails will fail");
+        }
+        if (senderEmail == null || senderEmail.isBlank()) LOG.warn("[email] no From address configured (set MAIL_FROM_EMAIL)");
+    }
+
+    private boolean usesSmtp() {
+        return "smtp".equalsIgnoreCase(provider == null ? "" : provider.trim());
+    }
 
     // == Internal =============================================================
 
@@ -98,18 +130,62 @@ public class EmailService {
 
     /** As above, with a one-click "turn off these emails" link in the footer (for optional emails). */
     public void sendCustomEmail(String toEmail, String subject, String htmlBody, String unsubscribeUrl) {
+        String html = htmlBody + footer(unsubscribeUrl);
         try {
-            SendSmtpEmail email = new SendSmtpEmail();
-            email.setSender(new SendSmtpEmailSender().email(senderEmail).name(senderName));
-            email.setTo(List.of(new SendSmtpEmailTo().email(toEmail)));
-            email.setSubject(subject);
-            email.setHtmlContent(htmlBody + footer(unsubscribeUrl));
-            getApi().sendTransacEmail(email);
+            if (usesSmtp()) {
+                sendViaSmtp(toEmail, subject, html, unsubscribeUrl);
+            } else {
+                sendViaBrevo(toEmail, subject, html);
+            }
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             throw new BusinessException(
                     ErrorType.INVALID_OPERATION,
                     "Failed to send transactional email [to=" + toEmail + "] Reason: " + e.getMessage()
             );
         }
+    }
+
+    // == Transports ============================================================
+
+    private void sendViaBrevo(String toEmail, String subject, String html) throws Exception {
+        SendSmtpEmail email = new SendSmtpEmail();
+        email.setSender(new SendSmtpEmailSender().email(senderEmail).name(senderName));
+        email.setTo(List.of(new SendSmtpEmailTo().email(toEmail)));
+        email.setSubject(subject);
+        email.setHtmlContent(html);
+        getApi().sendTransacEmail(email);
+    }
+
+    private void sendViaSmtp(String toEmail, String subject, String html, String unsubscribeUrl) throws Exception {
+        if (mailSender == null) {
+            throw new BusinessException(ErrorType.INVALID_OPERATION,
+                    "Email is set to SMTP but no SMTP server is configured (set SPRING_MAIL_HOST)");
+        }
+        if (senderEmail == null || senderEmail.isBlank()) {
+            throw new BusinessException(ErrorType.INVALID_OPERATION, "No From address is configured (set MAIL_FROM_EMAIL)");
+        }
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        helper.setFrom(senderEmail, senderName == null || senderName.isBlank() ? "Skepticall" : senderName);
+        helper.setTo(toEmail);
+        helper.setSubject(subject);
+        helper.setText(toPlainText(html), html); // plain-text part too: mail filters like a real alternative
+        if (unsubscribeUrl != null) {
+            message.addHeader("List-Unsubscribe", "<" + unsubscribeUrl + ">");
+        }
+        mailSender.send(message);
+    }
+
+    /** A readable plain-text version of the HTML body (links kept as "text (url)"). */
+    static String toPlainText(String html) {
+        return html
+                .replaceAll("(?is)<a\\s+[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>", "$2 ($1)")
+                .replaceAll("(?i)<br\\s*/?>|</p>|</h[1-6]>|</li>|<hr[^>]*>", "\n")
+                .replaceAll("<[^>]+>", "")
+                .replace("&nbsp;", " ")
+                .replaceAll("\n{3,}", "\n\n")
+                .trim();
     }
 }

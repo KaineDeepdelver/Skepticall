@@ -64,6 +64,9 @@ public class UserService {
         }
 
 
+        // The email address must have been verified with the code we sent (enforced here, not only by the page).
+        verificationService.requireVerifiedRegistration(dto.getEmail());
+
         // Consent: the Terms/Privacy box and the age confirmation must both be ticked.
         boolean tos = Boolean.TRUE.equals(dto.getTosAccepted());
         boolean age = Boolean.TRUE.equals(dto.getAgeConfirmed());
@@ -95,6 +98,7 @@ public class UserService {
                 .build();
 
         User saved = userRepository.save(user);
+        verificationService.consumeRegistration(dto.getEmail());
         publicKeyService.recordInitialKey(saved.getId(), publicKey);
         UserDTO userDTO = toDTOWithAdmin(saved);
         String token = jwtUtil.generate(userDTO.getId(), userDTO.getAdmin());

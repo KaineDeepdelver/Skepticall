@@ -71,7 +71,7 @@ export default function PrivacyPolicyPage() {
             <tr><td>Render</td><td>Runs our servers</td></tr>
             <tr><td>Neon</td><td>Hosts our database</td></tr>
             <tr><td>Cloudflare</td><td>Hosts this website; stores uploaded files (encrypted)</td></tr>
-            <tr><td>Brevo</td><td>Sends our emails (verification codes, password resets, optional sign-in alerts)</td></tr>
+            <tr><td>{business.emailProvider || 'Email delivery provider'}</td><td>Sends our emails (verification codes, password resets, optional sign-in alerts)</td></tr>
             <tr><td>Metered</td><td>Relays calls when two devices can’t connect directly. It sees IP addresses and encrypted call traffic</td></tr>
             <tr><td>Google (reCAPTCHA)</td><td>Spam protection on sign-up, only if you allow it</td></tr>
             <tr><td>Expo</td><td>Delivers push notifications to the mobile app</td></tr>

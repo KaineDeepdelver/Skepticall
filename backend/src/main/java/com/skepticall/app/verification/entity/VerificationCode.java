@@ -24,6 +24,9 @@ public class VerificationCode {
     private LocalDateTime expiresAt;
     private boolean used;
 
+    /** Wrong guesses so far; after 5 the code is dead. */
+    private int attempts;
+
     public enum CodeType {
         REGISTRATION, FORGOT_PASSWORD
     }

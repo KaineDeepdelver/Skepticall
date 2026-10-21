@@ -101,6 +101,12 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
+        <!-- SMTP email (any provider: set MAIL_PROVIDER=smtp and SPRING_MAIL_*) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Brevo (email) -->
         <dependency>
             <groupId>com.sendinblue</groupId>

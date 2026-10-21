@@ -48,6 +48,7 @@ export const BackupErrorCode = Object.freeze({
   WRONG_ACCOUNT: 'WRONG_ACCOUNT',
   TOO_LARGE: 'TOO_LARGE',
   KEYS_NO_LONGER_VALID: 'KEYS_NO_LONGER_VALID',
+  KEY_NOT_ON_DEVICE: 'KEY_NOT_ON_DEVICE',
 });
 
 export class BackupError extends Error {
@@ -154,7 +155,7 @@ function deriveKey(passphraseBytes, { t, m, salt }, header) {
   return key;
 }
 
-function gunzipChecked(compressed) {
+export function gunzipChecked(compressed) {
   // The last 4 bytes of a gzip stream hold the uncompressed size (little-endian).
   if (compressed.length >= 4) {
     const v = new DataView(compressed.buffer, compressed.byteOffset, compressed.byteLength);

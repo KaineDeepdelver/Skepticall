@@ -9,6 +9,8 @@ export const business = {
   email: env.REACT_APP_CONTACT_EMAIL || '',
   registration: env.REACT_APP_BUSINESS_REGISTRATION || '',
   country: env.REACT_APP_BUSINESS_COUNTRY || '',
+  // Name of the service that delivers your emails, listed in the Privacy Policy (e.g. Resend, Amazon SES, Zoho, Mailgun)
+  emailProvider: env.REACT_APP_EMAIL_PROVIDER || '',
 };
 
 /** Minimum age to use the service (keep in step with MIN_AGE on the backend). */

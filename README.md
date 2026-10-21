@@ -63,11 +63,15 @@ Details, threat model and the integration contract: [`frontend/src/backup/README
 
 Legal pages (Terms, Privacy, Cookie, Refund, data deletion), a cookie-consent banner, consent records, a real account-erasure flow and an accessibility pass are built in. See [`docs/COMPLIANCE.md`](docs/COMPLIANCE.md) for the checklist, what you still need to fill in (operator details), and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for licences.
 
+## Email
+
+Sign-up verification, password reset and the optional sign-in alert are sent from your own domain through any SMTP provider (Cloudflare Email Service is documented step by step). See [`docs/EMAIL_SETUP.md`](docs/EMAIL_SETUP.md).
+
 ## Tech stack
 
 - **Backend:** Java 21, Spring Boot, PostgreSQL, Redis, WebSockets (STOMP)
 - **Real-time media:** WebRTC
-- **Auth:** JWT, remember-me cookie, BCrypt, reCAPTCHA, email verification (Brevo)
+- **Auth:** JWT, remember-me cookie, BCrypt, reCAPTCHA, email verification (SMTP or Brevo)
 - **Storage:** Cloudflare R2
 - **Push notifications:** Expo
 - **Web client:** React, deployed on Cloudflare
@@ -79,7 +83,7 @@ Legal pages (Terms, Privacy, Cookie, Refund, data deletion), a cookie-consent ba
 <!-- FILL IN with the real commands. Backend: cd backend && ./mvnw spring-boot:run (needs the env vars below). Frontend: cd frontend && npm install && npm start. -->
 
 Required environment variables (names only):
-`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `REDIS_HOST`, `REDIS_PORT`, `BREVO_API_KEY`, `RECAPTCHA_SECRET_KEY`, `ADMIN_BOOTSTRAP_EMAIL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`, `FRONTEND_ORIGINS`, `MESSAGES_PURGE_ENABLED`; optional: `MESSAGES_REQUIRE_ENCRYPTION` (default true), `REQUIRE_SIGNUP_CONSENT`, `MIN_AGE`, `TERMS_VERSION`, `FRONTEND_URL`, `LEGAL_BUSINESS_NAME`, `LEGAL_CONTACT_EMAIL`, `LEGAL_BUSINESS_ADDRESS`, `MESSAGES_PURGE_CALL_LOG_DAYS`, `KEYS_RETIRED_GRACE_DAYS` (default 30), `KEYS_ROTATION_MIN_INTERVAL_MINUTES` (default 60), `JWT_EXPIRATION_MS`, `MESSAGES_PURGE_DELIVERED_AFTER_MINUTES`, `MESSAGES_PURGE_MAX_PENDING_DAYS`
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `REDIS_HOST`, `REDIS_PORT`, `BREVO_API_KEY`, `RECAPTCHA_SECRET_KEY`, `ADMIN_BOOTSTRAP_EMAIL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`, `FRONTEND_ORIGINS`, `MESSAGES_PURGE_ENABLED`; optional: `MAIL_PROVIDER` (`smtp` or `brevo`), `MAIL_FROM_EMAIL`, `SPRING_MAIL_HOST`/`_PORT`/`_USERNAME`/`_PASSWORD`, `MESSAGES_REQUIRE_ENCRYPTION` (default true), `REQUIRE_SIGNUP_CONSENT`, `MIN_AGE`, `TERMS_VERSION`, `FRONTEND_URL`, `LEGAL_BUSINESS_NAME`, `LEGAL_CONTACT_EMAIL`, `LEGAL_BUSINESS_ADDRESS`, `MESSAGES_PURGE_CALL_LOG_DAYS`, `KEYS_RETIRED_GRACE_DAYS` (default 30), `KEYS_ROTATION_MIN_INTERVAL_MINUTES` (default 60), `JWT_EXPIRATION_MS`, `MESSAGES_PURGE_DELIVERED_AFTER_MINUTES`, `MESSAGES_PURGE_MAX_PENDING_DAYS`
 
 ## Project status
 
