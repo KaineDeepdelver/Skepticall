@@ -39,7 +39,7 @@ function useRecaptchaScript(allowed) {
   return ready;
 }
 
-const STEPS = ['email', 'password', 'profile'];
+const STEPS = ['email', 'verify', 'password', 'profile'];
 
 function Eye() {
   return (
@@ -80,6 +80,8 @@ export default function SignUp() {
   const [error, setError]                     = useState('');
   const [loading, setLoading]                 = useState(false);
   const [captchaToken, setCaptchaToken]       = useState('');
+  const [code, setCode]                       = useState('');
+  const [cooldown, setCooldown]               = useState(0);
 
   const captchaRef  = useRef(null);
   const widgetIdRef = useRef(null);
@@ -96,6 +98,12 @@ export default function SignUp() {
       'expired-callback': () => setCaptchaToken(''),
     });
   }, [scriptReady, step]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   function resetCaptcha() {
     if (window.grecaptcha && widgetIdRef.current !== null) {
@@ -118,15 +126,46 @@ export default function SignUp() {
     try {
       const taken = await api.checkEmail(email);
       if (taken) { setError('An account with that email already exists.'); return; }
-      setStepIndex(1);
-    } catch {
-      setError('Server error. Try again.');
+      await api.sendRegistrationCode(email);
+      setCode('');
+      setCooldown(60);
+      setStepIndex(STEPS.indexOf('verify'));
+    } catch (err) {
+      setError(err.message || 'Could not send the verification email. Try again.');
     } finally {
       setLoading(false);
     }
   }
 
-  // -- Step 2: password + confirm
+  // -- Step 2: 6-digit email code
+  async function handleVerifySubmit(e) {
+    e.preventDefault();
+    setError('');
+    if (code.length !== 6) { setError('Enter the 6-digit code.'); return; }
+    setLoading(true);
+    try {
+      await api.verifyRegistrationCode(email, code);
+      setStepIndex(STEPS.indexOf('password'));
+    } catch (err) {
+      setError(err.message || 'Invalid or expired code.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resendCode() {
+    if (cooldown > 0) return;
+    setError('');
+    try {
+      await api.sendRegistrationCode(email);
+      setCooldown(60);
+      setError('New code sent.');
+    } catch (err) {
+      setError(err.message || 'Failed to resend code.');
+    }
+  }
+
+  // -- Step 3: password + confirm
   function handlePasswordSubmit(e) {
     e.preventDefault();
     setError('');
@@ -138,10 +177,10 @@ export default function SignUp() {
       setError('Passwords do not match.');
       return;
     }
-    setStepIndex(2);
+    setStepIndex(STEPS.indexOf('profile'));
   }
 
-  // -- Step 3: username + display name + ToS + captcha
+  // -- Step 4: username + display name + ToS + captcha
   async function handleProfileSubmit(e) {
     e.preventDefault();
     setError('');
@@ -201,6 +240,39 @@ export default function SignUp() {
             {loading ? 'Checking…' : 'Continue'}
           </button>
           <div className="auth-link">Already have an account? <Link to="/accounts/login">Sign in</Link></div>
+        </form>
+      )}
+
+      {step === 'verify' && (
+        <form className="auth-card" onSubmit={handleVerifySubmit}>
+          <div className="auth-logo">Skepticall</div>
+          <div className="auth-title">Check your email</div>
+          <div className="auth-chip">{email}</div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 12px' }}>
+            We sent a 6-digit code to your email. It expires in 10 minutes.
+          </p>
+          <input
+            className="auth-input"
+            placeholder="000000"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={code}
+            onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+            autoFocus
+          />
+          <div className="auth-error">{error}</div>
+          <button className="auth-btn" type="submit" disabled={loading}>
+            {loading ? 'Verifying…' : 'Verify'}
+          </button>
+          <div
+            className="auth-link"
+            style={{ cursor: cooldown > 0 ? 'default' : 'pointer' }}
+            onClick={resendCode}
+          >
+            {cooldown > 0 ? `Resend code in ${cooldown}s` : "Didn't get it? Resend code"}
+          </div>
+          <div className="auth-link" style={{ cursor: 'pointer' }} onClick={goBack}>← Change email</div>
         </form>
       )}
 
