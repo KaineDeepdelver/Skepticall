@@ -177,6 +177,11 @@ export const api = {
   checkUsername: (username)        => req('/users/check-username', { method: 'POST', body: { username } }),
   login:         (email, password) => req('/users/login',          { method: 'POST', body: { email, password } }),
   register:      (data)            => req('/users/register',       { method: 'POST', body: data }),
+  // Email codes (sign-up verification + password reset)
+  sendRegistrationCode:   (email)                    => req('/users/send-registration-code',   { method: 'POST', body: { email } }),
+  verifyRegistrationCode: (email, code)              => req('/users/verify-registration-code', { method: 'POST', body: { email, code } }),
+  sendResetCode:          (email)                    => req('/users/send-reset-code',          { method: 'POST', body: { email } }),
+  resetPassword:          (email, code, newPassword) => req('/users/reset-password',           { method: 'POST', body: { email, code, newPassword } }),
 
   // Users
   getUser:           (id)       => req(`/users/${id}`),
