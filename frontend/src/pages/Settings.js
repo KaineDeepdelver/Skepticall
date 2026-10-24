@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { api, adminApi, resolveUrl } from '../services/api';
 import { KeyBackupButton } from '../e2e/EncryptionGate';
+import MessageBackupPanel from '../backup/MessageBackupPanel';
 import Glyph from '../components/icons/Glyph';
 
 // == Icons ==
@@ -957,8 +958,11 @@ export default function Settings() {
           <ToggleSwitch checked={false} disabled onChange={() => {}} />
         </SettingRow>
         <SectionTitle mt={20}>Encryption</SectionTitle>
-        <SettingRow label="Encryption key backup" desc="Download your encryption key, protected by a passphrase. You need it to read your messages on a new browser or device. Keep it somewhere safe." noBorder>
+        <SettingRow label="Encryption key backup" desc="Download your encryption key, protected by a passphrase. You need it to read your messages on a new browser or device. Keep it somewhere safe.">
           <KeyBackupButton />
+        </SettingRow>
+        <SettingRow label="Message backup" desc="Download all your messages, photos and files as one .dat file. Opening it takes both pieces: the file and your encryption key. The file alone is unreadable, and the key alone cannot recover messages you have not saved." noBorder>
+          <MessageBackupPanel />
         </SettingRow>
         <SectionTitle mt={20}>Sessions</SectionTitle>
         <div className="acc-row" onClick={signOut}>
