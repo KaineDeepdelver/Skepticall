@@ -3,8 +3,9 @@ import { networkApi, resolveUrl, API_BASE } from '../../services/api';
 import ConfirmModal from '../ConfirmModal';
 import UserAvatar from '../UserAvatar';
 import NetworkUserPopover from './NetworkUserPopover';
+import Glyph from '../icons/Glyph';
 
-// This mirrors Discord's server-settings layout, but only the tabs backed by
+// Server-settings layout, but only the tabs backed by
 // a real endpoint (Members, Roles, Invites, Server Profile, Access, Safety
 // Setup, Bans) are functional. Everything else in the nav (Server Tag,
 // Emoji, Stickers, Soundboard, Integrations, App Directory, Audit Log,
@@ -102,15 +103,15 @@ const ICONS = {
   kebab: <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" /></svg>,
   search: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>,
   pencil: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></svg>,
-  plus: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>,
-  person: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
-  chevronRight: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6" /></svg>,
+  plus: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><Glyph n="plus" /></svg>,
+  person: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><Glyph n="user" /></svg>,
+  chevronRight: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><Glyph n="chevron-right" /></svg>,
   copy: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>,
-  trash: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
-  x: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
-  lock: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>,
-  check: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="13" height="13"><polyline points="20 6 9 17 4 12" /></svg>,
-  link: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>,
+  trash: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="trash" /></svg>,
+  x: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><Glyph n="close" /></svg>,
+  lock: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><Glyph n="lock" /></svg>,
+  check: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="13" height="13"><Glyph n="check" /></svg>,
+  link: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="link" /></svg>,
 };
 
 const NAV = [
@@ -160,7 +161,7 @@ function NavItem({ label, active, available, external, onClick }) {
       }}
     >
       <span>{label}</span>
-      {external && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>}
+      {external && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><Glyph n="maximize" /></svg>}
       {!available && !external && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-input)', borderRadius: 3, padding: '2px 5px' }}>SOON</span>}
     </button>
   );
@@ -831,7 +832,7 @@ function MembersTab({ network, onNetworkUpdated }) {
 
 // These bit values must mirror net.omnimedia.omni.network.entity.NetworkPermission
 // exactly — they're not derived from array order so a reorder here can't
-// silently desync from the backend's bitmask. The reference UI (Discord) has
+// silently desync from the backend's bitmask. The reference UI has
 // ~40 granular permission toggles; the backend only has 9 real bits. Each
 // group below lists every toggle from the reference for visual completeness,
 // but only items with a `bit` actually persist — the rest are local-state
@@ -1124,7 +1125,7 @@ function RoleDisplayTab({ name, setName, color, setColor, roleStyle, setRoleStyl
       </label>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10, marginBottom: 4 }}>
         <div style={{ width: 56, height: 56, borderRadius: 10, background: 'var(--bg-input)', border: '1px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22"><Glyph n="image" /></svg>
         </div>
         <button disabled style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: 'var(--bg-input)', color: 'var(--text-muted)', fontWeight: 600, fontSize: 13, cursor: 'not-allowed' }}>
           Choose Image
@@ -1356,7 +1357,7 @@ function RoleEditorShell({ network, roles, role, members, onSave, onDelete, onDu
       <div style={{ width: 200, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, letterSpacing: 0.3, padding: 0 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><polyline points="15 18 9 12 15 6" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><Glyph n="chevron-left" /></svg>
             BACK
           </button>
           <button onClick={onCreateNew} title="Create Role" style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'var(--bg-input)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1866,7 +1867,7 @@ function StickersTab() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.boosts} Boosts</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ color: 'var(--text-muted)' }}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ color: 'var(--text-muted)' }}><Glyph n="lock" /></svg>
           </div>
         </div>
       ))}
@@ -2338,7 +2339,7 @@ export default function NetworkSettingsModal({ network: initialNetwork, onClose,
         }}
         title="Close (Esc)"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><Glyph n="close" /></svg>
       </button>
     </div>
   );

@@ -4,6 +4,7 @@ import { api, API_BASE } from '../services/api';
 import { followApi, friendApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import UserAvatar from './UserAvatar';
+import Glyph from './icons/Glyph';
 
 function bannerSrc(pic)  { if (!pic) return null; return pic.startsWith('http') ? pic : `${API_BASE}${pic}`; }
 function fmtJoinDate(iso) { if (!iso) return '—'; return new Date(iso).toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' }); }
@@ -79,7 +80,7 @@ export default function UserProfileModal({ userId, onClose }) {
         {/* Close */}
         <div style={{ position: 'absolute', top: 10, right: 14, zIndex: 10 }}>
           <button className="dialog-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
           </button>
         </div>
 

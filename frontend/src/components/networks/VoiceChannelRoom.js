@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { ICE_SERVERS } from '../../context/CallContext';
 import UserAvatar from '../UserAvatar';
+import Glyph from '../icons/Glyph';
 
 /**
  * A network VOICE channel — everyone who's "in" it sits in the same room
@@ -204,7 +205,7 @@ export default function VoiceChannelRoom({ networkId, channel, currentUserId }) 
   }
 
   // Auto-join the moment this channel is opened — clicking a voice channel
-  // should behave like Discord's "click to join," not require a second,
+  // should behave like "click to join," not require a second,
   // separate confirmation click. If mic permission is denied, the button
   // below still appears so the person can retry after fixing permissions.
   useEffect(() => {
@@ -263,7 +264,7 @@ export default function VoiceChannelRoom({ networkId, channel, currentUserId }) 
                     background: 'var(--bg-card)', border: '2px solid var(--bg-card)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e06060',
                   }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><Glyph n="mic-off" /></svg>
                   </div>
                 )}
               </div>
@@ -307,8 +308,8 @@ export default function VoiceChannelRoom({ networkId, channel, currentUserId }) 
             }}
           >
             {muted
-              ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
-              : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>}
+              ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="mic-off" /></svg>
+              : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="mic" /></svg>}
           </button>
           <button
             onClick={handleLeave}

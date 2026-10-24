@@ -4,6 +4,7 @@ import { useGroupCall } from '../context/GroupCallContext';
 import { useAuth } from '../context/AuthContext';
 import { useWS } from '../context/WebSocketContext';
 import { api, API_BASE } from '../services/api';
+import Glyph from './icons/Glyph';
 
 /* ─────────────────────────────────────────────────────────────────
    CallNotification — global full-screen call overlay.
@@ -92,78 +93,44 @@ async function applyOutputDevice(audioEl, videoEl, mode, outputDevices) {
 
 /* ── Icons ── */
 const PhoneIcon = ({ color = '#fff', size = 22 }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}>
-    <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.39 18a19.5 19.5 0 0 1-3.39-3.39A19.79 19.79 0 0 1 2.12 6.18 2 2 0 0 1 4.11 4h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 11.91a16 16 0 0 0 4 4l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 20 16z" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}><Glyph n="phone" /></svg>
 );
 
 const PhoneOffIcon = ({ size = 22 }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" width={size} height={size}>
-    <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.39 18a19.45 19.45 0 0 1-5-5 19.79 19.79 0 0 1-3.99-8.43A2 2 0 0 1 4.11 2.5h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 10.41" />
-    <line x1="23" y1="1" x2="1" y2="23" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" width={size} height={size}><Glyph n="phone-end" /></svg>
 );
 
 const VideoIcon = ({ color = '#fff', size = 20 }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}>
-    <polygon points="23 7 16 12 23 17 23 7" />
-    <rect x="1" y="5" width="15" height="14" rx="2" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}><Glyph n="video" /></svg>
 );
 
 const VideoOffIcon = ({ color = '#fff', size = 20 }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}>
-    <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10" />
-    <line x1="1" y1="1" x2="23" y2="23" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}><Glyph n="video-off" /></svg>
 );
 
 const MicIcon = ({ size = 18, color = 'currentColor' }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}>
-    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-    <line x1="12" y1="19" x2="12" y2="23" />
-    <line x1="8" y1="23" x2="16" y2="23" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}><Glyph n="mic" /></svg>
 );
 
 const PlusIcon = ({ size = 18, color = 'currentColor' }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}>
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}><Glyph n="plus" /></svg>
 );
 
 const MicOffIcon = ({ size = 18, color = 'currentColor' }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}>
-    <line x1="1" y1="1" x2="23" y2="23" />
-    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-    <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-    <line x1="12" y1="19" x2="12" y2="23" />
-    <line x1="8" y1="23" x2="16" y2="23" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}><Glyph n="mic-off" /></svg>
 );
 
 // Speaker icons — one per output mode
 const EarpieceIcon = ({ size = 18, color = 'currentColor' }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}>
-    <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}><Glyph n="headphones" /></svg>
 );
 
 const SpeakerIcon = ({ size = 18, color = 'currentColor' }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}>
-    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}><Glyph n="volume" /></svg>
 );
 
 const BluetoothIcon = ({ size = 18, color = 'currentColor' }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}>
-    <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" width={size} height={size}><Glyph n="bluetooth" /></svg>
 );
 
 /* ── Round control button ── */

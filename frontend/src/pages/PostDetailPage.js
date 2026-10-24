@@ -7,6 +7,7 @@ import CommentsPanel from '../components/CommentsPanel';
 import UserAvatar from '../components/UserAvatar';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import RightSidebar from '../components/layout/RightSidebar';
+import Glyph from '../components/icons/Glyph';
 
 function avatarUrl(pic) { if (!pic) return null; return pic.startsWith('http') ? pic : `${API_BASE}${pic}`; }
 function fmtTime(iso) {
@@ -20,8 +21,8 @@ function fmtTime(iso) {
 }
 const LikeIcon    = ({ active }) => <svg viewBox="0 0 24 24" fill={active ? 'var(--accent)' : 'none'} stroke={active ? 'var(--accent)' : 'currentColor'} strokeWidth="2" width="16" height="16"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>;
 const DislikeIcon = ({ active }) => <svg viewBox="0 0 24 24" fill={active ? '#e06060' : 'none'} stroke={active ? '#e06060' : 'currentColor'} strokeWidth="2" width="16" height="16"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>;
-const CommentIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
-const BackIcon    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>;
+const CommentIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="chat" /></svg>;
+const BackIcon    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><Glyph n="chevron-left" /></svg>;
 const ChevronIcon = ({ up }) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points={up ? "18 15 12 9 6 15" : "6 9 12 15 18 9"}/></svg>;
 
 function MediaCarousel({ items }) {

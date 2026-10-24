@@ -88,7 +88,7 @@ public class GroupCallWsController {
         // the ringing UI for whoever isn't already in the call.
         messaging.convertAndSend("/topic/group/" + groupId, (Object) out);
 
-        // Separately, persist an actual WhatsApp-style "X started a call"
+        // Separately, persist an actual "X started a call"
         // row and broadcast THAT too, on the same topic — this one IS a
         // real chat message (real id/sender/createdAt), so it shows up in
         // history, survives a refresh, and is what renders the chat

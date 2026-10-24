@@ -5,6 +5,7 @@ import { api, API_BASE, groupApi } from '../services/api';
 import { useMessageFiles } from '../e2e/useMessageFiles';
 import UserAvatar from './UserAvatar';
 import toast from 'react-hot-toast';
+import Glyph from './icons/Glyph';
 
 /* ── helpers ── */
 function avatarSrc(pic) {
@@ -519,7 +520,7 @@ export default function GroupInfoPanel({ group, currentUserId, conversations, me
                     onMouseLeave={() => setPhotoHov(false)}
                     onClick={() => isAdmin && soon('Change group photo')}>
                     <div style={{ width: 92, height: 92, borderRadius: '50%', background: 'var(--gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px var(--accent-glow)' }}>
-                      <svg viewBox="0 0 24 24" fill="white" width="40" height="40"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                      <svg viewBox="0 0 24 24" fill="white" width="40" height="40"><Glyph n="users" /></svg>
                     </div>
                     {isAdmin && photoHov && (
                       <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api, API_BASE, followApi, friendApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import UserAvatar from './UserAvatar';
+import Glyph from './icons/Glyph';
 
 
 function UserResult({ user: u, currentUserId, onViewProfile }) {
@@ -106,9 +107,7 @@ export default function SearchSidebar() {
       {/* Search box */}
       <div style={{ position: 'relative' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"
-          style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}>
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
+          style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}><Glyph n="search" /></svg>
         <input
           value={query}
           onChange={handleInput}

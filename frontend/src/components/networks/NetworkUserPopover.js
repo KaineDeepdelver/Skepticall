@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { api, networkApi } from '../../services/api';
 import UserAvatar from '../UserAvatar';
+import Glyph from '../icons/Glyph';
 
 // Same fixed-position-off-getBoundingClientRect trick used elsewhere in the
 // networks components (ChannelSidebar's AnchoredMenu, NetworkSettingsModal's
@@ -165,7 +166,7 @@ export default function NetworkUserPopover({ anchorRef, networkId, userId, roleC
           <div style={{ padding: 6 }}>
             <button style={menuItemStyle} onClick={() => setInviteExpanded(v => !v)}>
               Invite to Server
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12" style={{ transform: inviteExpanded ? 'rotate(90deg)' : 'none' }}><polyline points="9 18 15 12 9 6" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12" style={{ transform: inviteExpanded ? 'rotate(90deg)' : 'none' }}><Glyph n="chevron-right" /></svg>
             </button>
             {inviteExpanded && (
               <div style={{ maxHeight: 180, overflowY: 'auto', margin: '2px 0 2px 8px', borderLeft: '1px solid var(--border)', paddingLeft: 6 }}>

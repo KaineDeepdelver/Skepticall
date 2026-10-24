@@ -353,7 +353,7 @@ public class GroupService {
                 .build();
     }
 
-    // == Call log (WhatsApp-style "X started a call" chat entry) ==
+    // == Call log ("X started a call" chat entry) ==
     // Called from GroupCallWsController's /call.group.invite handler —
     // ringing the group is the moment a call becomes something worth
     // showing in history, since starting/joining a room is otherwise

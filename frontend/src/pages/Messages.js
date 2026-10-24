@@ -14,6 +14,7 @@ import { useFriends } from '../context/FriendContext';
 import { useCall } from '../context/CallContext';
 import { useGroupCall } from '../context/GroupCallContext';
 import toast from 'react-hot-toast';
+import Glyph from '../components/icons/Glyph';
 
 /* ── UTILS ── */
 function fmtTime(iso) {
@@ -248,24 +249,24 @@ function useIsDesktop() {
 }
 
 /* == GROUP INFO ICONS == */
-const IcPhoneCall = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.36 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" /></svg>;
-const IcVideoCam = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>;
-const IcSearch20 = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>;
-const IcImages = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>;
-const IcStar = ({ filled } = {}) => <svg viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" width="18" height="18"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>;
-const IcBookmark = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>;
-const IcBell = ({ off } = {}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">{off && <line x1="1" y1="1" x2="23" y2="23" />}<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>;
-const IcLock = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>;
-const IcClock = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>;
-const IcShield = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>;
-const IcSliders = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></svg>;
-const IcLink = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>;
-const IcHistory = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" /></svg>;
-const IcHeart = ({ filled } = {}) => <svg viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>;
-const IcListPlus = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="11" y1="12" x2="3" y2="12" /><line x1="16" y1="6" x2="3" y2="6" /><line x1="16" y1="18" x2="3" y2="18" /><line x1="21" y1="9" x2="21" y2="15" /><line x1="18" y1="12" x2="24" y2="12" /></svg>;
-const IcEraser = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M20 20H7L3 16l10-10 8 8-6 6" /><path d="M13 6l5 5" /></svg>;
-const IcFlag = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>;
-const IcChevronR = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><polyline points="9 18 15 12 9 6" /></svg>;
+const IcPhoneCall = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><Glyph n="phone" /></svg>;
+const IcVideoCam = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><Glyph n="video" /></svg>;
+const IcSearch20 = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><Glyph n="search" /></svg>;
+const IcImages = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="image" /></svg>;
+const IcStar = ({ filled } = {}) => <svg viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="star" /></svg>;
+const IcBookmark = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="bookmark" /></svg>;
+const IcBell = ({ off } = {}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n={off ? 'bell-off' : 'bell'} /></svg>;
+const IcLock = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="lock" /></svg>;
+const IcClock = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="clock" /></svg>;
+const IcShield = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="shield" /></svg>;
+const IcSliders = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="sliders" /></svg>;
+const IcLink = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="link" /></svg>;
+const IcHistory = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="history" /></svg>;
+const IcHeart = ({ filled } = {}) => <svg viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="heart" /></svg>;
+const IcListPlus = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="list-plus" /></svg>;
+const IcEraser = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="eraser" /></svg>;
+const IcFlag = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="flag" /></svg>;
+const IcChevronR = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="chevron-right" /></svg>;
 const IcUserPlus20 = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>;
 
 /* ── TICK SVG ── */
@@ -352,7 +353,7 @@ function VoiceBubble({ src, durationHint = 0, waveformPeaks }) {
 
   return (
     <div className="bubble-voice">
-      <button className="voice-play-btn" onClick={toggle}>{playing ? <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg> : <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>}</button>
+      <button className="voice-play-btn" onClick={toggle}>{playing ? <svg viewBox="0 0 24 24" fill="currentColor"><Glyph n="pause" /></svg> : <svg viewBox="0 0 24 24" fill="currentColor"><Glyph n="play" /></svg>}</button>
       <audio ref={audioRef} src={src} preload="metadata" onLoadedMetadata={handleMeta} onDurationChange={handleDurationChange} onTimeUpdate={handleTimeUpdate} onEnded={() => { setPlaying(false); setCurrent(0); }} />
       <div className="voice-wave-wrap">
         <div className="voice-waveform">{peaks.map((p, i) => (
@@ -366,7 +367,7 @@ function VoiceBubble({ src, durationHint = 0, waveformPeaks }) {
         onClick={togglePitchSync}
         title={pitchSynced ? 'Pitch synced to speed (chipmunk/beast) — click to keep pitch normal' : 'Pitch stays normal — click to sync pitch with speed'}
       >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2 5 4-16 3 11 2-5h4" /></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><Glyph n="pulse" /></svg>
       </button>
     </div>
   );
@@ -393,7 +394,7 @@ function renderText(text) {
 }
 
 /* ── BUBBLE ── */
-// WhatsApp-style call-log row — "X started a call" with a Join button
+// call-log row — "X started a call" with a Join button
 // while the room's still open, "Call ended" once it's not. Centered,
 // unlike normal bubbles, since it's not "from" anyone in particular the
 // way a message is — it's a system-style event about the conversation.
@@ -416,8 +417,8 @@ function CallLogRow({ msg, onJoin }) {
           color: ended ? 'var(--text-muted)' : 'var(--accent-text)',
         }}>
           {isVideo
-            ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
-            : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.39 18a19.5 19.5 0 0 1-3.39-3.39A19.79 19.79 0 0 1 2.12 6.18 2 2 0 0 1 4.11 4h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 11.91a16 16 0 0 0 4 4l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 20 16z" /></svg>}
+            ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="video" /></svg>
+            : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="phone" /></svg>}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -483,16 +484,14 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
     inner = <><span className="bubble-inner">{fileInfo.state === 'loading' ? '🔒 Decrypting…' : '🔒 Unable to decrypt this file'}</span>{footer}</>;
   } else if (isDeleted) { inner = <><span className="bubble-deleted">⊘ This message was deleted</span><span className="bubble-gap short" /><span className="bubble-footer"><span className="bubble-time">{timeStr}</span></span></>; }
   else if (msgType === 'IMAGE' || msgType === 'GIF') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><img className="bubble-media" src={fileSrc} alt={msg.content ? `Image: ${String(msg.content).slice(0, 80)}` : "Image sent in this chat"} loading="lazy" /><span className="bubble-media-overlay">{hasEdited && <span className="bubble-edited">Edited</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
-  else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="video-play-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5,3 19,12 5,21" /></svg></span><span className="video-meta-bar">{msg.durationSeconds != null && <span className="video-duration-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z" /></svg>{formatDuration(msg.durationSeconds)}</span>}<span className="video-time-badge">{hasEdited && <span className="bubble-edited">Edited</span>}{timeStr}{isSent && <Tick status={msg.status || 'SENT'} />}</span></span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
+  else if (msgType === 'VIDEO') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<div className="bubble-media-frame" style={{ cursor: 'pointer', width: mediaBox.width, height: mediaBox.height }} onClick={e => { e.stopPropagation(); setLightboxOpen(true); }}><video className="bubble-media" src={fileSrc} /><span className="video-play-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><Glyph n="play" /></svg></span><span className="video-meta-bar">{msg.durationSeconds != null && <span className="video-duration-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><Glyph n="video" /></svg>{formatDuration(msg.durationSeconds)}</span>}<span className="video-time-badge">{hasEdited && <span className="bubble-edited">Edited</span>}{timeStr}{isSent && <Tick status={msg.status || 'SENT'} />}</span></span></div>{msg.content && <span className="bubble-inner">{msg.content}</span>}</>; }
   else if (msgType === 'VOICE') { inner = <div className="bubble-voice-wrap">{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<VoiceBubble src={fileSrc} durationHint={msg.durationSeconds ? Number(msg.durationSeconds) : 0} waveformPeaks={msg.waveformPeaks} /><div className="bubble-voice-footer">{msg.edited && <span className="bubble-edited">edited ·</span>}<span className="bubble-time">{timeStr}</span>{isSent && <Tick status={msg.status || 'SENT'} />}</div></div>; }
-  else if (msgType === 'FILE') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<a className="bubble-file" href={fileSrc} target="_blank" rel="noreferrer" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg><span>{fileSrc?.split('/').pop()}</span></a><span className="bubble-inner" style={{ display: 'block', minHeight: 4 }} />{footer}</>; }
+  else if (msgType === 'FILE') { inner = <>{msg.replyToId && <div className="bubble-reply-quote">{msg.replyPreviewSender && <span className="bubble-reply-quote-name">{msg.replyPreviewSender}</span>}<span className="bubble-reply-quote-text">{msg.replyPreview}</span></div>}<a className="bubble-file" href={fileSrc} target="_blank" rel="noreferrer" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="file" /></svg><span>{fileSrc?.split('/').pop()}</span></a><span className="bubble-inner" style={{ display: 'block', minHeight: 4 }} />{footer}</>; }
   else if (msgType === 'CALL') {
     const isFailedCall = msg.callStatus && msg.callStatus !== 'completed';
     inner = (
       <span className={`bubble-call${isFailedCall ? ' bubble-call-failed' : ''}`}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-          <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.39 18a19.5 19.5 0 0 1-3.39-3.39A19.79 19.79 0 0 1 2.12 6.18 2 2 0 0 1 4.11 4h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 11.91a16 16 0 0 0 4 4l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 20 16z" />
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="phone" /></svg>
         {msg.content}
         {footer}
       </span>
@@ -531,7 +530,7 @@ function Bubble({ msg, isSent, onContextMenu, isGroup, groupCreatorId, selectMod
             background: isSelected ? 'var(--accent)' : 'transparent',
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.12s',
           }}>
-            {isSelected && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" width="12" height="12"><polyline points="20 6 9 17 4 12" /></svg>}
+            {isSelected && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" width="12" height="12"><Glyph n="check" /></svg>}
           </div>
         </div>
       )}
@@ -612,7 +611,7 @@ function BundleTile({ src, type, extraCount, showBadge, width, height, onClick }
   );
 }
 
-/* ── BUBBLE BUNDLE (WhatsApp-style media grid) ── */
+/* ── BUBBLE BUNDLE (media grid) ── */
 function BubbleBundle({ msgs, isSent, onContextMenu, groupCreatorId }) {
   const [lightbox, setLightbox] = useState(null);
 
@@ -721,17 +720,17 @@ function SelectionBar({ count, onCopy, onDelete, onCancel, canDelete }) {
         {count} selected
       </span>
       <button onClick={onCopy} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: '4px 12px' }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><Glyph n="copy" /></svg>
         <span style={{ fontSize: 10, fontWeight: 600 }}>Copy</span>
       </button>
       {canDelete && (
         <button onClick={onDelete} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px 12px' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><Glyph n="trash" /></svg>
           <span style={{ fontSize: 10, fontWeight: 600 }}>Delete</span>
         </button>
       )}
       <button onClick={onCancel} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 12px' }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><Glyph n="close" /></svg>
         <span style={{ fontSize: 10, fontWeight: 600 }}>Cancel</span>
       </button>
     </div>
@@ -765,7 +764,7 @@ function GroupModal({ userId, conversations, onClose, onCreate }) {
                   ? <img src={avatarSrc(c.avatar)} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} alt="" />
                   : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'var(--accent-text)' }}>{(c.name || '?').slice(0, 2).toUpperCase()}</div>}
                 <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: sel ? 600 : 400 }}>{c.name || c.username}</span>
-                {sel && <svg style={{ marginLeft: 'auto' }} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" width="16" height="16"><polyline points="20 6 9 17 4 12" /></svg>}
+                {sel && <svg style={{ marginLeft: 'auto' }} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" width="16" height="16"><Glyph n="check" /></svg>}
               </div>
             );
           })}
@@ -850,9 +849,7 @@ function DmSearchModal({ messages, userId, convoName, query, onQueryChange, onCl
           gap: 10,
         }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"
-            style={{ color: 'var(--accent-link, var(--accent))', flexShrink: 0 }}>
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+            style={{ color: 'var(--accent-link, var(--accent))', flexShrink: 0 }}><Glyph n="search" /></svg>
           <input
             ref={inputRef}
             value={query}
@@ -890,9 +887,7 @@ function DmSearchModal({ messages, userId, convoName, query, onQueryChange, onCl
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><Glyph n="close" /></svg>
           </button>
         </div>
 
@@ -900,9 +895,7 @@ function DmSearchModal({ messages, userId, convoName, query, onQueryChange, onCl
           {!q && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '52px 32px', gap: 10 }}>
               <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--bg-hover)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24" style={{ color: 'var(--text-muted)' }}>
-                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24" style={{ color: 'var(--text-muted)' }}><Glyph n="search" /></svg>
               </div>
               <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Search messages</span>
               <span style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5 }}>
@@ -913,9 +906,7 @@ function DmSearchModal({ messages, userId, convoName, query, onQueryChange, onCl
           {q && results.length === 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '52px 32px', gap: 10 }}>
               <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--bg-hover)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24" style={{ color: 'var(--text-muted)' }}>
-                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24" style={{ color: 'var(--text-muted)' }}><Glyph n="search" /></svg>
               </div>
               <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>No messages found</span>
               <span style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
@@ -1080,7 +1071,7 @@ export default function Messages() {
     // new signaling types (this bit us before with GROUP_CALL_INVITE/
     // GROUP_CALL_END, added after this filter and not included in it)
     // are covered automatically. The persisted "CALL" call-log message
-    // (WhatsApp-style "X started a call" row) is a real chat message and
+    // ("X started a call" row) is a real chat message and
     // deliberately doesn't match any of these prefixes.
     if (msgType && (msgType.startsWith('CALL_') || msgType.startsWith('GROUP_CALL_') || msgType.startsWith('VOICE_'))) return;
 
@@ -1712,29 +1703,19 @@ export default function Messages() {
         <div className="convo-panel-header">
           <div className="search-wrap" style={{ marginTop: 0 }}>
             <input className="search-input" placeholder="Search people…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-            {searchQuery && <button className="search-clear" onClick={() => setSearchQuery('')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></button>}
+            {searchQuery && <button className="search-clear" onClick={() => setSearchQuery('')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><Glyph n="close" /></svg></button>}
           </div>
 
           {/* Filter tabs */}
           {!searchQuery && (
-            <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+            <div className="seg" role="tablist" aria-label="Filter conversations">
               {['all', 'friends', 'groups'].map(tab => (
                 <button
                   key={tab}
+                  role="tab"
+                  aria-selected={msgFilter === tab}
+                  className={`seg-btn${msgFilter === tab ? ' active' : ''}`}
                   onClick={() => setMsgFilter(tab)}
-                  style={{
-                    flex: 1,
-                    padding: '5px 0',
-                    borderRadius: 20,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    border: msgFilter === tab ? 'none' : '1px solid var(--border-input)',
-                    background: msgFilter === tab ? 'var(--accent)' : 'var(--bg-input)',
-                    color: msgFilter === tab ? 'var(--accent-text)' : 'var(--text-muted)',
-                    textTransform: 'capitalize',
-                    transition: 'background 0.15s, color 0.15s',
-                  }}
                 >
                   {tab}
                 </button>
@@ -1768,7 +1749,7 @@ export default function Messages() {
                 <div className="convo-avatar-wrap" style={{ position: 'relative' }} onClick={e => { e.stopPropagation(); if (!c.isGroup) navigate(`/profile/${c.username}`); else setViewingGroupInfo(c); }}>
                   {c.isGroup
                     ? <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'var(--accent-text)', cursor: 'pointer' }}>
-                      <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                      <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><Glyph n="users" /></svg>
                     </div>
                     : <UserAvatar src={c.avatar} name={c.name || c.username} userId={c.userId} size={44} />
                   }
@@ -1777,7 +1758,7 @@ export default function Messages() {
                 <div className="convo-info">
                   <div className="convo-row">
                     <span className="convo-name" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {isPinned && <svg viewBox="0 0 24 24" fill="var(--accent)" width="10" height="10"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>}
+                      {isPinned && <svg viewBox="0 0 24 24" fill="var(--accent)" width="10" height="10"><Glyph n="star" /></svg>}
                       {c.name || c.username}
                       {c.isGroup && <span style={{ fontSize: 9, background: 'var(--gradient)', color: 'var(--accent-text)', borderRadius: 4, padding: '1px 5px', fontWeight: 700, marginLeft: 2 }}>GROUP</span>}
                     </span>
@@ -1796,8 +1777,8 @@ export default function Messages() {
       <div className="chat-panel">
         {!activeConvo ? (
           <div className="chat-empty">
-            {!sidebarOpen && <button onClick={() => setSidebarOpen(true)} style={{ position: 'absolute', top: 14, left: 14, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'flex' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="15" y1="3" x2="15" y2="21" /></svg></button>}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+            {!sidebarOpen && <button onClick={() => setSidebarOpen(true)} style={{ position: 'absolute', top: 14, left: 14, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'flex' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><Glyph n="panel" /></svg></button>}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><Glyph n="chat" /></svg>
             <p>Your messages</p>
             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Select a conversation or search for someone</span>
           </div>
@@ -1808,15 +1789,15 @@ export default function Messages() {
               {/* Mobile back arrow — returns to convo list */}
               <button className="mobile-back-btn" onClick={() => { setActiveConvo(null); activeConvoRef.current = null; }}
                 style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'none', alignItems: 'center', flexShrink: 0 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><polyline points="15 18 9 12 15 6" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><Glyph n="chevron-left" /></svg>
               </button>
-              <button onClick={() => setSidebarOpen(o => !o)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">{sidebarOpen ? <><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="9" y1="3" x2="9" y2="21" /></> : <><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="15" y1="3" x2="15" y2="21" /></>}</svg>
+              <button className="hdr-btn" title="Toggle details" aria-label="Toggle details" onClick={() => setSidebarOpen(o => !o)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="panel" /></svg>
               </button>
               <div style={{ cursor: 'pointer', flexShrink: 0 }} onClick={() => { if (!activeConvo.isGroup) navigate(`/profile/${activeConvo.username}`); else setViewingGroupInfo(activeConvo); }}>
                 {activeConvo.isGroup
                   ? <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'var(--accent-text)' }}>
-                    <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                    <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><Glyph n="users" /></svg>
                   </div>
                   : <UserAvatar src={activeConvo.avatar} name={convoName} userId={activeConvo.userId} size={38} />
                 }
@@ -1844,11 +1825,9 @@ export default function Messages() {
                     if (activeConvo.isGroup) startGroupCall({ groupId: activeConvo.groupId, name: activeConvo.name }, 'audio');
                     else startCall('audio', activeConvo);
                   }}
-                  title="Voice call"
-                  style={{ background: 'none', border: '1px solid var(--border-input)', borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)', transition: 'all 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent-text)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-input)'; }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.39 18a19.5 19.5 0 0 1-3.39-3.39A19.79 19.79 0 0 1 2.12 6.18 2 2 0 0 1 4.11 4h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 11.91a16 16 0 0 0 4 4l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 20 16z" /></svg>
+                  title="Voice call" className="hdr-btn"
+                  >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="phone" /></svg>
                 </button>
                 <button
                   onClick={() => {
@@ -1856,21 +1835,17 @@ export default function Messages() {
                     if (activeConvo.isGroup) startGroupCall({ groupId: activeConvo.groupId, name: activeConvo.name }, 'video');
                     else startCall('video', activeConvo);
                   }}
-                  title="Video call"
-                  style={{ background: 'none', border: '1px solid var(--border-input)', borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)', transition: 'all 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent-text)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-input)'; }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
+                  title="Video call" className="hdr-btn"
+                  >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="video" /></svg>
                 </button>
                 {!activeConvo.isGroup && (
                   <button
-                    className="dm-search-btn"
+                    className="dm-search-btn hdr-btn"
                     onClick={() => setDmSearchActive(true)}
                     title="Search messages"
-                    style={{ background: 'none', border: '1px solid var(--border-input)', borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)', transition: 'all 0.15s' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent-text)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-input)'; }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                    >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="search" /></svg>
                   </button>
                 )}
               </div>
@@ -1887,10 +1862,7 @@ export default function Messages() {
                   <span className="reply-bar-text">{replyingTo.content?.slice(0, 80)}</span>
                 </div>
                 <button className="reply-bar-close" onClick={() => setReplyingTo(null)}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><Glyph n="close" /></svg>
                 </button>
               </div>
             )}
@@ -1902,14 +1874,14 @@ export default function Messages() {
                   {attachments.map((att, idx) => (
                     <div key={idx} className="attachment-file-item">
                       {att.kind === 'FILE'
-                        ? <div className="att-file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg></div>
+                        ? <div className="att-file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24"><Glyph n="file" /></svg></div>
                         : att.kind === 'VIDEO'
                           ? <video src={att.dataUrl} className="att-thumb" muted />
                           : <img src={att.dataUrl} className="att-thumb" alt="Attachment preview" />
                       }
                       <span className="att-name">{att.file.name}</span>
                       <button className="att-remove" onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><Glyph n="close" /></svg>
                       </button>
                     </div>
                   ))}
@@ -1926,7 +1898,7 @@ export default function Messages() {
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                   />
                   <button className="att-send-btn" onClick={sendMessage}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="send" /></svg>
                   </button>
                 </div>
               </div>
@@ -1940,10 +1912,10 @@ export default function Messages() {
                 <span style={{ fontSize: 13, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', minWidth: 36 }}>{Math.floor(recSeconds / 60)}:{String(recSeconds % 60).padStart(2, '0')}</span>
                 <button onClick={cancelRecording} style={{ marginLeft: 'auto', background: 'rgba(224,96,96,0.12)', border: '1px solid #e06060', color: '#e06060', borderRadius: 20, padding: '6px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>Cancel</button>
                 <button onClick={pauseRecording} style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-input)', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                  {paused ? <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="5,3 19,12 5,21" /></svg> : <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>}
+                  {paused ? <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><Glyph n="play" /></svg> : <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><Glyph n="pause" /></svg>}
                 </button>
                 <button onClick={sendRecording} style={{ background: 'var(--accent)', border: 'none', color: 'var(--accent-text)', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><Glyph n="send" /></svg>
                 </button>
               </div>
             )}
@@ -1952,7 +1924,7 @@ export default function Messages() {
             {!recording && attachments.length === 0 && (
               <div className="chat-input-bar">
                 <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*,video/*,.pdf,.doc,.docx,.zip,.txt" multiple onChange={pickFile} />
-                <button className="icon-btn" onClick={() => fileInputRef.current?.click()}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg></button>
+                <button className="icon-btn" onClick={() => fileInputRef.current?.click()}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><Glyph n="paperclip" /></svg></button>
                 {(() => {
                   const cantSend = activeConvo?.isGroup && activeConvo?.permSendMessages === false && activeConvo?.creatorId !== userId;
                   return cantSend ? (
@@ -1971,8 +1943,8 @@ export default function Messages() {
                           if (e.key === 'Enter' && !e.shiftKey && !isMobile) { e.preventDefault(); sendMessage(); }
                         }}
                       />
-                      <button className="icon-btn" onClick={startRecording} title="Voice message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg></button>
-                      <button className="send-btn" onClick={sendMessage} aria-label="Send message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg></button>
+                      <button className="icon-btn" onClick={startRecording} title="Voice message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><Glyph n="mic" /></svg></button>
+                      <button className="send-btn" onClick={sendMessage} aria-label="Send message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><Glyph n="send" /></svg></button>
                     </>
                   );
                 })()}
@@ -2062,11 +2034,11 @@ export default function Messages() {
           isPinned
             ? { label: 'Unpin', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><line x1="2" y1="2" x2="22" y2="22" /><path d="M12 17v5" /><path d="M9 9l-7 7 3 3 5-5" /><path d="M15 15l5-5-3-3-5 5" /></svg>, action: () => togglePin(c.userId) }
             : { label: 'Pin', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M12 17v5" /><path d="M9 11l-7 7 3 3 7-7" /><path d="M15 11l7-7-3-3-7 7" /><circle cx="12" cy="8" r="3" /></svg>, action: () => togglePin(c.userId) },
-          { label: 'Mark as unread', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>, action: () => { } },
-          ...(!c.isGroup ? [{ label: 'View profile', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>, action: () => { setCtxMenu(null); navigate(`/profile/${c.username}`); } }] : []),
-          { label: 'Mute notifications', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /><line x1="1" y1="1" x2="23" y2="23" /></svg>, action: () => { } },
-          { label: 'Close chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>, action: () => { if (activeConvo?.userId === c.userId) setActiveConvo(null); }, danger: false },
-          { label: 'Delete chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" /></svg>, action: () => { if (activeConvo?.userId === c.userId) setActiveConvo(null); setConversations(prev => prev.filter(x => x.userId !== c.userId)); }, danger: true },
+          { label: 'Mark as unread', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="chat" /></svg>, action: () => { } },
+          ...(!c.isGroup ? [{ label: 'View profile', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="user" /></svg>, action: () => { setCtxMenu(null); navigate(`/profile/${c.username}`); } }] : []),
+          { label: 'Mute notifications', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="bell" /></svg>, action: () => { } },
+          { label: 'Close chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="close" /></svg>, action: () => { if (activeConvo?.userId === c.userId) setActiveConvo(null); }, danger: false },
+          { label: 'Delete chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="trash" /></svg>, action: () => { if (activeConvo?.userId === c.userId) setActiveConvo(null); setConversations(prev => prev.filter(x => x.userId !== c.userId)); }, danger: true },
         ];
         // Clamp position so menu doesn't go off-screen
         const menuW = 200, menuH = menuItems.length * 38 + 8;

@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { api, API_BASE } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import teddyImg from '../teddy_no_results.png';
+import Glyph from '../components/icons/Glyph';
 
-const PersonIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="28" height="28"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>;
+const PersonIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="28" height="28"><Glyph n="user" /></svg>;
 
 /* ── Avatar ── */
 function Avatar({ src, name, size = 38, onClick }) {
@@ -115,7 +116,7 @@ export default function SearchPage() {
         {!query && !loading && (
           <div style={{ textAlign: 'center', padding: '100px 20px', color: 'var(--text-muted)' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, opacity: 0.15 }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" width="72" height="72"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" width="72" height="72"><Glyph n="search" /></svg>
             </div>
             <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-secondary)' }}>Search Skepticall</div>
             <div style={{ fontSize: 14 }}>Find people</div>

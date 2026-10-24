@@ -8,12 +8,13 @@ import CommentsPanel from '../components/CommentsPanel';
 import UserAvatar from '../components/UserAvatar';
 import ConfirmModal from '../components/ConfirmModal';
 import RightSidebar from '../components/layout/RightSidebar';
+import Glyph from '../components/icons/Glyph';
 
 /* ── Icons ── */
 const LikeIcon    = ({ active }) => <svg viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>;
 const DislikeIcon = ({ active }) => <svg viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>;
-const CommentIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
-const OpenIcon    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>;
+const CommentIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="chat" /></svg>;
+const OpenIcon    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="maximize" /></svg>;
 const DotsIcon    = () => <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>;
 const SparkleIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="14" height="14"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>;
 
@@ -31,16 +32,16 @@ function PostMenu({ onDelete, onAdminDelete, onNavigatePost, postId, postSlug, i
 
   const menuItems = [
     { label: 'Open post',  icon: <OpenIcon />, onClick: () => { setOpen(false); onNavigatePost(postSlug); } },
-    { label: 'Copy link',  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>, onClick: () => { setOpen(false); navigator.clipboard?.writeText(`${window.location.origin}/post/${postSlug}`); } },
+    { label: 'Copy link',  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><Glyph n="link" /></svg>, onClick: () => { setOpen(false); navigator.clipboard?.writeText(`${window.location.origin}/post/${postSlug}`); } },
     ...(isOwn ? [
       { label: 'Edit post',  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, onClick: () => { setOpen(false); onNavigatePost(postSlug); } },
     ] : []),
     { divider: true },
     ...(isOwn ? [
-      { label: 'Delete post', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>, onClick: () => { setOpen(false); onDelete(postId); }, danger: true },
+      { label: 'Delete post', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><Glyph n="trash" /></svg>, onClick: () => { setOpen(false); onDelete(postId); }, danger: true },
     ] : []),
     ...(isAdmin && !isOwn ? [
-      { label: 'Delete post (admin)', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, onClick: () => { setOpen(false); onAdminDelete(postId); }, danger: true },
+      { label: 'Delete post (admin)', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><Glyph n="shield" /></svg>, onClick: () => { setOpen(false); onAdminDelete(postId); }, danger: true },
     ] : []),
   ];
 
@@ -187,12 +188,12 @@ function PostCard({ post, onVote, onOpenComments, onDelete, onAdminDelete, userI
 
             {mediaIdx > 0 && (
               <button className="omni-media-arrow left" onClick={() => setMediaIdx(i => i - 1)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><Glyph n="chevron-left" /></svg>
               </button>
             )}
             {mediaIdx < mediaItems.length - 1 && (
               <button className="omni-media-arrow right" onClick={() => setMediaIdx(i => i + 1)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><Glyph n="chevron-right" /></svg>
               </button>
             )}
             {mediaItems.length > 1 && (

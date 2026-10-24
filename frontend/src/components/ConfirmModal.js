@@ -1,4 +1,5 @@
 import React from 'react';
+import Glyph from './icons/Glyph';
 
 // Lightweight "are you sure?" modal — themed to match the app instead of the
 // native browser confirm(). Used for deleting posts, comments, and media.
@@ -9,7 +10,7 @@ export default function ConfirmModal({ title = 'Delete this?', message, confirmL
         <div className="dialog-header">
           <span className="dialog-title">{title}</span>
           <button className="dialog-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
           </button>
         </div>
         <div className="dialog-body">

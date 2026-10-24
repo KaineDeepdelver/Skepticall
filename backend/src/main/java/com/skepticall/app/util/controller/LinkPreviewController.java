@@ -61,11 +61,11 @@ public class LinkPreviewController {
             Map<String, String> result = new LinkedHashMap<>();
             result.put("url",         url);
             result.put("title",       firstOf(
-                og(html, "title"), twitterMeta(html, "title"), titleTag(html), extractDomain(url)));
+                og(html, "title"), titleTag(html), extractDomain(url)));
             result.put("description", firstOf(
-                og(html, "description"), twitterMeta(html, "description"), metaDescription(html), ""));
+                og(html, "description"), metaDescription(html), ""));
             result.put("image",       firstOf(
-                og(html, "image"), twitterMeta(html, "image"), ""));
+                og(html, "image"), ""));
             result.put("siteName",    firstOf(
                 og(html, "site_name"), extractDomain(url)));
 
@@ -86,17 +86,6 @@ public class LinkPreviewController {
         // also try reversed attribute order
         Matcher m2 = Pattern.compile(
             "<meta[^>]+content=[\"']([^\"']*)[\"'][^>]+property=[\"']og:" + prop + "[\"']",
-            Pattern.CASE_INSENSITIVE).matcher(html);
-        return m2.find() ? m2.group(1).trim() : "";
-    }
-
-    private String twitterMeta(String html, String name) {
-        Matcher m = Pattern.compile(
-            "<meta[^>]+name=[\"']twitter:" + name + "[\"'][^>]+content=[\"']([^\"']*)[\"']",
-            Pattern.CASE_INSENSITIVE).matcher(html);
-        if (m.find()) return m.group(1).trim();
-        Matcher m2 = Pattern.compile(
-            "<meta[^>]+content=[\"']([^\"']*)[\"'][^>]+name=[\"']twitter:" + name + "[\"']",
             Pattern.CASE_INSENSITIVE).matcher(html);
         return m2.find() ? m2.group(1).trim() : "";
     }

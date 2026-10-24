@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import { networkApi } from '../../services/api';
+import Glyph from '../icons/Glyph';
 
 const CLOSE_BTN = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="close" /></svg>
 );
 
 // Three-state permission toggle: deny (x) / inherit (slash) / allow (check).
-// Matches Discord's own control. Local state only for now — see the note
+// Local state only for now — see the note
 // in each tab below about what's actually wired to the backend.
 function PermissionToggle({ value, onChange }) {
   const opts = ['deny', 'inherit', 'allow'];
   const icons = {
-    deny:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+    deny:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><Glyph n="close" /></svg>,
     inherit: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><line x1="6" y1="18" x2="18" y2="6" /></svg>,
-    allow:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12" /></svg>,
+    allow:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><Glyph n="check" /></svg>,
   };
   const activeColor = { deny: '#e06060', inherit: 'var(--text-secondary)', allow: '#3ba55d' };
 
@@ -335,7 +334,7 @@ export default function ChannelSettingsModal({ network, channel, initialTab = 'o
 
         {!confirmingDelete ? (
           <button onClick={() => setConfirmingDelete(true)} style={{ textAlign: 'left', padding: '8px 10px', border: 'none', background: 'none', color: '#e06060', fontSize: 13.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="trash" /></svg>
             Delete Channel
           </button>
         ) : (

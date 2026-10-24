@@ -12,6 +12,8 @@ import './styles/animations.css';
 import './styles/settings-additions.css';
 import App from './App';
 import { installKeyboardSupport } from './a11y/keyboard';
+// Keep last: page-level CSS (landing, legal, consent) loads with App, and this unifies the controls across all of it.
+import './styles/components.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);

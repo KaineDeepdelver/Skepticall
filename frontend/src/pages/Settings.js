@@ -6,27 +6,28 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { api, adminApi, resolveUrl } from '../services/api';
 import { KeyBackupButton } from '../e2e/EncryptionGate';
+import Glyph from '../components/icons/Glyph';
 
 // == Icons ==
-const IcAccount    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
-const IcProfile    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12h8M8 8h8M8 16h5"/></svg>;
-const IcAppearance = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>;
-const IcPrivacy    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
-const IcPresence   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>;
-const IcNotif      = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
-const IcSecurity   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
-const IcSignOut    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
-const IcTrash      = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>;
-const IcChevron    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>;
-const IcChevronLeft= () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><polyline points="15 18 9 12 15 6"/></svg>;
-const IcCamera     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>;
-const IcCheck      = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>;
-const IcEye        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
-const IcEyeOff     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>;
-const IcShield     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>;
-const IcAlertTriangle = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
-const IcSearch     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
-const IcClock      = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+const IcAccount    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="user" /></svg>;
+const IcProfile    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="id-card" /></svg>;
+const IcAppearance = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="sun" /></svg>;
+const IcPrivacy    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="shield" /></svg>;
+const IcPresence   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="presence" /></svg>;
+const IcNotif      = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="bell" /></svg>;
+const IcSecurity   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="lock" /></svg>;
+const IcSignOut    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="logout" /></svg>;
+const IcTrash      = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="trash" /></svg>;
+const IcChevron    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="chevron-right" /></svg>;
+const IcChevronLeft= () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><Glyph n="chevron-left" /></svg>;
+const IcCamera     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="camera" /></svg>;
+const IcCheck      = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><Glyph n="check" /></svg>;
+const IcEye        = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="eye" /></svg>;
+const IcEyeOff     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="eye-off" /></svg>;
+const IcShield     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="shield-check" /></svg>;
+const IcAlertTriangle = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="warning" /></svg>;
+const IcSearch     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="search" /></svg>;
+const IcClock      = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="clock" /></svg>;
 
 // == Helpers ==
 function maskedEmail(email) {
@@ -111,7 +112,7 @@ function Dialog({ title, onClose, onSave, saveLabel = 'Save', saveVariant = 'pri
         <div className="dialog-header">
           <span className="dialog-title">{title}</span>
           <button className="dialog-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
           </button>
         </div>
         <div className="dialog-body">{children}</div>
@@ -155,7 +156,7 @@ function HeavyConfirmModal({ title, targetLabel, targetSub, targetAvatar, warnin
             {title}
           </span>
           <button className="dialog-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
           </button>
         </div>
         <div className="dialog-body">
@@ -506,7 +507,7 @@ function BannerCard({ bannerSrc, avatarSrc, displayName, username, onBannerClick
 // == SETTINGS PAGE ==
 export default function Settings() {
   const { user, logout, updateUser } = useAuth();
-  const { theme, toggleTheme, accentId, setAccent, ACCENT_PRESETS, currentAccents, themePresetId, setThemePreset, THEME_PRESETS, bubbleStyleId, setBubbleStyle, BUBBLE_STYLES } = useTheme();
+  const { theme, toggleTheme, accentId, setAccent, ACCENT_PRESETS, currentAccents, themePresetId, setThemePreset, THEME_PRESETS } = useTheme();
   const navigate                     = useNavigate();
   const location                     = useLocation();
 
@@ -791,9 +792,9 @@ export default function Settings() {
     if (id === 'appearance') return (
       <>
         <SettingRow label="Theme" desc="Switch between dark and light mode">
-          <button className="theme-toggle" onClick={toggleTheme}>
-            <span className="theme-icon dark-icon">🌙</span>
-            <span className="theme-icon light-icon">☀️</span>
+          <button className="theme-toggle" onClick={toggleTheme} aria-label="Switch between dark and light mode">
+            <span className="theme-icon dark-icon"><svg viewBox="0 0 24 24" width="14" height="14"><Glyph n="moon" /></svg></span>
+            <span className="theme-icon light-icon"><svg viewBox="0 0 24 24" width="14" height="14"><Glyph n="sun" /></svg></span>
             <span className="theme-thumb" />
           </button>
         </SettingRow>
@@ -849,62 +850,11 @@ export default function Settings() {
           {theme === 'light' ? 'Showing light themes. Switch to dark mode to see dark themes.' : 'Showing dark themes. Switch to light mode to see light themes.'}
         </div>
 
-        <SectionTitle mt={24}>Message Bubbles</SectionTitle>
-        <div style={{ marginTop: 8 }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {BUBBLE_STYLES.map(style => (
-              <button
-                key={style.id}
-                onClick={() => setBubbleStyle(style.id)}
-                title={style.label}
-                style={{
-                  width: 96, borderRadius: 10,
-                  border: bubbleStyleId === style.id ? '2px solid var(--accent)' : '2px solid transparent',
-                  outline: '1px solid var(--border-input)', cursor: 'pointer',
-                  background: 'var(--bg-input)', padding: 0, overflow: 'hidden',
-                  display: 'flex', flexDirection: 'column', alignItems: 'stretch',
-                  transform: bubbleStyleId === style.id ? 'scale(1.04)' : 'scale(1)',
-                  transition: 'transform 0.15s, border 0.15s',
-                }}
-              >
-                <div data-bubble-style={style.id} style={{ height: 52, padding: '8px 8px 6px', display: 'flex', flexDirection: 'column', gap: 4, background: 'var(--bg-body)' }}>
-                  <span style={{
-                    alignSelf: 'flex-start', maxWidth: '70%', background: 'var(--bubble-in-bg)', color: 'var(--bubble-in-text)',
-                    borderRadius: style.id === 'telegram-tail' ? '4px 12px 12px 12px' : '14px 14px 14px 4px',
-                    padding: '4px 8px', fontSize: 9, position: 'relative',
-                  }}>
-                    hey
-                    {style.id === 'telegram-tail' && (
-                      <span style={{ position: 'absolute', left: -4, bottom: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 4px 6px 0', borderColor: 'transparent var(--bubble-in-bg) transparent transparent' }} />
-                    )}
-                  </span>
-                  <span style={{
-                    alignSelf: 'flex-end', maxWidth: '70%', background: 'var(--bubble-out-bg)', color: 'var(--bubble-out-text)',
-                    borderRadius: style.id === 'telegram-tail' ? '12px 4px 12px 12px' : '14px 14px 4px 14px',
-                    padding: '4px 8px', fontSize: 9, position: 'relative',
-                  }}>
-                    hi
-                    {style.id === 'telegram-tail' && (
-                      <span style={{ position: 'absolute', right: -4, bottom: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '6px 4px 0 0', borderColor: 'var(--accent-to, var(--accent)) transparent transparent transparent' }} />
-                    )}
-                  </span>
-                </div>
-                <div style={{ fontSize: 10, fontWeight: 600, padding: '5px 4px', color: 'var(--text-primary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {style.label}
-                </div>
-              </button>
-            ))}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
-            Applies to text, image, file, and voice messages. New messages also pop in and type out letter by letter.
-          </div>
-        </div>
-
         <SectionTitle mt={24}>Font Size</SectionTitle>
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           {['Small', 'Default', 'Large'].map(size => (
             <button key={size} className={`settings-chip${size === 'Default' ? ' active' : ''}`}
-              style={{ opacity: 0.5, cursor: 'not-allowed' }} title="Coming soon">{size}</button>
+              disabled title="Coming soon">{size}</button>
           ))}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>Font size customization — coming soon</div>

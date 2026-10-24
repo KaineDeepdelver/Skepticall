@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_BASE, resolveUrl } from '../../services/api';
+import Glyph from '../icons/Glyph';
 
 function NetworkIcon({ network, active, onClick }) {
   const initials = network.name
@@ -35,7 +36,7 @@ function NetworkIcon({ network, active, onClick }) {
 }
 
 // Left-most rail: one icon per joined network, plus a "+" that opens the
-// create/join panel. Mirrors Discord's server rail — this is the entry
+// create/join panel. Server rail — this is the entry
 // point into the whole Networks section.
 export default function NetworkRail({ networks, activeNetworkId, onSelect, onAddClick }) {
   return (
@@ -65,9 +66,7 @@ export default function NetworkRail({ networks, activeNetworkId, onSelect, onAdd
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="plus" /></svg>
       </button>
     </div>
   );

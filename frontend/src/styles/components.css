@@ -1,0 +1,111 @@
+/* ============================================================================
+ * Shared control system
+ *
+ * One definition of "an icon button", "a button", "a chip" and "a segmented
+ * control", so the same kind of control looks and behaves the same everywhere.
+ * Loaded last (see index.js). Colours still come from the existing theme tokens.
+ *
+ *   Icon button   36px circle, no border, soft fill on hover
+ *   Button        pill, 40px tall, 14px / 600  (46px, 15px for full-width form buttons)
+ *   Chip          pill, 32px tall, 13px / 600
+ *   Focus         the same 2px ring on everything you can tab to
+ * ========================================================================== */
+
+/* ── Icon buttons ─────────────────────────────────────────────────────────── */
+.icon-btn, .topbar-icon-btn, .hdr-btn, .create-back-btn, .mobile-back-btn, .friend-pin-btn {
+  width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  border: none; border-radius: 50%;
+  background: transparent; color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.icon-btn svg, .topbar-icon-btn svg, .hdr-btn svg, .create-back-btn svg, .mobile-back-btn svg {
+  width: 20px; height: 20px; pointer-events: none;
+}
+.icon-btn:hover, .topbar-icon-btn:hover, .hdr-btn:hover, .create-back-btn:hover, .mobile-back-btn:hover, .friend-pin-btn:hover {
+  background: var(--bg-hover); color: var(--text-primary); transform: none;
+}
+.icon-btn:active, .topbar-icon-btn:active, .hdr-btn:active, .create-back-btn:active, .mobile-back-btn:active { transform: scale(0.94); }
+.icon-btn.recording { background: rgba(239, 68, 68, 0.14); color: #ef4444; }
+
+/* Starting a call from the chat header is the one primary header action. */
+.hdr-btn[title="Voice call"]:hover, .hdr-btn[title="Video call"]:hover {
+  background: var(--accent); color: var(--accent-text);
+}
+
+/* Send and attach-send: filled accent circles, same size. */
+.send-btn, .att-send-btn { width: 40px; height: 40px; border-radius: 50%; }
+.send-btn svg, .att-send-btn svg { width: 18px; height: 18px; }
+.send-btn:active, .att-send-btn:active { transform: scale(0.94); }
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.dialog-btn, .profile-btn, .e2e-btn, .lg-btn, .cb-btn, .profile-card-view-btn {
+  min-height: 40px; padding: 0 20px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 9999px; font-size: 14px; font-weight: 600; line-height: 1.1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, filter 0.15s, transform 0.1s;
+}
+.profile-card-view-btn { min-height: 34px; padding: 0 18px; font-size: 13px; }
+.auth-btn, .create-submit-btn {
+  min-height: 46px; padding: 0 20px; border-radius: 9999px;
+  font-size: 15px; font-weight: 600; line-height: 1.1;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+/* .create-submit-btn was defined twice with different radii and weights; this settles it. */
+.create-type-btn { border-radius: 14px; }
+.bubble-menu-btn { border-radius: 8px; }
+
+:is(.dialog-btn, .profile-btn, .e2e-btn, .lg-btn, .cb-btn, .profile-card-view-btn, .auth-btn, .create-submit-btn):hover:not(:disabled) { filter: brightness(1.08); }
+:is(.dialog-btn, .profile-btn, .e2e-btn, .lg-btn, .cb-btn, .profile-card-view-btn, .auth-btn, .create-submit-btn):active:not(:disabled) { transform: scale(0.98); }
+:is(.dialog-btn, .profile-btn, .e2e-btn, .lg-btn, .cb-btn, .auth-btn, .create-submit-btn, .settings-chip, .seg-btn):disabled {
+  opacity: 0.5; cursor: not-allowed; filter: none; transform: none;
+}
+
+/* ── Chips and the All / Friends / Groups segmented control ───────────────── */
+.settings-chip {
+  min-height: 32px; padding: 0 16px; border-radius: 9999px;
+  font-size: 13px; font-weight: 600; display: inline-flex; align-items: center;
+}
+.settings-chip:disabled:not(.active) { opacity: 0.45; }
+.settings-chip.active:disabled { opacity: 0.8; } /* the current value must not look switched off */
+
+.seg {
+  display: flex; gap: 2px; margin-top: 10px; padding: 3px;
+  background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 9999px;
+}
+.seg-btn {
+  flex: 1; min-height: 28px; border: none; border-radius: 9999px; background: transparent;
+  color: var(--text-muted); font-size: 12.5px; font-weight: 600; text-transform: capitalize; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.seg-btn:hover:not(.active) { color: var(--text-primary); }
+.seg-btn.active { background: var(--accent); color: var(--accent-text); }
+
+/* ── Theme switch ─────────────────────────────────────────────────────────── */
+.theme-toggle { height: 30px; width: 60px; }
+.theme-icon { display: flex; align-items: center; justify-content: center; font-size: 0; }
+.theme-icon svg { width: 14px; height: 14px; }
+.theme-thumb { width: 22px; height: 22px; }
+[data-theme="dark"]  .theme-thumb { left: 4px; }
+[data-theme="light"] .theme-thumb { left: 34px; }
+.theme-icon { color: var(--text-muted); }
+.dark-icon { left: 8px; } .light-icon { right: 8px; }
+
+/* ── Active states: the icon fills softly, so "selected" is more than a colour ─ */
+.nav-link svg, .settings-nav-btn svg, .mobile-nav-btn svg, .hdr-btn svg { overflow: visible; }
+.nav-link.active svg [data-f],
+.settings-nav-btn.active svg [data-f],
+.mobile-nav-btn.active svg [data-f] { fill: currentColor; fill-opacity: 0.22; }
+svg [data-f] { transition: fill-opacity 0.2s; }
+
+/* ── Focus: one ring for everything ───────────────────────────────────────── */
+:is(button, a, [role="button"], [role="tab"], input, textarea, select):focus-visible {
+  outline: 2px solid var(--accent-link, var(--accent)); outline-offset: 2px;
+}
+.auth-input:focus-visible, .search-input:focus-visible, .msg-textarea:focus-visible { outline: none; }
+
+/* TopBar injects its own <style> after this file, so its icon buttons need !important to join the system. */
+.topbar-icon-btn { border: none !important; border-radius: 50% !important; background: transparent !important; }
+.topbar-icon-btn:hover { background: var(--bg-hover) !important; color: var(--text-primary) !important; border: none !important; }

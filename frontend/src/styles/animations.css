@@ -176,7 +176,7 @@
   box-shadow: 0 6px 20px rgba(0,0,0,0.18);
 }
 
-/* Media card hover (YouTube-style) */
+/* Media card hover */
 .hover-lift-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }

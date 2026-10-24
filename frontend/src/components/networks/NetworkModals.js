@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { networkApi } from '../../services/api';
+import Glyph from '../icons/Glyph';
 
 // Two tabs in one modal: create a brand new network, or join one via invite
 // code. Styled with the same .dialog-* classes as ConfirmModal so it looks
@@ -36,7 +37,7 @@ export function CreateOrJoinNetworkModal({ onClose, onCreated, onJoined }) {
         <div className="dialog-header">
           <span className="dialog-title">{tab === 'create' ? 'Create a network' : 'Join a network'}</span>
           <button className="dialog-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
           </button>
         </div>
 
@@ -74,7 +75,7 @@ export function CreateOrJoinNetworkModal({ onClose, onCreated, onJoined }) {
   );
 }
 
-// Matches the Discord reference: radio-style channel-type cards, a
+// Radio-style channel-type cards, a
 // #-prefixed name field, and a "Private Channel" toggle. Type cards and the
 // name field are fully wired; the Private Channel toggle is visual-only for
 // now (same reason as the Permissions tab — no channel-level view gating
@@ -111,7 +112,7 @@ export function CreateChannelModal({ presetType, categoryName, onClose, onCreate
     },
     {
       key: 'FORUM', label: 'Forum', desc: 'Create a space for organized discussions', disabled: true,
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="chat" /></svg>,
     },
   ];
 
@@ -124,7 +125,7 @@ export function CreateChannelModal({ presetType, categoryName, onClose, onCreate
             {categoryName && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>in {categoryName}</div>}
           </div>
           <button className="dialog-close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><Glyph n="close" /></svg>
           </button>
         </div>
 
@@ -182,7 +183,7 @@ export function CreateChannelModal({ presetType, categoryName, onClose, onCreate
 
           <label style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, cursor: 'pointer', padding: '12px 0', borderRadius: 6 }}>
             <div style={{ display: 'flex', gap: 12, flex: 1 }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--text-secondary)', marginTop: 2, flexShrink: 0 }}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ color: 'var(--text-secondary)', marginTop: 2, flexShrink: 0 }}><Glyph n="lock" /></svg>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Private Channel</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.4 }}>Only selected members and roles will be able to view this channel.</div>
@@ -230,7 +231,7 @@ export function CreateCategoryModal({ onClose, onCreated, onCreate }) {
         <div className="dialog-header">
           <span className="dialog-title">Create Category</span>
           <button className="dialog-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
           </button>
         </div>
         <div className="dialog-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

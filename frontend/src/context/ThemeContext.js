@@ -37,7 +37,7 @@ const THEME_ACCENTS = {
     { id: 'blue-cyan',   label: 'Blue Cyan',   from: '#1a6fff', to: '#06c8ff', accent: '#1a6fff' },
     { id: 'teal',        label: 'Teal',        from: '#0ea5e9', to: '#14b8a6', accent: '#0ea5e9' },
   ],
-  'dracula': [
+  'mulberry': [
     { id: 'purple-pink', label: 'Purple Pink', from: '#a855f7', to: '#f72585', accent: '#a855f7' },
     { id: 'violet',      label: 'Violet',      from: '#8b5cf6', to: '#6d28d9', accent: '#8b5cf6' },
     { id: 'hot-pink',    label: 'Hot Pink',    from: '#ec4899', to: '#db2777', accent: '#ec4899' },
@@ -79,7 +79,7 @@ const THEME_DEFAULT_ACCENT = {
   'terminal':      'green',
   'volcanic':      'red',
   'nordic':        'sky',
-  'dracula':       'purple-pink',
+  'mulberry':      'purple-pink',
   'galaxy':        'purple-pink',
   'light-default': 'blue-violet',
   'light-warm':    'amber',
@@ -303,7 +303,7 @@ const THEME_PRESETS = [
     },
   },
   {
-    id: 'dracula', label: 'Dracula', dark: true,
+    id: 'mulberry', label: 'Mulberry', dark: true,
     swatch: 'linear-gradient(135deg, #242535 50%, #bd93f9)',
     vars: {
       '--bg-body':     '#242535',
@@ -437,25 +437,17 @@ function applyThemePreset(preset, setThemeFn) {
   if (setThemeFn) setThemeFn(preset.dark === false ? 'light' : 'dark');
 }
 
-// Bubble shape presets — keyed by id, applied as [data-bubble-style] on <html>
-const BUBBLE_STYLES = [
-  { id: 'classic', label: 'Classic' },
-  { id: 'telegram-tail', label: 'Telegram tail' },
-];
-
-export { ACCENT_PRESETS, THEME_ACCENTS, THEME_DEFAULT_ACCENT, THEME_PRESETS, BUBBLE_STYLES };
+export { ACCENT_PRESETS, THEME_ACCENTS, THEME_DEFAULT_ACCENT, THEME_PRESETS };
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => localStorage.getItem('omni_theme') || 'dark');
   const [accentId, setAccentId] = useState(() => localStorage.getItem('omni_accent_id') || 'blue-violet');
-  const [themePresetId, setThemePresetId] = useState(() => localStorage.getItem('omni_theme_preset') || 'default');
-  const [bubbleStyleId, setBubbleStyleId] = useState(() => localStorage.getItem('omni_bubble_style') || 'classic');
+  const [themePresetId, setThemePresetId] = useState(() => {
+    const saved = localStorage.getItem('omni_theme_preset');
+    return THEME_PRESETS.some(p => p.id === saved) ? saved : 'default'; // ignore ids that no longer exist
+  });
 
-  // Apply bubble style
-  useEffect(() => {
-    document.documentElement.setAttribute('data-bubble-style', bubbleStyleId);
-    localStorage.setItem('omni_bubble_style', bubbleStyleId);
-  }, [bubbleStyleId]);
+
 
   // Apply theme
   useEffect(() => {
@@ -477,7 +469,6 @@ export function ThemeProvider({ children }) {
     const handler = (e) => {
       if (e.key === 'omni_theme'        && e.newValue) setTheme(e.newValue);
       if (e.key === 'omni_accent_id'    && e.newValue) setAccentId(e.newValue);
-      if (e.key === 'omni_bubble_style' && e.newValue) setBubbleStyleId(e.newValue);
     };
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
@@ -526,13 +517,12 @@ export function ThemeProvider({ children }) {
   };
 
   const setThemePreset = (id) => setThemePresetId(id);
-  const setBubbleStyle = (id) => setBubbleStyleId(id);
 
   // Accents available for the current theme
   const currentAccents = THEME_ACCENTS[themePresetId] || THEME_ACCENTS['default'];
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, accentId, setAccent, ACCENT_PRESETS, currentAccents, THEME_ACCENTS, themePresetId, setThemePreset, THEME_PRESETS, bubbleStyleId, setBubbleStyle, BUBBLE_STYLES }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, accentId, setAccent, ACCENT_PRESETS, currentAccents, THEME_ACCENTS, themePresetId, setThemePreset, THEME_PRESETS }}>
       {children}
     </ThemeContext.Provider>
   );

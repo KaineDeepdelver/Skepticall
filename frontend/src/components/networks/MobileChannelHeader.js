@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { notifApi } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import Glyph from '../icons/Glyph';
 
 const TYPE_LABEL = { TEXT: '', VOICE: '(voice)', ANNOUNCEMENT: '(announcements)' };
 
@@ -31,9 +32,7 @@ export default function MobileChannelHeader({ channel, network, onBack, onOpenSe
   return (
     <div className="mobile-channel-header">
       <button className="mobile-channel-back" onClick={onBack} aria-label="Back to channel list">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" width="22" height="22">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" width="22" height="22"><Glyph n="chevron-left" /></svg>
         {unread > 0 && <span className="mobile-channel-back-badge">{unread > 99 ? '99+' : unread}</span>}
       </button>
 

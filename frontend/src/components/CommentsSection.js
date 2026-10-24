@@ -3,6 +3,7 @@ import { api, API_BASE, replyApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useRequireAccount } from '../hooks/useRequireAccount';
 import UserAvatar from './UserAvatar';
+import Glyph from './icons/Glyph';
 
 const EMOJI_ROWS = [
   ['👍','❤️','😂','😮','😢','😡'],
@@ -63,7 +64,7 @@ function ReplyBox({ parentId, authorId, onAdded }) {
         onBlur={e=>e.target.style.borderColor='var(--border-input)'}
       />
       <button onClick={submit} style={{background:'var(--accent)',border:'none',color:'var(--accent-text)',width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><Glyph n="send" /></svg>
       </button>
     </div>
   );
@@ -208,7 +209,7 @@ export default function CommentsSection({ type, targetId }) {
           onBlur={e=>e.target.style.borderColor='var(--border-input)'}
         />
         <button onClick={submit} style={{background:'var(--accent)',border:'none',color:'var(--accent-text)',width:32,height:32,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><Glyph n="send" /></svg>
         </button>
       </div>
     </div>

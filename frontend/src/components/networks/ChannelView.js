@@ -4,6 +4,7 @@ import { useWebSocket } from '../../hooks/useWebSocket';
 import UserAvatar from '../UserAvatar';
 import NetworkUserPopover from './NetworkUserPopover';
 import VoiceChannelRoom from './VoiceChannelRoom';
+import Glyph from '../icons/Glyph';
 
 function formatTime(iso) {
   try {
@@ -224,8 +225,8 @@ function ChannelVoiceBubble({ src, durationHint = 0, waveformPeaks }) {
         }}
       >
         {playing
-          ? <svg viewBox="0 0 24 24" fill="#fff" width="12" height="12"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
-          : <svg viewBox="0 0 24 24" fill="#fff" width="12" height="12" style={{ marginLeft: 1 }}><polygon points="5,3 19,12 5,21" /></svg>}
+          ? <svg viewBox="0 0 24 24" fill="#fff" width="12" height="12"><Glyph n="pause" /></svg>
+          : <svg viewBox="0 0 24 24" fill="#fff" width="12" height="12" style={{ marginLeft: 1 }}><Glyph n="play" /></svg>}
       </button>
 
       <audio
@@ -274,9 +275,7 @@ function ChannelVoiceBubble({ src, durationHint = 0, waveformPeaks }) {
           color: pitchSynced ? 'var(--accent)' : 'var(--text-muted)',
         }}
       >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 12h3l2 5 4-16 3 11 2-5h4" />
-        </svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><Glyph n="pulse" /></svg>
       </button>
     </div>
   );
@@ -593,7 +592,7 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
 
   function handleDeleteClick(m, e) {
     if (e?.shiftKey) {
-      performDelete(m); // hold shift to skip the confirmation, same as Discord
+      performDelete(m); // hold shift to skip the confirmation
     } else {
       setDeleteModalTarget(m);
     }
@@ -670,7 +669,7 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
                   fontSize: 12, color: 'var(--text-muted)', cursor: m.parentDeleted ? 'default' : 'pointer', maxWidth: 460,
                 }}
               >
-                {/* Discord-style curved connector: drops from above, curves right into the quoted line */}
+                {/* curved connector: drops from above, curves right into the quoted line */}
                 <svg width="26" height="14" viewBox="0 0 26 14" style={{ flexShrink: 0, overflow: 'visible' }}>
                   <path d="M 6 0 V 6 C 6 10 9 10 13 10 H 22" fill="none" stroke={m.parentDeleted ? 'var(--text-muted)' : 'var(--accent)'} strokeWidth="2" strokeLinecap="round" />
                 </svg>
@@ -922,14 +921,14 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
             style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-input)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-primary)' }}
           >
             {paused
-              ? <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><polygon points="5,3 19,12 5,21" /></svg>
-              : <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>}
+              ? <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><Glyph n="play" /></svg>
+              : <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><Glyph n="pause" /></svg>}
           </button>
           <button
             onClick={sendRecording}
             style={{ background: 'var(--accent)', border: 'none', color: 'var(--accent-text)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><Glyph n="send" /></svg>
           </button>
         </div>
       ) : (
@@ -949,12 +948,7 @@ export default function ChannelView({ networkId, channel, currentUserId, hideHea
             title="Voice message"
             style={{ flexShrink: 0 }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="mic" /></svg>
           </button>
         </div>
       )}

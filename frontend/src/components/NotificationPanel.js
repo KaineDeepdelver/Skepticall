@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notifApi, API_BASE } from '../services/api';
+import Glyph from './icons/Glyph';
 
 const MAX_NOTIFS = 10;
 
@@ -150,10 +151,7 @@ function typeIcon(type) {
       );
     case 'MESSAGE':
       return (
-        <svg {...s} viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5">
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-          <polyline points="22,6 12,13 2,6"/>
-        </svg>
+        <svg {...s} viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5"><Glyph n="mail" /></svg>
       );
     default:
       return null;
@@ -257,9 +255,7 @@ export default function NotificationPanel({ userId, onClose, onReadCountChange }
             onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><Glyph n="close" /></svg>
           </button>
         </div>
 

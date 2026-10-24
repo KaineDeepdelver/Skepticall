@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { friendApi } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar from '../UserAvatar';
+import Glyph from '../icons/Glyph';
 
 /**
- * Discord-style "Invite friends" modal. Two ways in: pick a friend from the
+ * "Invite friends" modal. Two ways in: pick a friend from the
  * list (real friends, via friendApi.list), or copy the network's invite
  * link. There's no per-friend invite-delivery backend (no DM-send REST
  * endpoint to piggyback on — messaging here is WebSocket-only), so the
@@ -80,12 +81,12 @@ export default function InviteFriendsModal({ network, channel, onClose }) {
               )}
             </div>
             <button onClick={onClose} style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><Glyph n="close" /></svg>
             </button>
           </div>
 
           <div style={{ position: 'relative', marginTop: 14 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Glyph n="search" /></svg>
             <input
               className="auth-input" style={{ paddingLeft: 36 }}
               placeholder="Search for friends"

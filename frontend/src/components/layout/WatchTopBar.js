@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import OmniLogo from '../OmniLogo';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE } from '../../services/api';
+import Glyph from '../icons/Glyph';
 
 function DefaultAvatar({ size = 32, name = '' }) {
   const initials = (name || '?').slice(0, 2).toUpperCase();
@@ -48,9 +49,7 @@ export default function WatchTopBar({ reactive, onBack }) {
           onClick={onBack || (() => navigate(-1))}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, padding: 4, borderRadius: 4, fontSize: 14 }}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20"><Glyph n="chevron-left" /></svg>
         </button>
         <OmniLogo size={20} onClick={() => navigate('/')} />
       </div>

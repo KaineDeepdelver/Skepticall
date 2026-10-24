@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { useWS } from '../context/WebSocketContext';
 import { API_BASE } from '../services/api';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Glyph from './icons/Glyph';
 
 // Module-level — persists until user visits /messages
 const msgCounts = {};
@@ -80,9 +81,7 @@ function ToastBubble({ text, avatar, name, count, onClick }) {
       </div>
 
       {/* chevron */}
-      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" width="13" height="13" style={{ flexShrink: 0 }}>
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" width="13" height="13" style={{ flexShrink: 0 }}><Glyph n="chevron-right" /></svg>
     </div>
   );
 }

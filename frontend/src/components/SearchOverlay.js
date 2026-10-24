@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api, API_BASE, followApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import UserAvatar from './UserAvatar';
+import Glyph from './icons/Glyph';
 
 function fmtTime(iso) {
   if (!iso) return '';
@@ -88,9 +89,7 @@ export default function SearchOverlay({ onClose }) {
         {/* Search input header */}
         <div style={{ padding: '16px 16px 0', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg-input)', border: '1px solid var(--accent)', borderRadius: 24, padding: '10px 16px' }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ color: 'var(--accent)', flexShrink: 0 }}>
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ color: 'var(--accent)', flexShrink: 0 }}><Glyph n="search" /></svg>
             <input
               ref={inputRef}
               value={query}
@@ -100,11 +99,11 @@ export default function SearchOverlay({ onClose }) {
             />
             {query && (
               <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2, display: 'flex' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><Glyph n="close" /></svg>
               </button>
             )}
             <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2, display: 'flex', marginLeft: 4 }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
             </button>
           </div>
 
@@ -130,9 +129,7 @@ export default function SearchOverlay({ onClose }) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px 20px' }}>
           {!query.trim() ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ display: 'block', margin: '0 auto 12px', opacity: 0.3 }}>
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ display: 'block', margin: '0 auto 12px', opacity: 0.3 }}><Glyph n="search" /></svg>
               <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Search Skepticall</div>
               <div style={{ fontSize: 13 }}>Find people, posts, and videos</div>
             </div>
@@ -185,7 +182,7 @@ export default function SearchOverlay({ onClose }) {
                       onClick={onClose}>
                       <div style={{ width: 100, height: 58, borderRadius: 6, background: '#000', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
                         {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="1.5" width="20" height="20"><polygon points="5,3 19,12 5,21"/></svg></div>}
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="1.5" width="20" height="20"><Glyph n="play" /></svg></div>}
                         <div style={{ position: 'absolute', bottom: 3, right: 4, background: 'rgba(0,0,0,0.75)', color: '#fff', fontSize: 9, padding: '1px 5px', borderRadius: 3 }}>{fmtViews(v.viewCount)}</div>
                       </div>
                       <div style={{ minWidth: 0 }}>

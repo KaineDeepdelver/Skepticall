@@ -99,7 +99,7 @@ export default function ProfilePage() {
           ← Back
         </button>
 
-        {/* Banner — full width, YouTube-style */}
+        {/* Banner — full width, */}
         <div style={{ position: 'relative', width: '100%', height: 200, borderRadius: 12, overflow: 'hidden', marginTop: 8, background: banner ? undefined : 'linear-gradient(135deg,#1a3a5c,#0f2040)' }}>
           {banner && <img src={banner} alt="banner" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
         </div>

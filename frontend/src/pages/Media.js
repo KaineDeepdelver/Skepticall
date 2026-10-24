@@ -5,6 +5,7 @@ import { useRequireAccount } from '../hooks/useRequireAccount';
 import { api, adminApi, API_BASE, followApi, resolveUrl } from '../services/api';
 import CommentsPanel from '../components/CommentsPanel';
 import ConfirmModal from '../components/ConfirmModal';
+import Glyph from '../components/icons/Glyph';
 
 /* ── helpers ── */
 function useIsDesktop() {
@@ -32,20 +33,15 @@ function fmtViews(n) {
   return String(n || 0);
 }
 
-/* ── Ambient/cinematic glow — matched to what YouTube's page config
-   actually reveals (cinematicContainerRenderer), not a guess:
-     "presentationStyle": "CINEMATIC_CONTAINER_PRESENTATION_STYLE_DYNAMIC_SINGLE_COLOR"
-     "animationConfig": { "minImageUpdateIntervalMs": 5000, "crossfadeDurationMs": 5000, "maxFrameRate": 30 }
-     "colorStore": { "sampledColors": [{ "key": "0", "value": <packed ARGB int> }, { "key": "5000", ... }, ...] }
-   i.e. it is NOT a second video playing behind the first, and NOT a
-   continuous per-frame canvas draw. It's a single dominant color, sampled
-   once every 5s, cross-faded into the next sample over the next 5s. We
-   don't have a backend that precomputes this, so we sample it live off
-   the real <video> element (no duplicate stream needed) on the same
-   cadence, and let CSS transition the color change. ── */
-const CINEMATIC_SAMPLE_MS    = 5000; // minImageUpdateIntervalMs
-const CINEMATIC_CROSSFADE_MS = 5000; // crossfadeDurationMs — for the background-color property itself, once visible
-const CINEMATIC_OPACITY      = 0.92; // pushed well past the real decoded alpha (~0.6) — averaged video frames wash out fast, so a stronger glow reads better in practice
+/* ── Ambient/cinematic glow ──────────────────────────────────────────────
+   A single dominant color, sampled once every 5s from the playing video and
+   cross-faded into the next sample over the following 5s. It is not a second
+   video playing behind the first and not a per-frame canvas draw. We sample
+   it live off the real <video> element (no duplicate stream needed) and let
+   CSS transition the color change. ── */
+const CINEMATIC_SAMPLE_MS    = 5000; // how often to re-sample
+const CINEMATIC_CROSSFADE_MS = 5000; // crossfade length for the background-color property itself, once visible
+const CINEMATIC_OPACITY      = 0.92; // pushed well past a natural alpha (~0.6) — averaged video frames wash out fast, so a stronger glow reads better in practice
 const TOGGLE_FADE_MS         = 400;  // separate, snappier fade for the on/off toggle itself — 5s to appear after flipping a switch reads as "broken", not "cinematic"
 
 /* Pushes a sampled {r,g,b} away from its own average brightness, i.e. a
@@ -64,9 +60,8 @@ function boostColor({ r, g, b }, factor = 2.2) {
 
 /* Averages a downscaled frame from a <video> (or <img>) into one {r,g,b}.
    Drawing to a tiny canvas and averaging is the cheap client-side
-   equivalent of "sample a dominant color" — same idea as YouTube's
-   applyClientImageBlur + blurStrength, just done by us instead of their
-   backend. Requires the source to not be CORS-tainted (crossOrigin +
+   equivalent of "sample a dominant color", done entirely in the browser.
+   Requires the source to not be CORS-tainted (crossOrigin +
    proper Access-Control-Allow-Origin from wherever the video is served);
    fails silently (keeps last color) otherwise. */
 function sampleDominantColor(source) {
@@ -86,7 +81,7 @@ function sampleDominantColor(source) {
   }
 }
 
-/* Re-samples a video's dominant color on the same 5s cadence YouTube uses,
+/* Re-samples a video's dominant color on the same 5s cadence,
    while `active`. `getSource` returns the current <video> element to
    sample — a function rather than a plain ref because in some callers
    (the clips carousel) which element is "active" changes as slides swap. */
@@ -146,10 +141,10 @@ function Avatar({ src, name, size=36, onClick }) {
 /* SVG icons */
 const LikeIcon    = ({active}) => <svg viewBox="0 0 24 24" fill={active?'var(--accent)':'none'} stroke={active?'var(--accent)':'currentColor'} strokeWidth="2" width="15" height="15"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>;
 const DislikeIcon = ({active}) => <svg viewBox="0 0 24 24" fill={active?'#e06060':'none'} stroke={active?'#e06060':'currentColor'} strokeWidth="2" width="15" height="15"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>;
-const CommentIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
-const BackIcon    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>;
-const UploadIcon  = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
-const PlayIcon    = () => <svg viewBox="0 0 24 24" fill="white" width="28" height="28"><polygon points="5,3 19,12 5,21"/></svg>;
+const CommentIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="chat" /></svg>;
+const BackIcon    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="chevron-left" /></svg>;
+const UploadIcon  = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="plus" /></svg>;
+const PlayIcon    = () => <svg viewBox="0 0 24 24" fill="white" width="28" height="28"><Glyph n="play" /></svg>;
 const DotsIcon    = () => <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>;
 
 /* ── 3-dot menu for owned video ── */
@@ -167,19 +162,19 @@ function VideoMenu({ itemId, onDelete, onAdminDelete, onBack, isOwn, isAdmin }) 
   const menuItems = [
     {
       label: 'Copy link',
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="link" /></svg>,
       onClick: () => { setOpen(false); navigator.clipboard?.writeText(window.location.href); },
     },
     { divider: true },
     ...(isOwn ? [{
       label: 'Delete video',
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>,
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="trash" /></svg>,
       onClick: () => { setOpen(false); onDelete(itemId); },
       danger: true,
     }] : []),
     ...(isAdmin && !isOwn ? [{
       label: 'Delete video (admin)',
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><Glyph n="shield" /></svg>,
       onClick: () => { setOpen(false); onAdminDelete(itemId); },
       danger: true,
     }] : []),
@@ -451,7 +446,7 @@ function UploadModal({ userId, onClose, onUploaded }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 0' }}>
           <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Upload</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
           </button>
         </div>
 
@@ -511,7 +506,7 @@ function UploadModal({ userId, onClose, onUploaded }) {
                 <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                   {file ? (
                     <>
-                      <svg viewBox="0 0 24 24" fill="none" stroke={durationErr ? '#e94560' : accentColor} strokeWidth="2" width="24" height="24"><polyline points="20 6 9 17 4 12"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke={durationErr ? '#e94560' : accentColor} strokeWidth="2" width="24" height="24"><Glyph n="check" /></svg>
                       <span style={{ fontSize: 11, color: durationErr ? '#e94560' : accentColor, fontWeight: 600, textAlign: 'center', padding: '0 8px', maxWidth: 120, wordBreak: 'break-all' }}>{file.name}</span>
                       <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Click to replace</span>
                     </>
@@ -529,7 +524,7 @@ function UploadModal({ userId, onClose, onUploaded }) {
               </div>
               {isClip && (
                 <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 16, background: 'var(--bg-hover)', border: '1px solid var(--border-input)' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#e94560" strokeWidth="2.5" width="11" height="11"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#e94560" strokeWidth="2.5" width="11" height="11"><Glyph n="clock" /></svg>
                   <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>Max 5 min</span>
                 </div>
               )}
@@ -703,7 +698,7 @@ function ClipPlayer({ clips, startIndex, onClose, onVoteExternal }) {
   const clip     = rawClip ? { ...rawClip, ...(overrides[rawClip.id] || {}) } : null;
 
   // Ambient mode — samples the active slide's own <video> for its dominant
-  // color every CINEMATIC_SAMPLE_MS (5s, matching YouTube's real config) and
+  // color every CINEMATIC_SAMPLE_MS (5s) and
   // lets CSS crossfade a radial-gradient glow between samples. No second
   // video stream, no per-frame canvas draw — see sampleDominantColor above.
   const { mounted: glowMounted, visible: glowVisible } = useFadeMount(ambientMode && isDesktop);
@@ -931,8 +926,8 @@ function ClipPlayer({ clips, startIndex, onClose, onVoteExternal }) {
               {/* Mute toggle */}
               <button onClick={e => { e.stopPropagation(); setMuted(m => !m); }} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 'auto' }}>
                 {muted
-                  ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-                  : <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="16" height="16"><Glyph n="volume" /></svg>
+                  : <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="16" height="16"><Glyph n="volume" /></svg>
                 }
               </button>
 
@@ -1022,7 +1017,7 @@ function ClipPlayer({ clips, startIndex, onClose, onVoteExternal }) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid #262626', flexShrink: 0 }}>
                 <span style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>Description</span>
                 <button onClick={() => setDescriptionOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="close" /></svg>
                 </button>
               </div>
               <div style={{ padding: '14px 16px', overflowY: 'auto' }}>
@@ -1050,7 +1045,7 @@ function ClipPlayer({ clips, startIndex, onClose, onVoteExternal }) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid #262626', flexShrink: 0 }}>
                 <span style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>Comments</span>
                 <button onClick={() => setCommentsOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><Glyph n="close" /></svg>
                 </button>
               </div>
               <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -1121,7 +1116,7 @@ function ClipActions({ clip, isDesktop, commentsOpen, onVote, onToggleComments, 
     },
     {
       id: 'comment',
-      icon: <svg viewBox="0 0 24 24" fill={commentsOpen ? '#fff' : 'none'} stroke="white" strokeWidth="2" width={isDesktop ? 22 : 24} height={isDesktop ? 22 : 24}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+      icon: <svg viewBox="0 0 24 24" fill={commentsOpen ? '#fff' : 'none'} stroke="white" strokeWidth="2" width={isDesktop ? 22 : 24} height={isDesktop ? 22 : 24}><Glyph n="chat" /></svg>,
       label: fmtViews(clip.commentCount || 0),
       onClick: onToggleComments,
       active: commentsOpen,
@@ -1514,10 +1509,7 @@ function VideoPlayer({ src, onPlay: onPlayCb, isFullscreen, onToggleFullscreen, 
     if (videoRef.current) videoRef.current.playbackRate = val;
   }
 
-  // Keyboard shortcuts — YouTube confirms it has exactly this feature (its
-  // page schema whitelists a "hotkeyDialogRenderer" for a "?" help dialog),
-  // though the specific key list here is our own standard mapping since the
-  // dialog's actual copy isn't present in a homepage config dump. Ignored
+  // Keyboard shortcuts, with a "?" help dialog. Ignored
   // while typing in an input/textarea/contentEditable elsewhere on the page.
   useEffect(() => {
     function onKey(e) {
@@ -1588,8 +1580,7 @@ function VideoPlayer({ src, onPlay: onPlayCb, isFullscreen, onToggleFullscreen, 
   );
 
   // Ambilight / Reactive mode — samples the real player's own <video> for
-  // its dominant color every CINEMATIC_SAMPLE_MS (5s, matching YouTube's
-  // actual cinematicContainerRenderer config) and CSS-crossfades a radial
+  // its dominant color every CINEMATIC_SAMPLE_MS (5s) and CSS-crossfades a radial
   // glow between samples. No second video stream needed at all.
   const glowColor = useDominantColorGlow(reactive, videoRef);
   const boostedGlow = glowColor ? boostColor(glowColor) : null;
@@ -1603,13 +1594,13 @@ function VideoPlayer({ src, onPlay: onPlayCb, isFullscreen, onToggleFullscreen, 
       height: isFullscreen ? '100%' : undefined, overflow: 'visible' }}>
 
       {/* Ambient glow — anchored to the player itself so it scrolls with the video.
-          A dominant color sampled off the real video, cross-faded on YouTube's
-          own cadence (5s sample / 5s crossfade), rather than a blurred duplicate
+          A dominant color sampled off the real video, cross-faded
+          on a 5s sample / 5s crossfade cadence, rather than a blurred duplicate
           video stream — see sampleDominantColor / useDominantColorGlow above.
           Rendered as a layered box-shadow sitting flush against the player's
           own rect (rather than a radial-gradient blob inset behind it), so the
           glow hugs all four edges evenly and reads as a halo/border wrapping
-          the video, the way YouTube's ambilight actually looks. */}
+          the video. */}
       {glowMounted && boostedGlow && (
         <div
           style={{
@@ -1659,7 +1650,7 @@ function VideoPlayer({ src, onPlay: onPlayCb, isFullscreen, onToggleFullscreen, 
           onMouseEnter={e => { e.currentTarget.style.height = '5px'; }}
           onMouseLeave={e => { e.currentTarget.style.height = '3px'; setShowPreview(false); }}>
 
-          {/* Hover scrub preview — frame thumbnail + timestamp, YouTube-style */}
+          {/* Hover scrub preview — frame thumbnail + timestamp, */}
           {showPreview && duration > 0 && (
             <div
               style={{
@@ -1691,14 +1682,14 @@ function VideoPlayer({ src, onPlay: onPlayCb, isFullscreen, onToggleFullscreen, 
           {iconBtn(togglePlay,
             playing
               ? <svg viewBox="0 0 24 24" fill="#fff" width="20" height="20"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-              : <svg viewBox="0 0 24 24" fill="#fff" width="20" height="20"><polygon points="5,3 19,12 5,21"/></svg>,
+              : <svg viewBox="0 0 24 24" fill="#fff" width="20" height="20"><Glyph n="play" /></svg>,
             playing ? 'Pause' : 'Play'
           )}
 
           {iconBtn(toggleMute,
             muted || volume === 0
-              ? <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" width="18" height="18"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-              : <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" width="18" height="18"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>,
+              ? <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" width="18" height="18"><Glyph n="volume" /></svg>
+              : <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" width="18" height="18"><Glyph n="volume" /></svg>,
             'Mute'
           )}
           <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={changeVolume}
@@ -1727,7 +1718,7 @@ function VideoPlayer({ src, onPlay: onPlayCb, isFullscreen, onToggleFullscreen, 
             )}
             <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.3)', margin: '0 4px' }} />
             {iconBtn(onToggleComments,
-              <svg viewBox="0 0 24 24" fill={commentsOpen?'#fff':'none'} stroke="#fff" strokeWidth="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+              <svg viewBox="0 0 24 24" fill={commentsOpen?'#fff':'none'} stroke="#fff" strokeWidth="2" width="18" height="18"><Glyph n="chat" /></svg>,
               commentsOpen ? 'Hide comments' : 'Show comments', commentsOpen
             )}
             <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.3)', margin: '0 4px' }} />
@@ -1766,14 +1757,12 @@ function VideoPlayer({ src, onPlay: onPlayCb, isFullscreen, onToggleFullscreen, 
             <button title="Settings" onClick={e => { e.stopPropagation(); setSettingsOpen(o => !o); setSettingsPage('main'); }}
               style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px 7px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" width="18" height="18"
-                style={{ transform: settingsOpen ? 'rotate(30deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
-                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
+                style={{ transform: settingsOpen ? 'rotate(30deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}><Glyph n="sliders" /></svg>
             </button>
 
             {settingsOpen && (
               <div onClick={e => e.stopPropagation()}
-                style={{ position: 'absolute', bottom: 44, right: 0, background: 'rgba(28,28,28,0.93)', border: 'none', borderRadius: 8, minWidth: 250, padding: '6px 0', zIndex: 500, backdropFilter: 'none', boxShadow: '0 2px 10px rgba(0,0,0,0.5)', fontFamily: '"YouTube Sans", Roboto, Arial, sans-serif' }}>
+                style={{ position: 'absolute', bottom: 44, right: 0, background: 'rgba(28,28,28,0.93)', border: 'none', borderRadius: 8, minWidth: 250, padding: '6px 0', zIndex: 500, backdropFilter: 'none', boxShadow: '0 2px 10px rgba(0,0,0,0.5)', fontFamily: 'Inter, system-ui, sans-serif' }}>
 
                 {settingsPage === 'main' && <>
                   {/* Quality */}
@@ -1828,7 +1817,7 @@ function VideoPlayer({ src, onPlay: onPlayCb, isFullscreen, onToggleFullscreen, 
                       onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                       <span style={{ paddingLeft: quality === q ? 0 : 24 }}>{q}</span>
-                      {quality === q && <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" width="16" height="16" style={{ marginLeft: -20 }}><polyline points="20 6 9 17 4 12"/></svg>}
+                      {quality === q && <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" width="16" height="16" style={{ marginLeft: -20 }}><Glyph n="check" /></svg>}
                     </button>
                   ))}
                 </>}
@@ -1846,7 +1835,7 @@ function VideoPlayer({ src, onPlay: onPlayCb, isFullscreen, onToggleFullscreen, 
                       onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                       <span style={{ paddingLeft: speed === s ? 0 : 24 }}>{s === 1 ? 'Normal' : `${s}x`}</span>
-                      {speed === s && <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" width="16" height="16" style={{ marginLeft: -20 }}><polyline points="20 6 9 17 4 12"/></svg>}
+                      {speed === s && <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" width="16" height="16" style={{ marginLeft: -20 }}><Glyph n="check" /></svg>}
                     </button>
                   ))}
                 </>}
@@ -1871,8 +1860,7 @@ function VideoPlayer({ src, onPlay: onPlayCb, isFullscreen, onToggleFullscreen, 
       </div>
     </div>
 
-    {/* Keyboard shortcuts dialog — the feature YouTube's own schema confirms
-        exists (hotkeyDialogRenderer / hotkeyDialogSectionRenderer) */}
+    {/* Keyboard shortcuts dialog */}
     {showShortcuts && (
         <div onClick={e => { e.stopPropagation(); setShowShortcuts(false); }}
           style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
@@ -1964,7 +1952,7 @@ function VideoActionMenu() {
   );
 }
 
-/* ── VideoView — YouTube-style layout ── */
+/* ── VideoView — layout ── */
 export function VideoView({ item: initialItem, userId, isAdmin, onBack, onVoteExternal, onDelete, onAdminDelete, allItems, onSelectItem, externalReactiveMode, onReactiveModeChange }) {
   const requireAccount = useRequireAccount();
   const navigate = useNavigate();
@@ -2051,7 +2039,7 @@ export function VideoView({ item: initialItem, userId, isAdmin, onBack, onVoteEx
           }} />
       )}
       <style>{`
-        /* ── Video Player Page — Mobile YouTube layout ── */
+        /* ── Video Player Page — Mobile layout ── */
         @media (max-width: 768px) {
           .videoview-root {
             flex-direction: column !important;
@@ -2217,7 +2205,7 @@ export function VideoView({ item: initialItem, userId, isAdmin, onBack, onVoteEx
 
               {/* Save */}
               <button className="videoview-action-btn" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: 'var(--bg-hover)', border: 'none', borderRadius: 20, color: 'var(--text-primary)', cursor: 'pointer', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="bookmark" /></svg>
                 <span className="videoview-action-btn-text">Save</span>
               </button>
 
@@ -2441,7 +2429,7 @@ export default function Media() {
         <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>Loading…</div>
       ) : items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 80, color: 'var(--text-muted)' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="52" height="52" style={{display:"block",margin:"0 auto 16px",color:"var(--text-muted)"}}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="52" height="52" style={{display:"block",margin:"0 auto 16px",color:"var(--text-muted)"}}><Glyph n="video" /></svg>
           <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>No videos yet</div>
           {user && <button onClick={() => setShowUpload(true)} style={{ background: 'var(--accent)', border: 'none', color: 'var(--accent-text)', padding: '10px 28px', borderRadius: 20, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>Upload Video</button>}
         </div>

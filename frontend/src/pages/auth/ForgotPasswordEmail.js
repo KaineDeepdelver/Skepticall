@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 export default function ForgotPasswordEmail() {
   const { theme } = useTheme();
-  const [email, setEmail]     = useState('');
+  const location = useLocation();
+  const [email, setEmail]     = useState(location.state?.email || '');
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();

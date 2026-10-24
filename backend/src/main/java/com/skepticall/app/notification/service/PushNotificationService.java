@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 // https://exp.host/--/api/v2/push/send
 //
 // Expo's service is what actually talks to FCM (Android) and APNs (iOS)
-// on our behalf, so nothing here deals with Firebase or Apple credentials
+// on our behalf, so nothing here deals with push-provider credentials
 // directly — that's all handled on the RN app's build/EAS side, not here.
 @Service
 @RequiredArgsConstructor

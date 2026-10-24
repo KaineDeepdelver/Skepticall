@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * WhatsApp-style retention: the server is a delivery pipe, not the chat history.
+ * retention: the server is a delivery pipe, not the chat history.
  *
  *  - A message waits here until the receiver's device confirms it stored it (an "ack").
  *  - A few minutes after the ack it is deleted for good, together with its media in the bucket.

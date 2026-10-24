@@ -15,7 +15,7 @@ import NetworkSettingsModal from '../components/networks/NetworkSettingsModal';
 import ConfirmModal from '../components/ConfirmModal';
 
 /**
- * Top-level Networks page — the Discord-style section: a rail of joined
+ * Top-level Networks page — the servers section: a rail of joined
  * networks, a channel sidebar for whichever one's active, and the chat
  * panel for whichever channel's active. Lives inside AppLayout (nav
  * sidebar + TopBar stay put; this only owns the content area).

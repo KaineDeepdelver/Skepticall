@@ -48,7 +48,7 @@ public class GroupMessage extends BaseEntity {
     // operation's nonce.
     private String mediaNonce;
 
-    // Call-log entries (type == "CALL") — WhatsApp-style "X started a
+    // Call-log entries (type == "CALL") — "X started a
     // call" row rendered inline in the chat instead of the raw ephemeral
     // GROUP_CALL_INVITE signal. callId correlates this row back to the
     // in-memory ROOMS entry in GroupCallWsController so a later

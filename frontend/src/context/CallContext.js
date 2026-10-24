@@ -74,10 +74,11 @@ function _unlockAudio() {
   const audio = getRingtoneAudio();
   // Only unlock if not currently ringing (don't interrupt an active ring)
   if (!audio.paused) return;
-  audio.play().then(() => {
-    audio.pause();
-    audio.currentTime = 0;
-  }).catch(() => {});
+  // Muted, so the unlock is silent. Unmuted, the first click/tap on the site
+  // played a blip of the real ringtone before the pause landed.
+  audio.muted = true;
+  const restore = () => { audio.pause(); audio.currentTime = 0; audio.muted = false; };
+  audio.play().then(restore).catch(() => { audio.muted = false; });
 }
 document.addEventListener('click',      _unlockAudio, { once: true });
 document.addEventListener('keydown',    _unlockAudio, { once: true });
@@ -87,6 +88,7 @@ function createRingtone() {
   const audio = getRingtoneAudio();
   // Guard: if already playing (e.g. StrictMode double-call), don't restart
   if (!audio.paused) return { stop() { audio.loop = false; audio.pause(); audio.currentTime = 0; } };
+  audio.muted = false;
   audio.currentTime = 0;
   audio.loop = true;
   audio.play().catch(() => {});

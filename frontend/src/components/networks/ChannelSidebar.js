@@ -1,5 +1,6 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
 import { API_BASE, resolveUrl } from '../../services/api';
+import Glyph from '../icons/Glyph';
 
 const TYPE_ICON = {
   TEXT: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>,
@@ -221,9 +222,7 @@ function CategoryHeader({ category, collapsed, onToggle, onAddChannel, onRenameC
             title="Create Channel"
             style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><Glyph n="plus" /></svg>
           </button>
         )}
       </div>
@@ -239,7 +238,7 @@ function CategoryHeader({ category, collapsed, onToggle, onAddChannel, onRenameC
   );
 }
 
-// Discord-style server dropdown, opened by clicking the network name at the
+// server dropdown, opened by clicking the network name at the
 // top of the sidebar. Only the items with real backend support are wired up
 // (Invite, Create Channel, Create Category, Copy Server ID, Leave Server);
 // the rest are shown for parity with the reference but marked unavailable —
@@ -287,15 +286,15 @@ function ServerMenu({ anchorRef, network, onClose, onInvite, onCreateChannel, on
     boost: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" /></svg>,
     invite: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="16" y1="11" x2="22" y2="11" /></svg>,
     settings: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>,
-    plus: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>,
+    plus: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><Glyph n="plus" /></svg>,
     folderPlus: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /><line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" /></svg>,
     event: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>,
     apps: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>,
     bell: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>,
-    shield: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
+    shield: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><Glyph n="shield" /></svg>,
     edit: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
     id: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><rect x="2" y="4" width="20" height="16" rx="2" /><circle cx="8" cy="10" r="2" /><line x1="14" y1="9" x2="18" y2="9" /><line x1="14" y1="13" x2="18" y2="13" /><line x1="6" y1="15" x2="10" y2="15" /></svg>,
-    leave: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>,
+    leave: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...iconSize}><Glyph n="logout" /></svg>,
   };
 
   return (
@@ -481,9 +480,7 @@ export default function ChannelSidebar({
                 display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
               }}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><Glyph n="plus" /></svg>
               Channel
             </button>
           )}
@@ -496,9 +493,7 @@ export default function ChannelSidebar({
                 display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
               }}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><Glyph n="plus" /></svg>
               Category
             </button>
           )}
