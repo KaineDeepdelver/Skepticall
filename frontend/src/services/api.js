@@ -99,6 +99,19 @@ export function endRememberedSession() {
   return fetch(`${API_BASE}/users/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
 }
 
+// How many requests are waiting on the server right now. TopProgress listens to this.
+let pendingRequests = 0;
+function trackNetwork(promise) {
+  pendingRequests += 1;
+  window.dispatchEvent(new CustomEvent('omni:net', { detail: { pending: pendingRequests } }));
+  const done = () => {
+    pendingRequests = Math.max(0, pendingRequests - 1);
+    window.dispatchEvent(new CustomEvent('omni:net', { detail: { pending: pendingRequests } }));
+  };
+  promise.then(done, done);
+  return promise;
+}
+
 async function req(path, opts = {}, retried = false) {
   const method = (opts.method || 'GET').toUpperCase();
   if (
@@ -111,7 +124,7 @@ async function req(path, opts = {}, retried = false) {
   }
 
   const token = sessionStorage.getItem('omni_token');
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await trackNetwork(fetch(`${API_BASE}${path}`, {
     ...opts,
     ...(CREDENTIAL_PREFIXES.some(p => path.startsWith(p)) ? { credentials: 'include' } : {}),
     headers: {
@@ -121,7 +134,7 @@ async function req(path, opts = {}, retried = false) {
       ...opts.headers,
     },
     body: opts.body instanceof FormData ? opts.body : opts.body ? JSON.stringify(opts.body) : undefined,
-  });
+  }));
   if (res.status === 401 && token && !retried && await refreshAccessToken()) {
     return req(path, opts, true); // the token had expired: same request again with the new one
   }

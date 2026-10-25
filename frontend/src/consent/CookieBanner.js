@@ -8,7 +8,7 @@ import './consent.css';
  * style on purpose: saying no must be exactly as easy as saying yes.
  */
 export default function CookieBanner() {
-  const { panelOpen, decided, google, acceptAll, rejectOptional, setGoogle, close } = useConsent();
+  const { panelOpen, decided, google, acceptAll, rejectOptional, setGoogle, close, saveFailed, dismissSaveFailed } = useConsent();
   const [custom, setCustom] = useState(false);
   const [googleChoice, setGoogleChoice] = useState(google);
   const firstButton = useRef(null);
@@ -22,6 +22,19 @@ export default function CookieBanner() {
     return () => window.removeEventListener('keydown', onKey);
   }, [panelOpen, decided, close]);
 
+  if (!panelOpen && saveFailed) {
+    return (
+      <section className="cb" role="status" aria-live="polite" aria-labelledby="cb-warn-title">
+        <h2 id="cb-warn-title">Your browser isn’t keeping this choice</h2>
+        <p>
+          Private browsing, blocked site data, or a setting that clears data when you close the browser stops us
+          remembering your choice, and keeping you signed in, between visits. You will be asked again next time.
+          Use a normal window and allow site data for this site to make it stick.
+        </p>
+        <div className="cb-actions"><button type="button" className="cb-btn" onClick={dismissSaveFailed}>Got it</button></div>
+      </section>
+    );
+  }
   if (!panelOpen) return null;
 
   return (

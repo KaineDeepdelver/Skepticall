@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { GuestPromptProvider, useGuestPrompt } from './context/GuestPromptContext';
@@ -15,22 +15,25 @@ import AppLayout      from './components/layout/AppLayout';
 import GuestPromptModal from './components/GuestPromptModal';
 import SignIn          from './pages/auth/SignIn';
 import SignUp          from './pages/auth/SignUp';
-import ForgotPasswordEmail    from './pages/auth/ForgotPasswordEmail';
-import ForgotPasswordVerify   from './pages/auth/ForgotPasswordVerify';
-import ForgotPasswordReset    from './pages/auth/ForgotPasswordReset';
+const ForgotPasswordEmail = lazyWithRetry(() => import('./pages/auth/ForgotPasswordEmail'));
+const ForgotPasswordVerify = lazyWithRetry(() => import('./pages/auth/ForgotPasswordVerify'));
+const ForgotPasswordReset = lazyWithRetry(() => import('./pages/auth/ForgotPasswordReset'));
 import Messages       from './pages/Messages';
-import Calls          from './pages/Calls';
-import Settings       from './pages/Settings';
-import ProfilePage    from './pages/ProfilePage';
-import SearchPage     from './pages/SearchPage';
+const Calls = lazyWithRetry(() => import('./pages/Calls'));
+const Settings = lazyWithRetry(() => import('./pages/Settings'));
+const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage'));
+const SearchPage = lazyWithRetry(() => import('./pages/SearchPage'));
 import HomeEntry        from './pages/HomeEntry';
-import TermsPage         from './pages/TermsPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import CookiePolicyPage  from './pages/CookiePolicyPage';
-import RefundPolicyPage  from './pages/RefundPolicyPage';
-import DataDeletionPage  from './pages/DataDeletionPage';
-import EmailPreferencesPage from './pages/EmailPreferencesPage';
+const TermsPage = lazyWithRetry(() => import('./pages/TermsPage'));
+const PrivacyPolicyPage = lazyWithRetry(() => import('./pages/PrivacyPolicyPage'));
+const CookiePolicyPage = lazyWithRetry(() => import('./pages/CookiePolicyPage'));
+const RefundPolicyPage = lazyWithRetry(() => import('./pages/RefundPolicyPage'));
+const DataDeletionPage = lazyWithRetry(() => import('./pages/DataDeletionPage'));
+const EmailPreferencesPage = lazyWithRetry(() => import('./pages/EmailPreferencesPage'));
 import { ConsentProvider } from './consent/ConsentContext';
+import lazyWithRetry from './utils/lazyWithRetry';
+import SplashScreen from './components/SplashScreen';
+import TopProgress from './components/TopProgress';
 import CookieBanner from './consent/CookieBanner';
 
 // Settings, profiles and search are viewable without extra gating.
@@ -60,6 +63,8 @@ export default function App() {
         <BrowserRouter>
           <EncryptionGate />
           <CookieBanner />
+          <TopProgress />
+          <Suspense fallback={<SplashScreen />}>
           <Routes>
             <Route path="/accounts/login"    element={<SignIn />} />
             <Route path="/accounts/register" element={<SignUp />} />
@@ -95,6 +100,7 @@ export default function App() {
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
           <GuestPromptModal />
           <GroupCallOverlay />
         </BrowserRouter>

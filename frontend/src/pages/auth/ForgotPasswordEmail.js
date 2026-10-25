@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import Spinner from '../../components/Spinner';
 export default function ForgotPasswordEmail() {
   const { theme } = useTheme();
   const location = useLocation();
@@ -39,7 +40,7 @@ export default function ForgotPasswordEmail() {
           value={email} onChange={e => setEmail(e.target.value)} autoFocus />
         <div className="auth-error">{error}</div>
         <button className="auth-btn" type="submit" disabled={loading}>
-          {loading ? 'Sending code…' : 'Continue'}
+          {loading ? <><Spinner />Sending code…</> : 'Continue'}
         </button>
         <div className="auth-link"><Link to="/accounts/login">← Back to sign in</Link></div>
       </form>

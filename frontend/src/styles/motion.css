@@ -1,0 +1,120 @@
+/* ============================================================================
+ * Motion
+ *
+ * Loading screens, page transitions and small interaction details. Loaded last.
+ * Everything here is switched off by "reduce motion" (bottom of the file); the
+ * loading indicators stay visible, they just stop moving.
+ * ========================================================================== */
+
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Loading screen ───────────────────────────────────────────────────────── */
+.splash {
+  position: fixed; inset: 0; z-index: 9998;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  background: var(--bg-body, #0d0f11);
+  animation: splash-in 0.3s ease var(--splash-delay, 0.25s) both;
+}
+.splash-mark { position: relative; width: 76px; height: 76px; }
+.splash-dot {
+  position: absolute; inset: 26px; border-radius: 50%;
+  background: var(--accent, #7c5cfc);
+  animation: splash-breathe 1.8s ease-in-out infinite;
+}
+.splash-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--accent, #7c5cfc); opacity: 0;
+  animation: splash-ring 1.8s var(--ease-out) infinite;
+}
+.splash-ring:nth-child(2) { animation-delay: 0.6s; }
+.splash-ring:nth-child(3) { animation-delay: 1.2s; }
+.splash-hint {
+  margin: 0; max-width: 300px; padding: 0 24px; text-align: center;
+  font-size: 13.5px; line-height: 1.55; color: var(--text-muted, #8b949e);
+  animation: fadeSlideUp 0.4s var(--ease-out) both;
+}
+@keyframes splash-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes splash-ring { 0% { transform: scale(0.3); opacity: 0.65; } 100% { transform: scale(1); opacity: 0; } }
+@keyframes splash-breathe { 0%, 100% { transform: scale(0.9); } 50% { transform: scale(1.1); } }
+
+/* ── Page loading inside the app shell ────────────────────────────────────── */
+.route-loader { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); animation: splash-in 0.2s ease 0.2s both; }
+
+/* ── Spinner ──────────────────────────────────────────────────────────────── */
+.spin {
+  display: inline-block; vertical-align: -0.15em; box-sizing: border-box; flex-shrink: 0;
+  width: 1em; height: 1em; margin-right: 0.5em;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: omni-spin 0.7s linear infinite;
+}
+.spin--lg { width: 30px; height: 30px; margin: 0; border-width: 3px; color: var(--accent-link, var(--accent)); }
+.route-loader .spin { margin: 0; }
+
+/* ── Top progress bar (waiting on the server) ─────────────────────────────── */
+.top-progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 10000;
+  overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 0.25s ease;
+}
+.top-progress.is-on { opacity: 1; }
+.top-progress i {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 38%; border-radius: 3px;
+  background: var(--accent-link, var(--accent));
+  animation: tp-slide 1.15s var(--ease-out) infinite;
+}
+@keyframes tp-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(270%); } }
+
+/* ── Page transitions ─────────────────────────────────────────────────────── */
+.page-enter { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; animation: page-in 0.24s var(--ease-out) both; }
+@keyframes page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.panel-enter { animation: page-in 0.22s var(--ease-out) both; }
+
+/* Sign-in and sign-up: each step slides in, and the card settles on first load. */
+.auth-card { animation: auth-in 0.38s var(--ease-out) both; }
+@keyframes auth-in { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+
+/* ── Lists ────────────────────────────────────────────────────────────────── */
+.convo-list > .convo-item { animation: item-in 0.28s var(--ease-out) both; }
+.convo-list > .convo-item:nth-child(2) { animation-delay: 30ms; }
+.convo-list > .convo-item:nth-child(3) { animation-delay: 60ms; }
+.convo-list > .convo-item:nth-child(4) { animation-delay: 90ms; }
+.convo-list > .convo-item:nth-child(5) { animation-delay: 120ms; }
+.convo-list > .convo-item:nth-child(6) { animation-delay: 150ms; }
+.convo-list > .convo-item:nth-child(n+7) { animation-delay: 180ms; }
+@keyframes item-in { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+
+/* ── Small interaction details ────────────────────────────────────────────── */
+.convo-item, .nav-link, .settings-nav-btn, .seg-btn, .settings-chip { transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.2s ease, transform 0.12s ease; }
+.convo-item:active { transform: scale(0.99); }
+.nav-link svg, .settings-nav-btn svg, .mobile-nav-btn svg { transition: transform 0.25s var(--ease-spring); }
+.nav-link:hover svg, .settings-nav-btn:hover svg { transform: scale(1.1); }
+.mobile-nav-btn.active svg { animation: icon-pop 0.38s var(--ease-spring); }
+@keyframes icon-pop { 0% { transform: scale(0.8); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.send-btn, .att-send-btn { transition: transform 0.15s var(--ease-spring), filter 0.15s ease; }
+.send-btn:hover:not(:disabled), .att-send-btn:hover:not(:disabled) { transform: scale(1.07); }
+.unread-badge { animation: badge-pop 0.34s var(--ease-spring) both; }
+@keyframes badge-pop { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.hdr-btn svg, .icon-btn svg, .topbar-icon-btn svg { transition: transform 0.2s var(--ease-spring); }
+.hdr-btn:hover svg, .icon-btn:hover svg, .topbar-icon-btn:hover svg { transform: scale(1.12); }
+.auth-input { transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease; }
+.mb-viewer { animation: scaleIn 0.22s var(--ease-out) both; }
+.mb-overlay { animation: fadeIn 0.18s ease both; }
+
+/* Button that is working: the spinner sits in front of the label. */
+button .spin { margin-right: 8px; }
+
+/* ── Reduce motion: nothing moves, but loading still reads as loading ──────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important; scroll-behavior: auto !important;
+  }
+  .splash { animation: none !important; }
+  .splash-ring { opacity: 0.4; transform: scale(0.75); }
+  .splash-ring:nth-child(2) { transform: scale(0.55); opacity: 0.55; }
+  .splash-ring:nth-child(3) { transform: scale(0.35); opacity: 0.7; }
+  .top-progress i { width: 100%; opacity: 0.6; }
+  .spin { border-right-color: currentColor; border-bottom-color: transparent; }
+}

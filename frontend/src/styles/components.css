@@ -109,3 +109,19 @@ svg [data-f] { transition: fill-opacity 0.2s; }
 /* TopBar injects its own <style> after this file, so its icon buttons need !important to join the system. */
 .topbar-icon-btn { border: none !important; border-radius: 50% !important; background: transparent !important; }
 .topbar-icon-btn:hover { background: var(--bg-hover) !important; color: var(--text-primary) !important; border: none !important; }
+
+/* ── Loading placeholders (conversation list and thread) ──────────────────── */
+@keyframes sk-shimmer { 0% { opacity: 0.45; } 50% { opacity: 0.85; } 100% { opacity: 0.45; } }
+.sk-avatar, .sk-line, .sk-bubble { background: var(--bg-hover); animation: sk-shimmer 1.4s ease-in-out infinite; }
+.sk-list { padding: 8px 12px; }
+.sk-row { display: flex; align-items: center; gap: 12px; padding: 10px 4px; }
+.sk-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; }
+.sk-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.sk-line { height: 11px; border-radius: 6px; display: block; }
+.sk-line--short { width: 35%; height: 9px; }
+.sk-thread { display: flex; flex-direction: column; gap: 10px; padding: 16px 4px; }
+.sk-bubble { height: 38px; border-radius: 18px; }
+.sk-bubble--in { align-self: flex-start; border-bottom-left-radius: 4px; }
+.sk-bubble--out { align-self: flex-end; border-bottom-right-radius: 4px; }
+.sk-hint { margin: 14px 8px 0; font-size: 13px; line-height: 1.5; color: var(--text-muted); text-align: center; }
+@media (prefers-reduced-motion: reduce) { .sk-avatar, .sk-line, .sk-bubble { animation: none; } }

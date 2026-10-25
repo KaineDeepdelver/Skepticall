@@ -89,6 +89,7 @@ export default function PrivacyPolicyPage() {
           <thead><tr><th>Data</th><th>Kept for</th></tr></thead>
           <tbody>
             <tr><td>Messages and files (encrypted)</td><td>Deleted a few minutes after your device confirms delivery. Anything never collected is deleted after 30 days at the latest.</td></tr>
+            <tr><td>Recent messages and chat list saved on your device (encrypted)</td><td>Until you log out or clear site data. This copy stays on your device and is never sent to us.</td></tr>
             <tr><td>Call history</td><td>30 days</td></tr>
             <tr><td>Previous encryption keys after you replace your key</td><td>30 days, so messages sent to the old key still open</td></tr>
             <tr><td>Account, profile, friends, groups, notifications</td><td>Until you delete your account</td></tr>

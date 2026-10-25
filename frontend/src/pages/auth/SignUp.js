@@ -9,6 +9,7 @@ import { useConsent } from '../../consent/ConsentContext';
 import { MIN_AGE } from '../../config/business';
 import { useTheme } from '../../context/ThemeContext';
 import Glyph from '../../components/icons/Glyph';
+import Spinner from '../../components/Spinner';
 
 const EMAIL_PATTERN    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\s]).{8,}$/;
@@ -231,7 +232,7 @@ export default function SignUp() {
           />
           <div className="auth-error">{error}</div>
           <button className="auth-btn" type="submit" disabled={loading}>
-            {loading ? 'Checking…' : 'Continue'}
+            {loading ? <><Spinner />Checking…</> : 'Continue'}
           </button>
           <div className="auth-link">Already have an account? <Link to="/accounts/login">Sign in</Link></div>
         </form>
@@ -257,7 +258,7 @@ export default function SignUp() {
           />
           <div className="auth-error">{error}</div>
           <button className="auth-btn" type="submit" disabled={loading}>
-            {loading ? 'Verifying…' : 'Verify'}
+            {loading ? <><Spinner />Verifying…</> : 'Verify'}
           </button>
           <div
             className="auth-link"
@@ -376,7 +377,7 @@ export default function SignUp() {
           )}
           <div className="auth-error">{error}</div>
           <button className="auth-btn" type="submit" disabled={loading || !tosAccepted || !ageConfirmed || (!!RECAPTCHA_SITE_KEY && !captchaToken)}>
-            {loading ? 'Creating account…' : 'Create account'}
+            {loading ? <><Spinner />Creating account…</> : 'Create account'}
           </button>
           <div className="auth-link" style={{ cursor: 'pointer' }} onClick={goBack}>← Back</div>
         </form>

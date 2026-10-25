@@ -7,6 +7,7 @@ import { useE2EE } from '../e2e/E2EEContext';
 import { useMessageFiles } from '../e2e/useMessageFiles';
 import { useWebSocket } from '../hooks/useWebSocket';
 import MyProfileDrawer from '../components/MyProfileDrawer';
+import { messageCache } from '../cache/messageCache';
 import UserAvatar from '../components/UserAvatar';
 import GroupInfoPanel from '../components/GroupInfoPanel';
 import LinkPreview, { extractFirstUrl } from '../components/LinkPreview';
@@ -967,6 +968,39 @@ function DmSearchModal({ messages, userId, convoName, query, onQueryChange, onCl
 
 
 /* ── MAIN MESSAGES PAGE ── */
+/* Placeholders shown while the server answers. After a few seconds they explain why it is slow. */
+function ServerWaking({ slow }) {
+  if (!slow) return null;
+  return (
+    <p className="sk-hint" role="status">
+      Waking up the server. The first load after a quiet spell can take up to a minute.
+    </p>
+  );
+}
+function ListSkeleton({ slow }) {
+  return (
+    <div className="sk-list" aria-busy="true" aria-label="Loading conversations">
+      {[0, 1, 2, 3, 4].map(i => (
+        <div className="sk-row" key={i}>
+          <span className="sk-avatar" />
+          <span className="sk-lines"><span className="sk-line" style={{ width: `${55 + (i * 9) % 30}%` }} /><span className="sk-line sk-line--short" /></span>
+        </div>
+      ))}
+      <ServerWaking slow={slow} />
+    </div>
+  );
+}
+function ThreadSkeleton({ slow }) {
+  return (
+    <div className="sk-thread" aria-busy="true" aria-label="Loading messages">
+      {[['in', 46], ['out', 34], ['in', 62], ['out', 40], ['in', 28]].map(([side, w], i) => (
+        <span key={i} className={`sk-bubble sk-bubble--${side}`} style={{ width: `${w}%` }} />
+      ))}
+      <ServerWaking slow={slow} />
+    </div>
+  );
+}
+
 export default function Messages() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -978,6 +1012,10 @@ export default function Messages() {
   const [activeConvo, setActiveConvo] = useState(null);
   const activeConvoRef = useRef(null); // always has latest activeConvo for WS handler
   const [messages, setMessages] = useState([]);
+  const [loadingConvos, setLoadingConvos] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [serverSlow, setServerSlow] = useState(false);
+  const convoKey = (c) => (c && c.isGroup && c.groupId ? `g${c.groupId}` : `d${c && c.userId}`);
   // Clears the "just arrived" flag (used for the typewriter/pop-in effect)
   // a little after a message lands, so it never replays if the row's key
   // later changes (e.g. an optimistic tmpId resolving to a real id) or the
@@ -1204,10 +1242,18 @@ export default function Messages() {
   /* ── Load conversations ── */
   useEffect(() => {
     if (!userId) return;
+    let fresh = false; // set once the server has answered, so an older cached copy can't replace it
+    const cachedConvos = messageCache.peek(userId, 'convos');
+    if (cachedConvos) {
+      setConversations(cachedConvos); setLoadingConvos(false);
+    } else {
+      messageCache.get(userId, 'convos').then(c => { if (c && !fresh) { setConversations(c); setLoadingConvos(false); } });
+    }
     Promise.all([
       api.getConversations(userId).catch(() => []),
       groupApi.getForUser(userId).catch(() => []),
     ]).then(([dmConvos, groups]) => {
+      fresh = true;
       const groupConvos = groups.map(dto => ({
         userId: `group_${dto.id}`,
         groupId: dto.id,
@@ -1226,7 +1272,7 @@ export default function Messages() {
       setOnlineUsers({});
       // Subscribe to WS topic for every group the user belongs to
       groupConvos.forEach(g => subscribeToGroupRef.current?.(g.groupId));
-    });
+    }).finally(() => setLoadingConvos(false));
     api.setPresence(userId, true);
     setTimeout(() => { try { send('/app/presence', { userId, online: true }); } catch { } }, 1000);
     const bye = () => { api.setPresence(userId, false); try { send('/app/presence', { userId, online: false }); } catch { } };
@@ -1237,13 +1283,56 @@ export default function Messages() {
   /* ── Load history when convo opens ── */
   useEffect(() => {
     if (!activeConvo || !userId) return;
-    if (activeConvo.isGroup && activeConvo.groupId) {
-      groupApi.getMessages(activeConvo.groupId).then(msgs => e2e.decryptMessages(msgs)).then(msgs => setMessages(msgs)).catch(() => { });
+    let stale = false; // a slow answer for a chat we have since left must not overwrite the current one
+    const key = convoKey(activeConvo);
+    let fresh = false; // the server has answered; an older cached copy must not replace it
+    const cached = messageCache.peek(userId, key);
+    if (cached) {
+      setMessages(cached); setLoadingHistory(false);
     } else {
-      api.getHistory(userId, activeConvo.userId).then(msgs => e2e.decryptMessages(msgs)).then(msgs => { setMessages(msgs); sendReadReceipt(activeConvo.userId); }).catch(() => { });
+      setLoadingHistory(true);
+      messageCache.get(userId, key).then(c => {
+        if (c && !stale && !fresh) { setMessages(c); setLoadingHistory(false); }
+      });
     }
+
+    const request = activeConvo.isGroup && activeConvo.groupId
+      ? groupApi.getMessages(activeConvo.groupId)
+      : api.getHistory(userId, activeConvo.userId);
+    request
+      .then(msgs => e2e.decryptMessages(msgs))
+      .then(msgs => {
+        if (stale) return;
+        fresh = true;
+        setMessages(msgs);
+        if (!activeConvo.isGroup) sendReadReceipt(activeConvo.userId);
+      })
+      .catch(() => { })
+      .finally(() => { if (!stale) setLoadingHistory(false); });
     setActiveStatus('Offline');
+    return () => { stale = true; };
   }, [activeConvo?.userId, userId, e2eVersion]);
+
+  // Keep the cache current: the chat list as it changes, and the open chat as messages arrive.
+  // (Empty lists are skipped so a chat that is still loading is not cached as empty.)
+  useEffect(() => {
+    if (userId && conversations.length) messageCache.set(userId, 'convos', conversations);
+  }, [conversations, userId]);
+  useEffect(() => {
+    if (userId && activeConvo && messages.length) messageCache.set(userId, convoKey(activeConvo), messages);
+  }, [messages]);
+  useEffect(() => {
+    const save = () => { messageCache.flush(); };
+    window.addEventListener('pagehide', save);
+    return () => { window.removeEventListener('pagehide', save); save(); };
+  }, []);
+
+  // Only explain a slow load once it has actually been slow for a few seconds.
+  useEffect(() => {
+    if (!loadingConvos && !loadingHistory) { setServerSlow(false); return undefined; }
+    const t = setTimeout(() => setServerSlow(true), 4000);
+    return () => clearTimeout(t);
+  }, [loadingConvos, loadingHistory]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
@@ -1725,6 +1814,7 @@ export default function Messages() {
         </div>
 
         <div className="convo-list">
+          {loadingConvos && !conversations.length && !searchQuery && <ListSkeleton slow={serverSlow} />}
           {searchQuery && searchPeople.map(u => (
             <div key={u.id} className="people-item" onClick={() => startConvoWithUser(u)}>
               <div className="convo-avatar-wrap" style={{ position: 'relative' }}>
@@ -1852,7 +1942,7 @@ export default function Messages() {
             </div>
 
             {/* Messages */}
-            <div className="chat-messages">{renderMessages()}<div ref={messagesEndRef} /></div>
+            <div className="chat-messages">{loadingHistory && !messages.length ? <ThreadSkeleton slow={serverSlow} /> : renderMessages()}<div ref={messagesEndRef} /></div>
 
             {/* Reply bar */}
             {replyingTo && (
@@ -2038,7 +2128,7 @@ export default function Messages() {
           ...(!c.isGroup ? [{ label: 'View profile', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="user" /></svg>, action: () => { setCtxMenu(null); navigate(`/profile/${c.username}`); } }] : []),
           { label: 'Mute notifications', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="bell" /></svg>, action: () => { } },
           { label: 'Close chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="close" /></svg>, action: () => { if (activeConvo?.userId === c.userId) setActiveConvo(null); }, danger: false },
-          { label: 'Delete chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="trash" /></svg>, action: () => { if (activeConvo?.userId === c.userId) setActiveConvo(null); setConversations(prev => prev.filter(x => x.userId !== c.userId)); }, danger: true },
+          { label: 'Delete chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="trash" /></svg>, action: () => { if (activeConvo?.userId === c.userId) setActiveConvo(null); setConversations(prev => prev.filter(x => x.userId !== c.userId)); messageCache.remove(userId, convoKey(c)); }, danger: true },
         ];
         // Clamp position so menu doesn't go off-screen
         const menuW = 200, menuH = menuItems.length * 38 + 8;

@@ -1,3 +1,5 @@
+import { messageCache } from '../cache/messageCache';
+import SplashScreen from '../components/SplashScreen';
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { restoreSession, endRememberedSession, refreshAccessToken, tokenExpiryMs } from '../services/api';
 
@@ -58,6 +60,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     endRememberedSession();   // forget this browser too, or the cookie would just log you back in
     sessionStorage.clear();
+    messageCache.clearAll();  // the on-device message copy must not outlive the session
     setUser(null);
     setIsGuest(false);
   }, []);
@@ -107,7 +110,7 @@ export function AuthProvider({ children }) {
 
   // Hold the first render until the cookie check finishes, otherwise a remembered
   // user would be bounced to the login page for a moment.
-  if (restoring) return null;
+  if (restoring) return <SplashScreen initial />;
 
   return (
     <AuthContext.Provider value={{ user, login, logout, updateUser, isGuest, continueAsGuest, exitGuest }}>

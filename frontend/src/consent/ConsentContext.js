@@ -23,10 +23,19 @@ function readStored() {
 export function ConsentProvider({ children }) {
   const [stored, setStored] = useState(readStored);
   const [panelRequested, setPanelRequested] = useState(false);
+  // False when the browser did not actually keep the choice (private mode, storage blocked or cleared on exit).
+  const [kept, setKept] = useState(true);
+  const [warningSeen, setWarningSeen] = useState(false);
 
   const save = useCallback((google) => {
     const value = { v: 1, google: !!google, at: new Date().toISOString() };
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(value)); } catch { /* private mode: keep it in memory */ }
+    let wasKept = false;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+      wasKept = localStorage.getItem(STORAGE_KEY) === JSON.stringify(value); // read it back: some browsers accept the write and drop it
+    } catch { /* private mode: the choice lives in memory for this visit only */ }
+    setKept(wasKept);
+    setWarningSeen(false);
     setStored(value);
     setPanelRequested(false);
   }, []);
@@ -40,7 +49,10 @@ export function ConsentProvider({ children }) {
     reopen: () => setPanelRequested(true),
     close: () => setPanelRequested(false),
     panelOpen: !stored || panelRequested,
-  }), [stored, panelRequested, save]);
+    // The choice could not be saved, so the person will be asked again next visit. Tell them why.
+    saveFailed: !!stored && !kept && !warningSeen,
+    dismissSaveFailed: () => setWarningSeen(true),
+  }), [stored, panelRequested, save, kept, warningSeen]);
 
   return <ConsentContext.Provider value={value}>{children}</ConsentContext.Provider>;
 }

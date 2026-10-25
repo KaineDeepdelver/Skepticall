@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useE2EE } from './E2EEContext';
 import './e2e.css';
+import Spinner from '../components/Spinner';
 
 function errorText(e) {
   const raw = (e && (e.message || e.code)) || 'Something went wrong';
@@ -165,7 +166,7 @@ export function KeyBackupButton() {
         onChange={(e) => setPassphrase(e.target.value)} disabled={busy} />
       <input type="password" placeholder="Repeat it" value={again} autoComplete="new-password"
         onChange={(e) => setAgain(e.target.value)} disabled={busy} />
-      <button className="e2e-btn e2e-btn--primary" disabled={busy}>{busy ? 'Working…' : 'Download'}</button>
+      <button className="e2e-btn e2e-btn--primary" disabled={busy}>{busy ? <><Spinner />Working…</> : 'Download'}</button>
       <button type="button" className="e2e-btn" onClick={() => setOpen(false)} disabled={busy}>Cancel</button>
       {error && <span className="e2e-error">{error}</span>}
     </form>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import Spinner from '../../components/Spinner';
 export default function ForgotPasswordVerify() {
   const { theme } = useTheme();
   const [code, setCode]         = useState('');
@@ -61,7 +62,7 @@ export default function ForgotPasswordVerify() {
           value={code} onChange={e => setCode(e.target.value.replace(/\D/, ''))} autoFocus />
         <div className="auth-error">{error}</div>
         <button className="auth-btn" type="submit" disabled={loading}>
-          {loading ? 'Verifying…' : 'Verify'}
+          {loading ? <><Spinner />Verifying…</> : 'Verify'}
         </button>
         <div
           onClick={resend}

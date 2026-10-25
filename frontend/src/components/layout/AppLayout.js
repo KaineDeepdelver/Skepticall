@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { Suspense } from 'react';
+import RouteLoader from '../RouteLoader';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import TopBar from './TopBar';
 import { useSidebar } from '../../context/SidebarContext';
@@ -123,7 +124,9 @@ export default function AppLayout() {
           <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', height:'100vh' }}>
             <TopBar />
             <div style={{ flex:1, overflow:'hidden', display:'flex', flexDirection:'column' }}>
-              <Outlet />
+              <Suspense fallback={<RouteLoader />}>
+                <div key={pathname} className="page-enter"><Outlet /></div>
+              </Suspense>
             </div>
           </div>
 

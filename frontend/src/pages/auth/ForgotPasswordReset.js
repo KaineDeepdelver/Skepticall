@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import Spinner from '../../components/Spinner';
 export default function ForgotPasswordReset() {
   const { theme } = useTheme();
   const [password, setPassword]   = useState('');
@@ -41,7 +42,7 @@ export default function ForgotPasswordReset() {
           style={{ marginTop: '10px' }} />
         <div className="auth-error">{error}</div>
         <button className="auth-btn" type="submit" disabled={loading}>
-          {loading ? 'Resetting…' : 'Reset password'}
+          {loading ? <><Spinner />Resetting…</> : 'Reset password'}
         </button>
       </form>
     </div>

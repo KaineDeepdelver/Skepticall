@@ -12,6 +12,11 @@
   <script src="%PUBLIC_URL%/theme-init.js"></script>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- Shown until the app starts; the app's own loading screen uses the same markup. -->
+    <div class="splash" role="status" aria-label="Loading Skepticall">
+      <div class="splash-mark" aria-hidden="true"><i class="splash-ring"></i><i class="splash-ring"></i><i class="splash-ring"></i><i class="splash-dot"></i></div>
+    </div>
+  </div>
 </body>
 </html>

@@ -7,6 +7,7 @@ import { downloadBackup, readBackupFile } from './backupIO';
 import { collectMessages } from './exportMessages';
 import { openMessageBackup, backupErrorText } from './openMessageBackup';
 import BackupViewer from './BackupViewer';
+import Spinner from '../components/Spinner';
 import './messageBackup.css';
 
 const fileName = (d = new Date()) => `skepticall-messages-${d.toISOString().slice(0, 10)}.dat`;
@@ -86,7 +87,7 @@ export default function MessageBackupPanel() {
     <div className="mb-panel">
       <div className="mb-actions">
         <button className="e2e-btn e2e-btn--primary" onClick={download} disabled={busy}>
-          {busy && progress ? 'Working…' : 'Download messages'}
+          {busy && progress ? <><Spinner />Working…</> : 'Download messages'}
         </button>
         <button className="e2e-btn" onClick={() => picker.current && picker.current.click()} disabled={busy}>
           Open backup

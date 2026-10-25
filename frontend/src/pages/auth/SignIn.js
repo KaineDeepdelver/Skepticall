@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import Glyph from '../../components/icons/Glyph';
+import Spinner from '../../components/Spinner';
 
 export default function SignIn() {
   const { theme } = useTheme();
@@ -69,7 +70,7 @@ export default function SignIn() {
           />
           <div className="auth-error">{error}</div>
           <button className="auth-btn" type="submit" disabled={loading}>
-            {loading ? 'Checking…' : 'Continue'}
+            {loading ? <><Spinner />Checking…</> : 'Continue'}
           </button>
           <div className="auth-link">Don't have an account? <Link to="/accounts/register">Sign up</Link></div>
           <div className="auth-link"><Link to="/forgot-password" state={{ email }}>Forgot your password?</Link></div>
@@ -98,7 +99,7 @@ export default function SignIn() {
           </div>
           <div className="auth-error">{error}</div>
           <button className="auth-btn" type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? <><Spinner />Signing in…</> : 'Sign in'}
           </button>
           <div className="auth-link"><Link to="/forgot-password" state={{ email }}>Forgot your password?</Link></div>
           <div className="auth-link" style={{ cursor: 'pointer' }} onClick={backToEmail}>

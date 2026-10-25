@@ -96,4 +96,41 @@ describe('cookie consent', () => {
     act(() => api.reopen());
     expect(container.querySelector('[role="dialog"]')).not.toBeNull();
   });
+
+  describe('when the browser does not keep the choice', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    test('storage that throws (private mode): the person is told', () => {
+      mount(<><Probe /><CookieBanner /></>);
+      jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied'); });
+
+      act(() => api.acceptAll());
+
+      expect(api.decided).toBe(true);        // the choice still applies for this visit
+      expect(api.saveFailed).toBe(true);
+      expect(container.textContent).toMatch(/isn.t keeping this choice/);
+    });
+
+    test('storage that accepts the write but drops it is caught by reading it back', () => {
+      mount(<><Probe /><CookieBanner /></>);
+      jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {});
+
+      act(() => api.acceptAll());
+
+      expect(api.saveFailed).toBe(true);
+    });
+
+    test('the notice can be dismissed, and does not appear when saving works', () => {
+      mount(<><Probe /><CookieBanner /></>);
+      act(() => api.acceptAll());
+      expect(api.saveFailed).toBe(false);
+      expect(container.textContent).not.toMatch(/isn.t keeping/);
+
+      jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied'); });
+      act(() => api.rejectOptional());
+      expect(api.saveFailed).toBe(true);
+      act(() => api.dismissSaveFailed());
+      expect(api.saveFailed).toBe(false);
+    });
+  });
 });

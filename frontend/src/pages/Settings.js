@@ -8,6 +8,7 @@ import { api, adminApi, resolveUrl } from '../services/api';
 import { KeyBackupButton } from '../e2e/EncryptionGate';
 import MessageBackupPanel from '../backup/MessageBackupPanel';
 import Glyph from '../components/icons/Glyph';
+import Spinner from '../components/Spinner';
 
 // == Icons ==
 const IcAccount    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><Glyph n="user" /></svg>;
@@ -122,7 +123,7 @@ function Dialog({ title, onClose, onSave, saveLabel = 'Save', saveVariant = 'pri
           {onSave && (
             <button className={`dialog-btn ${saveVariant}`} onClick={onSave} disabled={saving}
               style={saveVariant === 'danger' ? { background: '#e06060', color: '#fff' } : {}}>
-              {saving ? 'Saving…' : saveLabel}
+              {saving ? <><Spinner />Saving…</> : saveLabel}
             </button>
           )}
         </div>
@@ -217,7 +218,7 @@ function HeavyConfirmModal({ title, targetLabel, targetSub, targetAvatar, warnin
             onClick={onConfirm}
             disabled={!canConfirm}
           >
-            {confirming ? 'Deleting…' : waitDone ? 'Delete forever' : `Delete forever (${secondsLeft}s)`}
+            {confirming ? <><Spinner />Deleting…</> : waitDone ? 'Delete forever' : `Delete forever (${secondsLeft}s)`}
           </button>
         </div>
       </div>
@@ -782,7 +783,7 @@ export default function Settings() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button className="dialog-btn primary" onClick={saveProfile} disabled={profileSaving} style={{ minWidth: 120 }}>
-              {profileSaving ? 'Saving…' : 'Save Profile'}
+              {profileSaving ? <><Spinner />Saving…</> : 'Save Profile'}
             </button>
           </div>
           <StatusMsg text={profileMsg.text} type={profileMsg.type} />
@@ -1229,7 +1230,7 @@ export default function Settings() {
               You're browsing as a guest. Log in to unlock your profile, account, and notification settings.
             </div>
           )}
-          <PanelContent id={panel} />
+          <div key={panel} className="panel-enter"><PanelContent id={panel} /></div>
         </div>
 
       </div>
