@@ -16,6 +16,7 @@ import java.util.*;
 public class FriendService {
     private final FriendRequestRepository repo;
     private final UserRepository userRepo;
+    private final com.skepticall.app.user.service.BlockService blockService;
 
     // Settings > Privacy > Allow friend requests
     private void requireAcceptsRequests(Long receiverId) {
@@ -30,6 +31,11 @@ public class FriendService {
     public Map<String, Object> sendRequest(Long senderId, Long receiverId) {
         if (senderId.equals(receiverId)) {
             throw new BusinessException(ErrorType.INVALID_OPERATION, "You cannot send a friend request to yourself");
+        }
+
+        if (blockService.isBlockedEitherWay(senderId, receiverId)) {
+            // Same words as a person who has turned requests off, so a block is not revealed.
+            throw new BusinessException(ErrorType.PERMISSION_DENIED, "This user isn't accepting friend requests");
         }
 
         var existing = repo.findBetween(senderId, receiverId);

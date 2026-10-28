@@ -31,6 +31,7 @@ public class MessageService {
     private final MessageMapper messageMapper;
     private final MessageRetentionService retentionService;
     private final com.skepticall.app.common.EncryptionPolicy encryptionPolicy;
+    private final com.skepticall.app.user.service.BlockService blockService;
 
     // == Tempo default TTL in seconds ==
     private static final int TEMPO_TTL_SECONDS = 30;
@@ -55,6 +56,11 @@ public class MessageService {
         // Covers both the WebSocket and REST send paths: a DM to yourself makes no sense.
         if (dto.getReceiverId() != null && dto.getReceiverId().equals(dto.getSenderId())) {
             throw new BusinessException(ErrorType.INVALID_OPERATION, "You can't send a message to yourself");
+        }
+
+        // A block in either direction stops direct messages. The sender is not told why.
+        if (blockService.isBlockedEitherWay(dto.getSenderId(), dto.getReceiverId())) {
+            throw new BusinessException(ErrorType.PERMISSION_DENIED, "This message could not be delivered");
         }
 
         // == Always encrypted ==

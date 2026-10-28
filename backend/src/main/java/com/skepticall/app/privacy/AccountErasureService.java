@@ -102,6 +102,9 @@ public class AccountErasureService {
         em.createQuery("delete from PushToken t where t.userId = :id").setParameter("id", userId).executeUpdate();
         em.createQuery("delete from Admin a where a.user.id = :id").setParameter("id", userId).executeUpdate();
         em.createQuery("delete from UserPublicKey k where k.userId = :id").setParameter("id", userId).executeUpdate();
+        em.createQuery("delete from UserKeyVault v where v.userId = :id").setParameter("id", userId).executeUpdate();
+        em.createQuery("delete from UserBlock b where b.blockerId = :id or b.blockedId = :id").setParameter("id", userId).executeUpdate();
+        em.createQuery("delete from Report r where r.reporterId = :id").setParameter("id", userId).executeUpdate(); // reports they filed; reports about them are kept for safety
 
         em.flush();
         em.clear();

@@ -2,6 +2,7 @@ package com.skepticall.app.config;
 
 import lombok.RequiredArgsConstructor;
 import com.skepticall.app.config.jwt.JwtFilter;
+import com.skepticall.app.config.ratelimit.RateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,6 +26,10 @@ public class SecurityConfig {
     // Origins allowed to make credentialed (cookie) requests to the remember-me endpoints.
     @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:3000}")
     private String allowedOrigins;
+
+    // Set RATE_LIMIT_ENABLED=false to switch request limiting off (for example while load testing).
+    @org.springframework.beans.factory.annotation.Value("${app.rate-limit.enabled:true}")
+    private boolean rateLimitEnabled;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -103,7 +108,9 @@ public class SecurityConfig {
                 )
                 .httpBasic(h -> h.disable())
                 .formLogin(f -> f.disable())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                // After CORS, before authentication: a flood is refused cheaply, and the browser still gets the 429.
+                .addFilterBefore(new RateLimitFilter(rateLimitEnabled), JwtFilter.class);
 
         return http.build();
     }

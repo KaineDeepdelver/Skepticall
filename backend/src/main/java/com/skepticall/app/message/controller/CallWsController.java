@@ -19,6 +19,7 @@ public class CallWsController {
     @Autowired private SimpMessagingTemplate messaging;
     @Autowired private NotificationService notifService;
     @Autowired private PushNotificationService pushService;
+    @Autowired private com.skepticall.app.user.service.BlockService blockService;
 
     private Long uid(Principal principal) {
         if (principal == null) {
@@ -47,6 +48,10 @@ public class CallWsController {
     @MessageMapping("/call.offer")
     public void offer(Map<String, Object> payload, Principal principal) {
         Long from = uid(principal);
+        Object offerTarget = payload.get("targetId");
+        if (offerTarget != null && blockService.isBlockedEitherWay(from, Long.valueOf(offerTarget.toString()))) {
+            return; // blocked either way: no ring, no push; the caller just gets no answer
+        }
         relay("CALL_OFFER", payload, principal);
 
         Object targetId  = payload.get("targetId");
