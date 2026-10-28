@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import RouteLoader from '../RouteLoader';
+import { VaultBanner } from '../../e2e/VaultContext';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import TopBar from './TopBar';
 import { useSidebar } from '../../context/SidebarContext';
@@ -123,6 +124,7 @@ export default function AppLayout() {
 
           <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', height:'100vh' }}>
             <TopBar />
+            <VaultBanner />
             <div style={{ flex:1, overflow:'hidden', display:'flex', flexDirection:'column' }}>
               <Suspense fallback={<RouteLoader />}>
                 <div key={pathname} className="page-enter"><Outlet /></div>

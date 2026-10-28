@@ -15,6 +15,7 @@
 import nacl from 'tweetnacl';
 import { createBackup, restoreBackup } from '../backup/backupFile';
 import { generateKeyPair, pruneRing } from '../crypto/keyring';
+import { normalizePhrase } from './recoveryPhrase';
 import {
   MAX_ENCRYPTED_FILE_BYTES,
   b64,
@@ -108,15 +109,17 @@ export function createE2EE({
   async function init(user) {
     mediaCache.clear();
     keyCache.clear();
-    emit({ status: 'loading', userId: user.id, username: user.username, ring: [], notice: null });
+    emit({ status: 'loading', userId: user.id, username: user.username, ring: [], notice: null, freshKey: false });
     const { keys: serverKeys, authoritative } = await fetchMyKeys(user);
 
     let ring = await store.load(user.id);
+    let freshKey = false;
     if (!ring && user.username) {
       const pending = await store.takePending(user.username); // key made at sign-up
       if (pending && serverKeys.includes(b64(pending[0].publicKey))) {
         ring = pending;
         await store.save(user.id, ring);
+        freshKey = true; // made a moment ago at sign-up, so no backup exists yet
       }
     }
 
@@ -134,13 +137,13 @@ export function createE2EE({
     }
     const ordered = [valid[idx], ...valid.filter((_, i) => i !== idx)];
     if (!ring || ordered.length !== ring.length || idx !== 0) await store.save(user.id, ordered);
-    emit({ status: 'ready', ring: ordered, version: st.version + 1 });
+    emit({ status: 'ready', ring: ordered, freshKey, version: st.version + 1 });
   }
 
   function reset() {
     mediaCache.clear();
     keyCache.clear();
-    emit({ status: 'loading', userId: null, username: null, ring: [], notice: null });
+    emit({ status: 'loading', userId: null, username: null, ring: [], notice: null, freshKey: false });
   }
 
   /** Makes a new key pair and registers it as the account's current key (needs the password). */
@@ -149,7 +152,7 @@ export function createE2EE({
     await api.rotateKey(b64(pair.publicKey), password); // throws on a wrong password
     const ring = [pair, ...st.ring];
     await store.save(st.userId, ring);
-    emit({ status: 'ready', ring, notice: null, version: st.version + 1 });
+    emit({ status: 'ready', ring, notice: null, freshKey: true, version: st.version + 1 });
   }
 
   /** Loads the account's keys from a .dat backup file made by this account. */
@@ -164,7 +167,7 @@ export function createE2EE({
     const ring = result.secretKeys.map((sk) => ({ secretKey: sk, publicKey: nacl.box.keyPair.fromSecretKey(sk).publicKey }));
     await store.save(st.userId, ring);
     if (result.currentKeyRestored) {
-      emit({ status: 'ready', ring, notice: null, version: st.version + 1 });
+      emit({ status: 'ready', ring, notice: null, freshKey: false, version: st.version + 1 });
     } else {
       // Only retired keys came back (the backup predates a reroll). They still open older
       // messages for now, but the account needs a new current key to receive new ones.
@@ -183,6 +186,41 @@ export function createE2EE({
       passphrase,
       ...(backupKdf ? { kdf: backupKdf } : {}),
     });
+  }
+
+  // == the account's stored key backup (recovery phrase) ======================
+
+  /** What the account holds: 'none', 'current', or 'stale' (made before the latest key change). */
+  async function vaultStatus() {
+    const vault = await api.getKeyVault();
+    if (!vault.exists) return 'none';
+    const { keys } = await fetchMyKeys({ publicKey: null });
+    return keys[0] && keys[0] === vault.currentPublicKey ? 'current' : 'stale';
+  }
+
+  /**
+   * Locks this browser's key ring with the phrase and stores it on the account.
+   * The phrase is only used here, in the browser, to lock the backup: the server receives the locked result.
+   */
+  async function saveVault({ phrase, password }) {
+    if (st.status !== 'ready') throw new Error('Encryption is not set up on this browser.');
+    const bytes = exportKeyBackup(normalizePhrase(phrase));
+    await api.putKeyVault(b64(bytes), b64(st.ring[0].publicKey), password);
+  }
+
+  /** On a new browser or device: fetch the account's key backup and open it with the phrase. */
+  async function restoreFromVault({ phrase }) {
+    const vault = await api.getKeyVault();
+    if (!vault.exists) {
+      const e = new Error('No recovery phrase has been set up for this account.');
+      e.code = 'NO_VAULT';
+      throw e;
+    }
+    return restoreFromBackup({ bytes: unb64(vault.blob), passphrase: normalizePhrase(phrase) });
+  }
+
+  async function removeVault(password) {
+    await api.deleteKeyVault(password);
   }
 
   // == finding other people's keys ============================================
@@ -371,6 +409,7 @@ export function createE2EE({
     subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
     init, reset,
     createNewKey, restoreFromBackup, exportKeyBackup,
+    vaultStatus, saveVault, restoreFromVault, removeVault,
     peerKeys, decryptMessage, decryptMessages,
     prepareText, prepareUpload, mediaUrl,
     /** Synchronous URL for a message file that is not encrypted. */

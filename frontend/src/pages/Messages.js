@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,8 @@ import { useFriends } from '../context/FriendContext';
 import { useCall } from '../context/CallContext';
 import { useGroupCall } from '../context/GroupCallContext';
 import toast from 'react-hot-toast';
+import ReportDialog from '../reports/ReportDialog';
+import { useBlocks } from '../context/BlockContext';
 import Glyph from '../components/icons/Glyph';
 
 /* ── UTILS ── */
@@ -673,7 +675,7 @@ function BubbleBundle({ msgs, isSent, onContextMenu, groupCreatorId }) {
 }
 
 
-function ContextMenu({ x, y, msg, isSent, onReply, onEdit, onDelete, onCopy, onSelect, onClose }) {
+function ContextMenu({ x, y, msg, isSent, onReply, onEdit, onDelete, onCopy, onSelect, onReport, onClose }) {
   const isMedia = !!msg.fileUrl;
   const isDeleted = msg.type === 'DELETE';
   const hasText = !isDeleted && msg.content;
@@ -691,6 +693,7 @@ function ContextMenu({ x, y, msg, isSent, onReply, onEdit, onDelete, onCopy, onS
     hasText && { icon: <rect x="9" y="9" width="13" height="13" rx="2" />, icon2: <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />, label: 'Copy', action: () => { onCopy(); onClose(); } },
     isSent && !isDeleted && !isMedia && { icon: <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />, icon2: <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />, label: 'Edit', action: () => { onEdit(); onClose(); } },
     !isDeleted && { icon: <polyline points="9 11 12 14 22 4" />, icon2: <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />, label: 'Select', action: () => { onSelect(); onClose(); } },
+    !isSent && !isDeleted && onReport && { icon: <Glyph n="flag" />, icon2: null, label: 'Report', action: () => { onReport(); onClose(); } },
     isSent && !isDeleted && { danger: true, icon: <polyline points="3 6 5 6 21 6" />, icon2: <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />, label: 'Delete', action: () => { onDelete(); onClose(); } },
   ].filter(Boolean);
 
@@ -1012,6 +1015,8 @@ export default function Messages() {
   const [activeConvo, setActiveConvo] = useState(null);
   const activeConvoRef = useRef(null); // always has latest activeConvo for WS handler
   const [messages, setMessages] = useState([]);
+  const { blockedIds, block: blockUser, unblock: unblockUser } = useBlocks();
+  const [reportTarget, setReportTarget] = useState(null);
   const [loadingConvos, setLoadingConvos] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [serverSlow, setServerSlow] = useState(false);
@@ -1693,14 +1698,19 @@ export default function Messages() {
   }
 
   /* ── Render messages grouped by date ── */
+  // In a group, messages from people you have blocked are hidden.
+  const visibleMessages = useMemo(() => (
+    activeConvo && activeConvo.isGroup ? messages.filter(m => !blockedIds.has(Number(m.senderId))) : messages
+  ), [messages, blockedIds, activeConvo]);
+
   function renderMessages() {
     const items = []; let lastDate = null;
     const MEDIA_TYPES = new Set(['IMAGE', 'GIF', 'VIDEO']);
     const BUNDLE_GAP_MS = 10000; // 10s window for grouping
 
     let i = 0;
-    while (i < messages.length) {
-      const msg = messages[i];
+    while (i < visibleMessages.length) {
+      const msg = visibleMessages[i];
       const label = fmtDateLabel(msg.sentAt ?? msg.createdAt);
       if (label !== lastDate) { items.push(<div key={`d-${i}`} className="date-sep">{label}</div>); lastDate = label; }
       const isSent = String(msg.senderId) === String(userId);
@@ -1716,8 +1726,8 @@ export default function Messages() {
       if (MEDIA_TYPES.has(mtype) && !msg.replyToId && editingId !== msg.id) {
         const bundle = [msg];
         let j = i + 1;
-        while (j < messages.length) {
-          const next = messages[j];
+        while (j < visibleMessages.length) {
+          const next = visibleMessages[j];
           const nextType = (next.type || 'TEXT').toUpperCase();
           const sameDate = fmtDateLabel(next.sentAt ?? next.createdAt) === label;
           const sameSender = String(next.senderId) === String(msg.senderId);
@@ -1778,6 +1788,7 @@ export default function Messages() {
     if (bPinned !== aPinned) return bPinned - aPinned;
     return new Date(b.lastTime || 0) - new Date(a.lastTime || 0);
   }).filter(c => {
+    if (!c.isGroup && blockedIds.has(Number(c.userId))) return false;
     if (msgFilter === 'groups') return c.isGroup;
     if (msgFilter === 'friends') return !c.isGroup && friendIds.has(Number(c.userId));
     return true;
@@ -2063,7 +2074,18 @@ export default function Messages() {
         onDelete={() => deleteMessage(contextMenu.msg.id)}
         onCopy={() => copyMessage(contextMenu.msg)}
         onSelect={() => enterSelectMode(contextMenu.msg)}
+        onReport={() => {
+          const m = contextMenu.msg;
+          setReportTarget({
+            type: activeConvo?.isGroup ? 'GROUP_MESSAGE' : 'MESSAGE',
+            id: m.id,
+            userId: m.senderId,
+            label: m.senderDisplayName || m.senderUsername || activeConvo?.name || 'this person',
+            evidence: m.content || undefined,
+          });
+        }}
       />}
+      {reportTarget && <ReportDialog target={reportTarget} onClose={() => setReportTarget(null)} />}
       {selectMode && (
         <SelectionBar
           count={selectedIds.size}
@@ -2084,6 +2106,7 @@ export default function Messages() {
         conversations={conversations}
         messages={activeConvo?.groupId === viewingGroupInfo.groupId ? messages : []}
         onClose={() => setViewingGroupInfo(null)}
+        onReportGroup={() => setReportTarget({ type: 'GROUP', id: viewingGroupInfo.groupId, label: viewingGroupInfo.name })}
         onGroupUpdated={updated => {
           if (!updated) {
             setConversations(prev => prev.filter(c => c.groupId !== viewingGroupInfo.groupId));
@@ -2127,6 +2150,24 @@ export default function Messages() {
           { label: 'Mark as unread', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="chat" /></svg>, action: () => { } },
           ...(!c.isGroup ? [{ label: 'View profile', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="user" /></svg>, action: () => { setCtxMenu(null); navigate(`/profile/${c.username}`); } }] : []),
           { label: 'Mute notifications', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="bell" /></svg>, action: () => { } },
+          ...(!c.isGroup ? [
+            {
+              label: blockedIds.has(Number(c.userId)) ? 'Unblock' : 'Block',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="shield" /></svg>,
+              danger: !blockedIds.has(Number(c.userId)),
+              action: async () => {
+                const name = c.name || c.username || 'this person';
+                try {
+                  if (blockedIds.has(Number(c.userId))) { await unblockUser(c.userId); toast.success(`Unblocked ${name}`); return; }
+                  if (!window.confirm(`Block ${name}? They won’t be able to message or call you, and they won’t be told.`)) return;
+                  await blockUser(c.userId);
+                  if (activeConvo?.userId === c.userId) setActiveConvo(null);
+                  toast.success(`Blocked ${name}`);
+                } catch { toast.error('Could not update the block. Try again.'); }
+              },
+            },
+            { label: 'Report user', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="flag" /></svg>, action: () => setReportTarget({ type: 'USER', id: c.userId, userId: c.userId, label: c.name || c.username }) },
+          ] : []),
           { label: 'Close chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="close" /></svg>, action: () => { if (activeConvo?.userId === c.userId) setActiveConvo(null); }, danger: false },
           { label: 'Delete chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><Glyph n="trash" /></svg>, action: () => { if (activeConvo?.userId === c.userId) setActiveConvo(null); setConversations(prev => prev.filter(x => x.userId !== c.userId)); messageCache.remove(userId, convoKey(c)); }, danger: true },
         ];

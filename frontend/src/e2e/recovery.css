@@ -1,0 +1,23 @@
+/* Recovery phrase: dialog, banner and Settings row. Builds on e2e.css (overlay, card, buttons). */
+.rec-card { max-width: 480px; }
+.rec-words { list-style: none; margin: 16px 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.rec-words li { display: flex; align-items: baseline; gap: 10px; padding: 10px 12px; border: 1px solid var(--border-input, var(--border)); border-radius: 10px; background: var(--bg-input); font-size: 16px; font-weight: 600; letter-spacing: 0.01em; }
+.rec-words li span { min-width: 1.2em; font-size: 12px; font-weight: 500; color: var(--text-muted); }
+.rec-loading { display: flex; align-items: center; gap: 8px; margin: 20px 0; color: var(--text-muted); }
+.rec-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.rec-actions--end { justify-content: flex-end; align-items: center; margin-top: 18px; }
+.rec-check { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 14px; cursor: pointer; }
+.rec-check input { accent-color: var(--accent); width: 18px; height: 18px; }
+
+.rec-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg-input); }
+.rec-banner p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--text-secondary); }
+.rec-banner-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+@media (max-width: 640px) { .rec-banner { flex-direction: column; align-items: stretch; gap: 8px; } .rec-banner-actions { justify-content: flex-end; } }
+
+.rec-setting { display: flex; align-items: center; gap: 12px; }
+.rec-status { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.rec-status--current { color: #34d399; }
+.rec-status--none, .rec-status--stale { color: #f59e0b; }
+
+.rec-unlock textarea { width: 100%; min-height: 76px; resize: vertical; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-input, var(--border)); background: var(--bg-input); color: var(--text-primary); font: inherit; }
+.e2e-card .rec-check input[type="checkbox"] { flex: none; width: 18px; height: 18px; margin: 0; padding: 0; }

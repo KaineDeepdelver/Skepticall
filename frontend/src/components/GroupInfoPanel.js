@@ -283,7 +283,7 @@ function HeroBtn({ icon, label, onClick, danger }) {
 /* ══════════════════════════════════════════
    MAIN GroupInfoPanel
 ══════════════════════════════════════════ */
-export default function GroupInfoPanel({ group, currentUserId, conversations, messages, onClose, onGroupUpdated, onStartCall, onSearchInGroup }) {
+export default function GroupInfoPanel({ group, currentUserId, conversations, messages, onClose, onGroupUpdated, onStartCall, onSearchInGroup, onReportGroup }) {
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
   const [mounted, setMounted] = useState(false);
@@ -717,7 +717,7 @@ export default function GroupInfoPanel({ group, currentUserId, conversations, me
                         {Icons.Leave}
                         Exit group
                       </button>
-                      <button className="gi-danger-row" onClick={() => soon('Report group')}
+                      <button className="gi-danger-row" onClick={() => (onReportGroup ? onReportGroup() : soon('Report group'))}
                         style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '15px 20px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 14, fontWeight: 600, transition: 'background 0.12s', textAlign: 'left' }}>
                         {Icons.Flag}
                         Report group

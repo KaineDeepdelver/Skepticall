@@ -6,7 +6,9 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { api, adminApi, resolveUrl } from '../services/api';
 import { KeyBackupButton } from '../e2e/EncryptionGate';
+import { RecoveryPhraseControl } from '../e2e/VaultContext';
 import MessageBackupPanel from '../backup/MessageBackupPanel';
+import BlockedUsersList from '../blocks/BlockedUsersList';
 import Glyph from '../components/icons/Glyph';
 import Spinner from '../components/Spinner';
 
@@ -886,6 +888,17 @@ export default function Settings() {
         <SectionTitle mt={24}>Legal</SectionTitle>
         <AccRow label="Terms of Service" onClick={() => navigate('/terms')} />
         <AccRow label="Privacy Policy"   onClick={() => navigate('/privacy-policy')} />
+        <SectionTitle mt={24}>Blocked people</SectionTitle>
+        <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--text-muted)' }}>People you block can’t message or call you, and aren’t told. Blocking someone also removes them as a friend.</p>
+        <BlockedUsersList />
+        {user?.admin && (
+          <>
+            <SectionTitle mt={24}>Moderation</SectionTitle>
+            <SettingRow label="Reports" desc="Review reports from people using Skepticall." noBorder>
+              <button className="e2e-btn" onClick={() => navigate('/admin/reports')}>Open reports</button>
+            </SettingRow>
+          </>
+        )}
       </>
     );
 
@@ -959,6 +972,9 @@ export default function Settings() {
           <ToggleSwitch checked={false} disabled onChange={() => {}} />
         </SettingRow>
         <SectionTitle mt={20}>Encryption</SectionTitle>
+        <SettingRow label="Recovery phrase" desc="Six words that unlock your messages on any new browser or device. Your key is locked with the phrase before it is stored on your account, so we cannot read it.">
+          <RecoveryPhraseControl />
+        </SettingRow>
         <SettingRow label="Encryption key backup" desc="Download your encryption key, protected by a passphrase. You need it to read your messages on a new browser or device. Keep it somewhere safe.">
           <KeyBackupButton />
         </SettingRow>

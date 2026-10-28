@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useE2EE } from './E2EEContext';
 import './e2e.css';
+import './recovery.css';
 import Spinner from '../components/Spinner';
 
 function errorText(e) {
@@ -29,6 +30,16 @@ export function EncryptionGate() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [phrase, setPhrase] = useState('');
+  const [hasVault, setHasVault] = useState(false);
+
+  // Does this account have a recovery phrase backup? If so, offer to unlock with it first.
+  useEffect(() => {
+    if (!user || status !== 'needs-restore') { setHasVault(false); return undefined; }
+    let alive = true;
+    service.vaultStatus().then((v) => { if (alive) setHasVault(v !== 'none'); }).catch(() => {});
+    return () => { alive = false; };
+  }, [user && user.id, status, service]);
 
   if (!user || (status !== 'needs-setup' && status !== 'needs-restore')) return null;
 
@@ -54,6 +65,20 @@ export function EncryptionGate() {
       const bytes = new Uint8Array(await file.arrayBuffer());
       await service.restoreFromBackup({ bytes, passphrase });
       setPassphrase('');
+    });
+  };
+
+  const unlock = (e) => {
+    e.preventDefault();
+    if (!phrase.trim()) { setError('Enter your recovery phrase.'); return; }
+    run(async () => {
+      try {
+        await service.restoreFromVault({ phrase });
+      } catch (err) {
+        if (err && err.code === 'WRONG_PASSPHRASE_OR_CORRUPT') throw new Error('That recovery phrase isn’t right. Check the words and try again.');
+        throw err;
+      }
+      setPhrase('');
     });
   };
 
@@ -86,9 +111,20 @@ export function EncryptionGate() {
               {notice === 'old-keys-only' && ' That backup only held an older key: it opens older messages, but you need a new key to receive new ones.'}
             </p>
 
+            {notice !== 'old-keys-only' && hasVault && (
+              <form onSubmit={unlock} className="e2e-section rec-unlock">
+                <h3>Unlock with your recovery phrase</h3>
+                <label>Recovery phrase
+                  <textarea value={phrase} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="six words, separated by spaces"
+                    onChange={(e) => setPhrase(e.target.value)} disabled={busy} />
+                </label>
+                <button className="e2e-btn e2e-btn--primary" disabled={busy}>{busy ? <><Spinner />Unlocking…</> : 'Unlock my messages'}</button>
+              </form>
+            )}
+
             {notice !== 'old-keys-only' && (
               <form onSubmit={restore} className="e2e-section">
-                <h3>Restore from a key backup</h3>
+                <h3>{hasVault ? 'Or restore from a key file' : 'Restore from a key backup'}</h3>
                 <label>Backup file (.dat)
                   <input type="file" accept=".dat" ref={fileRef} disabled={busy} />
                 </label>

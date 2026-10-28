@@ -9,6 +9,8 @@ import { WebSocketProvider } from './context/WebSocketContext';
 import { CallProvider } from './context/CallContext';
 import { GroupCallProvider } from './context/GroupCallContext';
 import { E2EEProvider } from './e2e/E2EEContext';
+import { VaultProvider } from './e2e/VaultContext';
+import { BlockProvider } from './context/BlockContext';
 import { EncryptionGate } from './e2e/EncryptionGate';
 import GroupCallOverlay from './components/GroupCallOverlay';
 import AppLayout      from './components/layout/AppLayout';
@@ -20,6 +22,7 @@ const ForgotPasswordVerify = lazyWithRetry(() => import('./pages/auth/ForgotPass
 const ForgotPasswordReset = lazyWithRetry(() => import('./pages/auth/ForgotPasswordReset'));
 import Messages       from './pages/Messages';
 const Calls = lazyWithRetry(() => import('./pages/Calls'));
+const AdminReportsPage = lazyWithRetry(() => import('./pages/AdminReportsPage'));
 const Settings = lazyWithRetry(() => import('./pages/Settings'));
 const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage'));
 const SearchPage = lazyWithRetry(() => import('./pages/SearchPage'));
@@ -55,6 +58,8 @@ export default function App() {
       <ConsentProvider>
       <AuthProvider>
         <E2EEProvider>
+        <VaultProvider>
+        <BlockProvider>
         <GuestPromptProvider>
         <FriendProvider>
         <WebSocketProvider>
@@ -94,6 +99,7 @@ export default function App() {
             <Route path="/" element={<ViewRoute><AppLayout /></ViewRoute>}>
               <Route path="messages"          element={<AccountRoute><Messages /></AccountRoute>} />
               <Route path="calls"             element={<AccountRoute><Calls /></AccountRoute>} />
+              <Route path="admin/reports"     element={<AccountRoute><AdminReportsPage /></AccountRoute>} />
               <Route path="settings"          element={<Settings />} />
               <Route path="profile/:username"  element={<ProfilePage />} />
               <Route path="search"            element={<SearchPage />} />
@@ -109,6 +115,8 @@ export default function App() {
         </WebSocketProvider>
         </FriendProvider>
         </GuestPromptProvider>
+        </BlockProvider>
+        </VaultProvider>
         </E2EEProvider>
       </AuthProvider>
       </ConsentProvider>

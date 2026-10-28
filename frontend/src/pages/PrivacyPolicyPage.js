@@ -90,7 +90,10 @@ export default function PrivacyPolicyPage() {
           <tbody>
             <tr><td>Messages and files (encrypted)</td><td>Deleted a few minutes after your device confirms delivery. Anything never collected is deleted after 30 days at the latest.</td></tr>
             <tr><td>Recent messages and chat list saved on your device (encrypted)</td><td>Until you log out or clear site data. This copy stays on your device and is never sent to us.</td></tr>
+            <tr><td>Reports you send, and any message text you choose to include</td><td>While we review them and as long as we need to keep Skepticall safe. Reports you filed are deleted if you delete your account; reports about an account may be kept.</td></tr>
+            <tr><td>The list of people you have blocked</td><td>Until you unblock them or delete your account</td></tr>
             <tr><td>Call history</td><td>30 days</td></tr>
+            <tr><td>Your encryption key, locked with your recovery phrase (we cannot open it)</td><td>Until you replace it or delete your account</td></tr>
             <tr><td>Previous encryption keys after you replace your key</td><td>30 days, so messages sent to the old key still open</td></tr>
             <tr><td>Account, profile, friends, groups, notifications</td><td>Until you delete your account</td></tr>
             <tr><td>Last sign-in time and network</td><td>Until your next sign-in replaces it, or you delete your account</td></tr>

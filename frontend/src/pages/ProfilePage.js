@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, API_BASE, friendApi } from '../services/api';
+import { useBlocks } from '../context/BlockContext';
+import ReportDialog from '../reports/ReportDialog';
 
 function fmtJoin(iso) {
   if (!iso) return '—';
@@ -31,6 +33,8 @@ export default function ProfilePage() {
   const [loading,      setLoading]      = useState(true);
   const [relationship, setRelationship] = useState({ status: 'NONE' });
   const [actionLoading, setActionLoading] = useState(false);
+  const { isBlocked, block, unblock } = useBlocks();
+  const [reporting, setReporting] = useState(false);
   const [showAbout,     setShowAbout]     = useState(false);
   const isMe = uid != null && me?.id === uid;
   const BIO_TRUNCATE_AT = 130;
@@ -73,6 +77,15 @@ export default function ProfilePage() {
         setRelationship({ status: 'NONE' });
       }
     } catch {} finally { setActionLoading(false); }
+  }
+
+  async function toggleBlock() {
+    const name = profile.displayName || profile.username;
+    try {
+      if (isBlocked(profile.id)) { await unblock(profile.id); return; }
+      if (!window.confirm(`Block ${name}? They won’t be able to message or call you, and they won’t be told.`)) return;
+      await block(profile.id);
+    } catch { /* the button stays as it was */ }
   }
 
   function friendBtnLabel() {
@@ -148,6 +161,10 @@ export default function ProfilePage() {
                   color: relationship.status === 'REQUEST_RECEIVED' ? '#fff' : 'var(--text-primary)' }}>
                 {friendBtnLabel()}
               </button>
+              <button className="e2e-btn" onClick={toggleBlock} disabled={actionLoading}>
+                {isBlocked(profile.id) ? 'Unblock' : 'Block'}
+              </button>
+              <button className="e2e-btn" onClick={() => setReporting(true)}>Report</button>
             </div>
           )}
         </div>
@@ -183,6 +200,7 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+      {reporting && <ReportDialog target={{ type: 'USER', id: profile.id, userId: profile.id, label: profile.displayName || profile.username }} onClose={() => setReporting(false)} />}
     </div>
   );
 }

@@ -206,6 +206,10 @@ export const api = {
   getUserKeys:       (id)       => req(`/users/${id}/public-keys`),
   getMyKeys:         ()         => req('/users/me/public-keys'),
   rotateKey:         (publicKey, password) => req('/users/me/public-key/rotate', { method: 'POST', body: { publicKey, password } }),
+  // The account's passphrase-protected key backup (the server only ever holds the locked blob)
+  getKeyVault:    ()                                    => req('/users/me/key-vault'),
+  putKeyVault:    (blob, currentPublicKey, password)   => req('/users/me/key-vault', { method: 'PUT',    body: { blob, currentPublicKey, password } }),
+  deleteKeyVault: (password)                           => req('/users/me/key-vault', { method: 'DELETE', body: { password } }),
   getUserByUsername: (username) => req(`/users/by-username/${encodeURIComponent(username)}`),
   searchUsers:    (query)           => req(`/users/search?query=${encodeURIComponent(query)}`),
   updateProfile:  (id, fd)          => upload(`/users/${id}/profile`, fd, 'PUT'),
@@ -273,7 +277,21 @@ export const linkPreviewApi = {
 // a client can no longer just type a different adminId into the URL bar.
 export const adminApi = {
   listUsers:     ()             => req('/admin/users'),
+  listReports:   (status = 'OPEN') => req(`/admin/reports?status=${encodeURIComponent(status)}`),
+  resolveReport: (id, status, note) => req(`/admin/reports/${id}/resolve`, { method: 'POST', body: { status, note } }),
   deleteUser:    (userId)       => req(`/admin/users/${userId}`, { method: 'DELETE' }),
   grantAdmin:    (targetUserId) => req(`/admin/admins/${targetUserId}`, { method: 'POST' }),
   revokeAdmin:   (targetUserId) => req(`/admin/admins/${targetUserId}`, { method: 'DELETE' }),
+};
+
+// Reporting and blocking
+export const reportApi = {
+  // { targetType: 'USER'|'MESSAGE'|'GROUP'|'GROUP_MESSAGE', targetId, reason, details?, evidence? }
+  submit: (data) => req('/reports', { method: 'POST', body: data }),
+};
+
+export const blockApi = {
+  list:    ()       => req('/users/me/blocks'),
+  block:   (userId) => req(`/users/me/blocks/${userId}`, { method: 'PUT' }),
+  unblock: (userId) => req(`/users/me/blocks/${userId}`, { method: 'DELETE' }),
 };
