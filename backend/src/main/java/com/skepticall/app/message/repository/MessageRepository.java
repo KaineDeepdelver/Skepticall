@@ -48,12 +48,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             "ORDER BY m.createdAt DESC")
     List<Message> findCallsForUser(@Param("userId") Long userId);
 
-    /**
-     * TEMPO messages whose TTL has expired — used for scheduled cleanup.
-     */
-    @Query("SELECT m FROM Message m WHERE m.type = 'TEMPO' AND m.tempoExpiresAt IS NOT NULL AND m.tempoExpiresAt <= :now")
-    List<Message> findExpiredTempoMessages(@Param("now") LocalDateTime now);
-
     // == Admin account deletion — wipe every message this user sent or received ==
     @Modifying
     @Query("DELETE FROM Message m WHERE m.sender.id = :userId OR m.receiver.id = :userId")

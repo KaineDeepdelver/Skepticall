@@ -27,7 +27,7 @@ public class Message extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    private String type; // TEXT, IMAGE, VIDEO, VOICE, FILE, GIF, DELETE, TEMPO
+    private String type; // TEXT, IMAGE, VIDEO, VOICE, FILE, GIF, DELETE
 
     private String fileUrl;
 
@@ -89,13 +89,4 @@ public class Message extends BaseEntity {
     private String callStatus; // "completed" | "missed" | "declined" | "cancelled"
     private Integer ringSeconds;
     private Integer callDurationSeconds;
-
-    // == /tempo self-destruct ==
-    // Set when the message is sent as type "TEMPO". Used to be detected by
-    // the server reading a "/tempo " prefix off the plaintext content, but
-    // that stopped being possible once content can be E2E-encrypted (the
-    // server can't read it) — the client now decides this before encrypting
-    // and declares it via `type`, same as VOICE/IMAGE/etc. Null for normal
-    // messages.
-    private LocalDateTime tempoExpiresAt;
 }

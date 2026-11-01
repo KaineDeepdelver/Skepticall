@@ -54,9 +54,6 @@ public class MessageDTO {
     // Read status
     private String status; // SENT, DELIVERED, READ
 
-    // /tempo self-destruct — ISO datetime string when message auto-deletes
-    private LocalDateTime tempoExpiresAt;
-
     // Optimistic-message correlation token — echoed back verbatim so the
     // frontend can replace its temporary placeholder with the real message.
     private String _tmpId;

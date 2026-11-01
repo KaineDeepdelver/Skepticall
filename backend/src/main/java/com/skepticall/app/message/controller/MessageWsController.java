@@ -59,11 +59,6 @@ public class MessageWsController {
                     pushService.notifyVoiceMessage(saved.getSenderId(), saved.getReceiverId());
                 }
                 case "CALL" -> { /* call-log entry — the call itself already notified */ }
-                case "TEMPO" -> {
-                    notifService.notifyMessage(
-                        saved.getSenderId(), saved.getReceiverId(), saved.getId(), "💨 Self-destruct message");
-                    pushService.notifyMessage(saved.getSenderId(), saved.getReceiverId(), "💨 Self-destruct message");
-                }
                 default -> {
                     String preview = saved.getContent() != null
                         ? saved.getContent().length() > 60
@@ -158,17 +153,6 @@ public class MessageWsController {
 
         messagingTemplate.convertAndSend("/topic/messages/" + fromUserId, receipt);
         messagingTemplate.convertAndSend("/topic/messages/" + toUserId,   receipt);
-    }
-
-    // == Tempo expiry scheduler — runs every 10 seconds, unrelated to auth ===
-
-    @Scheduled(fixedDelay = 10_000)
-    public void purgeExpiredTempoMessages() {
-        List<MessageDTO> expired = messageService.expireTempoMessages();
-        for (MessageDTO msg : expired) {
-            msg.setType("DELETE");
-            broadcast(msg);
-        }
     }
 
     // == Internal =============================================================

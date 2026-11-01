@@ -68,12 +68,6 @@ class EncryptionPolicyTest {
     }
 
     @Test
-    void selfDestructMessagesMustBeEncryptedToo() {
-        assertThrows(BusinessException.class, () -> directSend("TEMPO", "boom", null));
-        assertDoesNotThrow(() -> directSend("TEMPO", CIPHER, NONCE));
-    }
-
-    @Test
     void aFileNeedsItsNonceAndAWrappedKey() {
         assertThrows(BusinessException.class, () ->
                 policy.checkDirectSend("IMAGE", null, null, null, null, "https://r2/x.jpg", null, null, null));

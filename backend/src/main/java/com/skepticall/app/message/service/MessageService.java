@@ -33,9 +33,6 @@ public class MessageService {
     private final com.skepticall.app.common.EncryptionPolicy encryptionPolicy;
     private final com.skepticall.app.user.service.BlockService blockService;
 
-    // == Tempo default TTL in seconds ==
-    private static final int TEMPO_TTL_SECONDS = 30;
-
     // == Queries ==============================================================
 
     public List<MessageDTO> getConversation(Long user1, Long user2) {
@@ -79,19 +76,6 @@ public class MessageService {
                     dto.getFileUrl(), dto.getMediaNonce(), dto.getMediaKeyCiphertext(), dto.getMediaKeyNonce());
         }
         dto.setStatus("SENT");
-
-        // == /tempo detection ==
-        // Used to detect a "/tempo " prefix by reading dto.getContent()
-        // directly — that only worked because content was always plaintext
-        // server-side. Now that content can be E2E-encrypted, the server
-        // can't read it at all, so this has to be the client's decision:
-        // the client strips the "/tempo " prefix itself before encrypting
-        // and declares intent by sending type "TEMPO" directly. The server
-        // still owns the actual TTL (not trusting a client-supplied expiry
-        // time), it just no longer inspects content to detect the command.
-        if ("TEMPO".equals(dto.getType())) {
-            dto.setTempoExpiresAt(LocalDateTime.now().plusSeconds(TEMPO_TTL_SECONDS));
-        }
 
         Message saved = messageRepo.save(messageMapper.toEntity(dto));
         MessageDTO out = messageMapper.toDTO(saved);
@@ -172,7 +156,6 @@ public class MessageService {
 
             String preview;
             if ("DELETE".equals(m.getType()))       preview = "Message deleted";
-            else if ("TEMPO".equals(m.getType()))   preview = "💨 Self-destruct message";
             // Encrypted messages carry ciphertext the server can't read: never show base64 as a preview.
             else if (m.getNonce() != null && m.getContent() != null) preview = "🔒 Encrypted message";
             else if (m.getContent() != null)        preview = m.getContent();
@@ -195,25 +178,5 @@ public class MessageService {
             map.put(otherId, dto);
         }
         return new ArrayList<>(map.values());
-    }
-
-    // == Tempo expiry — runs every 10 seconds ================================
-
-    /**
-     * Finds all TEMPO messages whose expiry has passed and soft-deletes them.
-     * Returns the deleted DTOs so the WS controller can broadcast removals.
-     */
-    @Transactional
-    public List<MessageDTO> expireTempoMessages() {
-        List<Message> expired = messageRepo.findExpiredTempoMessages(LocalDateTime.now());
-        List<MessageDTO> deleted = new ArrayList<>();
-        for (Message m : expired) {
-            m.setType("DELETE");
-            m.setContent(null);
-            m.setNonce(null);
-            m.setTempoExpiresAt(null);
-            deleted.add(messageMapper.toDTO(messageRepo.save(m)));
-        }
-        return deleted;
     }
 }
