@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, API_BASE, friendApi } from '../services/api';
 import { useBlocks } from '../context/BlockContext';
+import ExitButton from '../components/ExitButton';
+import useGoBack from '../hooks/useGoBack';
 import ReportDialog from '../reports/ReportDialog';
 
 function fmtJoin(iso) {
@@ -26,6 +28,7 @@ export default function ProfilePage() {
   const { username } = useParams();
   const { user: me } = useAuth();
   const navigate = useNavigate();
+  const goBack = useGoBack('/');
 
   // uid is resolved after profile loads
   const [uid,          setUid]          = useState(null);
@@ -108,9 +111,7 @@ export default function ProfilePage() {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px' }}>
 
         {/* Back */}
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, margin: '16px 0 0 4px', padding: '6px 0' }}>
-          ← Back
-        </button>
+        <ExitButton label="Back" onClick={goBack} style={{ margin: '12px 0 0 -4px' }} />
 
         {/* Banner — full width, */}
         <div style={{ position: 'relative', width: '100%', height: 200, borderRadius: 12, overflow: 'hidden', marginTop: 8, background: banner ? undefined : 'linear-gradient(135deg,#1a3a5c,#0f2040)' }}>
@@ -175,12 +176,9 @@ export default function ProfilePage() {
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div onClick={e => e.stopPropagation()}
             style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 28, width: '100%', maxWidth: 480, maxHeight: '80vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+              <ExitButton label="Close" onClick={() => setShowAbout(false)} />
               <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>{profile.displayName || profile.username}</div>
-              <button onClick={() => setShowAbout(false)}
-                style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'var(--bg-hover)', color: 'var(--text-primary)', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                ✕
-              </button>
             </div>
 
             {profile.bio && (

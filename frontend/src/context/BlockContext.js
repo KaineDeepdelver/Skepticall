@@ -14,7 +14,11 @@ export function BlockProvider({ children }) {
 
   const refresh = useCallback(async () => {
     if (!user) { setBlocked([]); return; }
-    try { setBlocked(await blockApi.list()); } catch { /* keep what we had */ }
+    try {
+      const list = await blockApi.list();
+      // Anything other than a list (an older server, an error body) means "nobody is blocked", never a crash.
+      setBlocked(Array.isArray(list) ? list : []);
+    } catch { /* keep what we had */ }
   }, [user && user.id]); // eslint-disable-line
 
   useEffect(() => { refresh(); }, [refresh]);

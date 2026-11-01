@@ -10,6 +10,7 @@ import { MIN_AGE } from '../../config/business';
 import { useTheme } from '../../context/ThemeContext';
 import Glyph from '../../components/icons/Glyph';
 import Spinner from '../../components/Spinner';
+import { BackChevron } from '../../components/ExitButton';
 
 const EMAIL_PATTERN    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\s]).{8,}$/;
@@ -267,7 +268,7 @@ export default function SignUp() {
           >
             {cooldown > 0 ? `Resend code in ${cooldown}s` : "Didn't get it? Resend code"}
           </div>
-          <div className="auth-link" style={{ cursor: 'pointer' }} onClick={goBack}>← Change email</div>
+          <div className="auth-link" style={{ cursor: 'pointer' }} onClick={goBack}><BackChevron /> Change email</div>
         </form>
       )}
 
@@ -315,7 +316,7 @@ export default function SignUp() {
 
           <div className="auth-error">{error}</div>
           <button className="auth-btn" type="submit">Continue</button>
-          <div className="auth-link" style={{ cursor: 'pointer' }} onClick={goBack}>← Back</div>
+          <div className="auth-link" style={{ cursor: 'pointer' }} onClick={goBack}><BackChevron /> Back</div>
         </form>
       )}
 
@@ -379,7 +380,7 @@ export default function SignUp() {
           <button className="auth-btn" type="submit" disabled={loading || !tosAccepted || !ageConfirmed || (!!RECAPTCHA_SITE_KEY && !captchaToken)}>
             {loading ? <><Spinner />Creating account…</> : 'Create account'}
           </button>
-          <div className="auth-link" style={{ cursor: 'pointer' }} onClick={goBack}>← Back</div>
+          <div className="auth-link" style={{ cursor: 'pointer' }} onClick={goBack}><BackChevron /> Back</div>
         </form>
       )}
 

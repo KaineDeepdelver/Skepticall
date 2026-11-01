@@ -1,3 +1,4 @@
+import ExitButton from './ExitButton';
 import React, { useState, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api, API_BASE } from '../services/api';
@@ -237,11 +238,9 @@ export default function MyProfileDrawer({ onClose }) {
       <div style={{ position: 'fixed', top: 0, right: 0, width: 340, height: '100vh', background: 'var(--bg-card)', borderLeft: '1px solid var(--border)', zIndex: 901, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 32px rgba(0,0,0,0.3)', overflowY: 'auto' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+          <ExitButton label="Close" onClick={onClose} />
           <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Edit Profile</span>
-          <button className="dialog-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
-          </button>
         </div>
 
         {/* Body */}

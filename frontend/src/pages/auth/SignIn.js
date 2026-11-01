@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import Glyph from '../../components/icons/Glyph';
 import Spinner from '../../components/Spinner';
+import { BackChevron } from '../../components/ExitButton';
 
 export default function SignIn() {
   const { theme } = useTheme();
@@ -103,7 +104,7 @@ export default function SignIn() {
           </button>
           <div className="auth-link"><Link to="/forgot-password" state={{ email }}>Forgot your password?</Link></div>
           <div className="auth-link" style={{ cursor: 'pointer' }} onClick={backToEmail}>
-            ← Use a different email
+            <BackChevron /> Use a different email
           </div>
         </form>
       )}

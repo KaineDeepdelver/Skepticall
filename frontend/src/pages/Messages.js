@@ -16,6 +16,7 @@ import { useCall } from '../context/CallContext';
 import { useGroupCall } from '../context/GroupCallContext';
 import toast from 'react-hot-toast';
 import ReportDialog from '../reports/ReportDialog';
+import ExitButton from '../components/ExitButton';
 import { useBlocks } from '../context/BlockContext';
 import Glyph from '../components/icons/Glyph';
 
@@ -579,7 +580,7 @@ function Lightbox({ items, startIndex, onClose }) {
   }, [items.length, onClose]);
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: '#fff', fontSize: 32, cursor: 'pointer', lineHeight: 1, padding: '0 8px' }}>×</button>
+      <ExitButton label="Close" onClick={e => { e.stopPropagation(); onClose(); }} style={{ position: 'absolute', top: 16, left: 16, color: '#fff' }} />
       {items.length > 1 && idx > 0 && (
         <button onClick={e => { e.stopPropagation(); setIdx(i => i - 1); }} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
       )}

@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import Spinner from '../../components/Spinner';
+import { BackChevron } from '../../components/ExitButton';
 export default function ForgotPasswordEmail() {
   const { theme } = useTheme();
   const location = useLocation();
@@ -42,7 +43,7 @@ export default function ForgotPasswordEmail() {
         <button className="auth-btn" type="submit" disabled={loading}>
           {loading ? <><Spinner />Sending code…</> : 'Continue'}
         </button>
-        <div className="auth-link"><Link to="/accounts/login">← Back to sign in</Link></div>
+        <div className="auth-link"><Link to="/accounts/login"><BackChevron /> Back to sign in</Link></div>
       </form>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { decodeBase64 } from 'tweetnacl-util';
 import Glyph from '../components/icons/Glyph';
+import ExitButton from '../components/ExitButton';
 
 const SKIP_TEXT = {
   'too-large': 'File not included (too large)',
@@ -58,13 +59,13 @@ export default function BackupViewer({ backup, onClose }) {
     <div className="mb-overlay" role="dialog" aria-modal="true" aria-label="Message backup">
       <div className="mb-viewer">
         <header className="mb-head">
-          <div>
+          <ExitButton label="Close backup" onClick={onClose} />
+          <div style={{ flex: 1 }}>
             <strong>Message backup</strong>
             <span className="mb-sub">
               {convos.length} conversations · saved {createdAt ? new Date(createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}
             </span>
           </div>
-          <button className="hdr-btn" onClick={onClose} aria-label="Close backup"><svg viewBox="0 0 24 24"><Glyph n="close" /></svg></button>
         </header>
         <div className="mb-body">
           <nav className="mb-list" aria-label="Conversations">

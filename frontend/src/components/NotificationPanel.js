@@ -1,3 +1,4 @@
+import ExitButton from './ExitButton';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notifApi, API_BASE } from '../services/api';
@@ -75,7 +76,6 @@ function AvatarStack({ notifications, size = 32 }) {
 /**
  * Group notifications:
  * - MESSAGE type: grouped by actorId (same sender stacks as "x10")
- * - FOLLOW: grouped by actorId
  * - everything else: grouped by type+refId
  *
  * Result is limited to MAX_NOTIFS groups.
@@ -86,7 +86,7 @@ function groupNotifications(notifs) {
 
   for (const n of notifs) {
     let key;
-    if (n.type === 'MESSAGE' || n.type === 'FOLLOW') {
+    if (n.type === 'MESSAGE') {
       key = `${n.type}_${n.actorId}`;
     } else {
       key = `${n.type}_${n.refId ?? 'null'}`;
@@ -109,7 +109,7 @@ function groupText(group) {
   const first     = items[0];
   const firstName = first.actorDisplayName || first.actorUsername || 'Someone';
 
-  // Stacked same-actor (MESSAGE / FOLLOW) → show count suffix
+  // Stacked same-actor messages → show count suffix
   if (type === 'MESSAGE') {
     if (count === 1) return `${firstName} sent you a message`;
     return `${firstName} sent you ${count} messages`;
@@ -123,7 +123,6 @@ function groupText(group) {
   const suffix = others === 1 ? '1 other' : `${others} others`;
 
   switch (type) {
-    case 'FOLLOW':  return `${firstName} and ${suffix} followed you`;
     default:        return `${firstName} and ${others} others sent notifications`;
   }
 }
@@ -132,7 +131,6 @@ function notifTarget(group) {
   const n = group.items[0];
   switch (n.type) {
     case 'MESSAGE': return '/messages';
-    case 'FOLLOW':  return n.actorUsername ? `/profile/${n.actorUsername}` : (n.actorId ? `/profile/${n.actorId}` : '/');
     default:        return '/';
   }
 }
@@ -140,15 +138,6 @@ function notifTarget(group) {
 function typeIcon(type) {
   const s = { width: 14, height: 14 };
   switch (type) {
-    case 'FOLLOW':
-      return (
-        <svg {...s} viewBox="0 0 24 24" fill="none" stroke="#4facfe" strokeWidth="2.5">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <line x1="19" y1="8" x2="19" y2="14"/>
-          <line x1="22" y1="11" x2="16" y2="11"/>
-        </svg>
-      );
     case 'MESSAGE':
       return (
         <svg {...s} viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5"><Glyph n="mail" /></svg>
@@ -240,6 +229,7 @@ export default function NotificationPanel({ userId, onClose, onReadCountChange }
           flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ExitButton label="Close" onClick={onClose} />
             <span style={{ fontWeight: 700, fontSize: 16 }}>Notifications</span>
             {unreadCount > 0 && (
               <span style={{
@@ -249,14 +239,6 @@ export default function NotificationPanel({ userId, onClose, onReadCountChange }
               }}>{unreadCount}</span>
             )}
           </div>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 4, borderRadius: 6 }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><Glyph n="close" /></svg>
-          </button>
         </div>
 
         {/* list */}

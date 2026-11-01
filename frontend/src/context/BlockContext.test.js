@@ -54,6 +54,21 @@ test('a failed block is reported to the caller and changes nothing', async () =>
   expect(api.isBlocked(7)).toBe(false);
 });
 
+test('a reply that is not a list (an older server) never crashes the app', async () => {
+  mockApi.list.mockResolvedValue({});
+  await mount();
+  expect(api.blocked).toEqual([]);
+  expect(api.isBlocked(7)).toBe(false);
+
+  mockApi.list.mockResolvedValue(null);
+  await act(async () => { await api.refresh(); });
+  expect(api.blocked).toEqual([]);
+
+  mockApi.list.mockRejectedValue(new Error('404'));
+  await act(async () => { await api.refresh(); });
+  expect(api.blocked).toEqual([]);
+});
+
 test('signed out: nothing is blocked and the server is not asked', async () => {
   mockUser = null;
   await mount();

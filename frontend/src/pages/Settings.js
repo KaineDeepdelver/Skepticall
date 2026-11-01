@@ -9,6 +9,7 @@ import { KeyBackupButton } from '../e2e/EncryptionGate';
 import { RecoveryPhraseControl } from '../e2e/VaultContext';
 import MessageBackupPanel from '../backup/MessageBackupPanel';
 import BlockedUsersList from '../blocks/BlockedUsersList';
+import ExitButton from '../components/ExitButton';
 import Glyph from '../components/icons/Glyph';
 import Spinner from '../components/Spinner';
 
@@ -113,11 +114,9 @@ function Dialog({ title, onClose, onSave, saveLabel = 'Save', saveVariant = 'pri
   return (
     <div className="dialog-overlay" onClick={onClose}>
       <div className="dialog-box" onClick={e => e.stopPropagation()}>
-        <div className="dialog-header">
+        <div className="dialog-header" style={{ justifyContent: 'flex-start', gap: 8 }}>
+          <ExitButton label="Close" onClick={onClose} />
           <span className="dialog-title">{title}</span>
-          <button className="dialog-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
-          </button>
         </div>
         <div className="dialog-body">{children}</div>
         <div className="dialog-footer">
@@ -154,14 +153,12 @@ function HeavyConfirmModal({ title, targetLabel, targetSub, targetAvatar, warnin
   return (
     <div className="dialog-overlay" onClick={onClose}>
       <div className="dialog-box" onClick={e => e.stopPropagation()}>
-        <div className="dialog-header">
+        <div className="dialog-header" style={{ justifyContent: 'flex-start', gap: 8 }}>
+          <ExitButton label="Close" onClick={onClose} />
           <span className="dialog-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: '#e06060', display: 'flex' }}><IcAlertTriangle /></span>
             {title}
           </span>
-          <button className="dialog-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><Glyph n="close" /></svg>
-          </button>
         </div>
         <div className="dialog-body">
 
@@ -546,13 +543,8 @@ export default function Settings() {
 
   // toggles — initialised from user object
   const [privacyMode,    setPrivacyMode]    = useState(user?.privacyMode    || false);
-  const [anonymousMode,  setAnonymousMode]  = useState(user?.anonymousMode  || false);
   const [appearOffline,  setAppearOffline]  = useState(user?.appearOffline  || false);
   const [notifMessages,  setNotifMessages]  = useState(user?.notifMessages  !== false);
-  const [notifMentions,  setNotifMentions]  = useState(user?.notifMentions  !== false);
-  const [notifFollows,   setNotifFollows]   = useState(user?.notifFollows   !== false);
-  const [notifReposts,   setNotifReposts]   = useState(user?.notifReposts   !== false);
-  const [profanityFilter,setProfanityFilter]= useState(user?.profanityMode  || false);
   const [ipAlerts,       setIpAlerts]       = useState(user?.ipLoginAlerts  || false);
 
   // per-toggle saving state so we show a spinner inline
@@ -868,7 +860,7 @@ export default function Settings() {
     if (id === 'privacy') return (
       <>
         <SectionTitle>Profile Visibility</SectionTitle>
-        <SettingRow label="Privacy Mode" desc="Hide your profile from search results and suggestions.">
+        <SettingRow label="Privacy Mode" desc="Hide your profile from search results and suggestions." noBorder>
           <ToggleSwitch
             checked={privacyMode}
             disabled={toggling.privacyMode}
@@ -876,13 +868,6 @@ export default function Settings() {
               // privacy uses its own endpoint
               api.updatePrivacy(user.id, val).catch(() => {});
             })}
-          />
-        </SettingRow>
-        <SettingRow label="Anonymous Mode" desc="Your username is hidden in public posts. Appears as 'Anonymous'." noBorder>
-          <ToggleSwitch
-            checked={anonymousMode}
-            disabled={toggling.anonymousMode}
-            onChange={val => toggle('anonymousMode', val, setAnonymousMode)}
           />
         </SettingRow>
         <SectionTitle mt={24}>Legal</SectionTitle>
@@ -933,22 +918,9 @@ export default function Settings() {
     if (id === 'notif') return (
       <>
         <SectionTitle>Messages &amp; Calls</SectionTitle>
-        <SettingRow label="Direct Messages" desc="Get notified when someone sends you a message.">
+        <SettingRow label="Direct Messages" desc="Get notified when someone sends you a message." noBorder>
           <ToggleSwitch checked={notifMessages} disabled={toggling.notifMessages}
             onChange={val => toggle('notifMessages', val, setNotifMessages)} />
-        </SettingRow>
-        <SectionTitle mt={20}>Social</SectionTitle>
-        <SettingRow label="Mentions" desc="Notify when someone mentions you in a post or comment.">
-          <ToggleSwitch checked={notifMentions} disabled={toggling.notifMentions}
-            onChange={val => toggle('notifMentions', val, setNotifMentions)} />
-        </SettingRow>
-        <SettingRow label="New Followers" desc="Notify when someone starts following you.">
-          <ToggleSwitch checked={notifFollows} disabled={toggling.notifFollows}
-            onChange={val => toggle('notifFollows', val, setNotifFollows)} />
-        </SettingRow>
-        <SettingRow label="Reposts" desc="Notify when someone reposts your content." noBorder>
-          <ToggleSwitch checked={notifReposts} disabled={toggling.notifReposts}
-            onChange={val => toggle('notifReposts', val, setNotifReposts)} />
         </SettingRow>
         <div style={{ marginTop: 20, padding: '0 20px', fontSize: 11, color: 'var(--text-muted)' }}>
           Push notification delivery depends on browser permissions and device settings.
@@ -958,12 +930,7 @@ export default function Settings() {
 
     if (id === 'security') return (
       <>
-        <SectionTitle>Content</SectionTitle>
-        <SettingRow label="Profanity Filter" desc="Automatically censor profanity in messages and posts you receive.">
-          <ToggleSwitch checked={profanityFilter} disabled={toggling.profanityFilter}
-            onChange={val => toggle('profanityFilter', val, setProfanityFilter, 'profanityMode')} />
-        </SettingRow>
-        <SectionTitle mt={20}>Login &amp; Access</SectionTitle>
+        <SectionTitle>Login &amp; Access</SectionTitle>
         <SettingRow label="IP Login Alerts" desc="Email alert when your account is accessed from a new or unrecognised IP address.">
           <ToggleSwitch checked={ipAlerts} disabled={toggling.ipAlerts}
             onChange={val => toggle('ipAlerts', val, setIpAlerts, 'ipLoginAlerts')} />
